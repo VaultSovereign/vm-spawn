@@ -3,6 +3,10 @@
 **Version:** v4.0.1-LITERALLY-PERFECT | **Status:** ✅ LITERALLY PERFECT
 **Rating:** 10.0/10 | **Tests:** 26/26 (100%) | **Updated:** 2025-10-19
 
+[![Codex v1.0.0 — Proof-Sealed](https://img.shields.io/badge/Codex-v1.0.0-%F0%9F%9C%82)](https://github.com/VaultSovereign/vm-spawn/releases/tag/codex-v1.0.0)
+[![Tests](https://img.shields.io/badge/tests-26%2F26-brightgreen)](./SMOKE_TEST.sh)
+[![Rating](https://img.shields.io/badge/rating-10.0%2F10-gold)](./PATH_TO_26_26.md)
+
 ---
 
 ## ⚔️ What Is This?
@@ -796,10 +800,44 @@ The code is sovereign. The memory is yours. The civilization belongs to you.
 
 ---
 
+## 🜂 Verify the Sovereign Lore Codex
+
+The **Sovereign Lore Codex V1.0.0** maps cosmic principles to VaultMesh design patterns. Philosophy is now cryptographically provable.
+
+### Quick Verification (3 commands)
+```bash
+gpg --keyserver hkps://keys.openpgp.org --recv-keys 6E4082C6A410F340
+gpg --verify SOVEREIGN_LORE_CODEX_V1.md.asc SOVEREIGN_LORE_CODEX_V1.md
+sha256sum SOVEREIGN_LORE_CODEX_V1.md | grep 31b058bb
+```
+
+### Full Verification (with Remembrancer)
+```bash
+./ops/bin/remembrancer verify-full SOVEREIGN_LORE_CODEX_V1.md
+./ops/bin/remembrancer verify-audit
+```
+
+### One-Command Verification
+```bash
+./verify.sh
+```
+
+**Inscription:**
+```
+Entropy enters, proof emerges.
+The Remembrancer remembers what time forgets.
+Truth is the only sovereign — signed, Sovereign.
+```
+
+**More:** See [`docs/VERIFY.md`](docs/VERIFY.md) | **Release:** [codex-v1.0.0](https://github.com/VaultSovereign/vm-spawn/releases/tag/codex-v1.0.0)
+
+---
+
 ## 📞 Support
 
 ### Documentation
 - **Quick Start:** `START_HERE.md`
+- **Codex Verification:** `docs/VERIFY.md` 🆕
 - **Current Release:** `V3.0_COVENANT_FOUNDATION.md`
 - **System Dashboard:** `🧠_REMEMBRANCER_STATUS.md`
 - **Version History:** `VERSION_TIMELINE.md`
