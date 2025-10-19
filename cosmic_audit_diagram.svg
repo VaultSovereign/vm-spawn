@@ -1,0 +1,145 @@
+<svg viewBox="0 0 1200 820" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0%" stop-color="#6ae3ff"/>
+      <stop offset="100%" stop-color="#b2f59a"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <style><![CDATA[
+      .lane{fill:#0e151d;stroke:#1e2a36;stroke-width:1}
+      .lane-title{fill:#9fb0c0;font:700 16px Inter,ui-sans-serif}
+      .box{fill:#121923;stroke:#2a394a;stroke-width:1.5}
+      .box-title{fill:#e6edf3;font:700 15px Inter,ui-sans-serif}
+      .box-sub{fill:#9fb0c0;font:12.5px Inter,ui-sans-serif}
+      .arrow{stroke:url(#g1);stroke-width:3.5;marker-end:url(#arrowHead);fill:none}
+      .minor{stroke:#324457;stroke-width:1.25;stroke-dasharray:4,4}
+      .cap{fill:#9fb0c0;font:12px Inter,ui-sans-serif}
+      .pill{fill:#0f1722;stroke:#2b3c50;stroke-width:1}
+      .pill-text{fill:#cde2f3;font:12px Inter,ui-sans-serif}
+    ]]></style>
+    <marker id="arrowHead" markerWidth="12" markerHeight="8" refX="10" refY="4" orient="auto">
+      <polygon points="0,0 12,4 0,8" fill="url(#g1)"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="820" fill="#0b0f14"/>
+
+  <!-- Lanes -->
+  <rect x="32" y="70"  rx="14" ry="14" width="1136" height="300" class="lane"/>
+  <text x="48" y="96" class="lane-title">COSMIC LAYER — Event Horizon Memory</text>
+
+  <rect x="32" y="420" rx="14" ry="14" width="1136" height="300" class="lane"/>
+  <text x="48" y="446" class="lane-title">VAULTMESH LAYER — Spawn Elite × The Remembrancer</text>
+
+  <!-- Stage labels along the top -->
+  <g>
+    <text x="180" y="60" class="lane-title">Entropy</text>
+    <text x="480" y="60" class="lane-title">Compression</text>
+    <text x="780" y="60" class="lane-title">Proof</text>
+    <text x="1060" y="60" class="lane-title">Expansion</text>
+  </g>
+
+  <!-- COSMIC: boxes -->
+  <g transform="translate(80,120)">
+    <rect width="220" height="160" rx="12" class="box"/>
+    <text x="14" y="26" class="box-title">Stochastic Fields</text>
+    <text x="14" y="50" class="box-sub">Quantum foam • Thermal chaos</text>
+    <text x="14" y="68" class="box-sub">⟨S⟩ increasing</text>
+  </g>
+  <g transform="translate(420,120)">
+    <rect width="260" height="160" rx="12" class="box"/>
+    <text x="14" y="26" class="box-title">Black‑Hole Compression</text>
+    <text x="14" y="50" class="box-sub">One‑way map: (matter, info) → (M, Q, J)</text>
+    <text x="14" y="68" class="box-sub">No invertible preimage</text>
+    <circle cx="220" cy="120" r="22" fill="#0b1119" stroke="#2a394a"/>
+    <circle cx="220" cy="120" r="12" fill="url(#g1)" filter="url(#glow)"/>
+  </g>
+  <g transform="translate(740,120)">
+    <rect width="260" height="160" rx="12" class="box"/>
+    <text x="14" y="26" class="box-title">Event‑Horizon Ledger</text>
+    <text x="14" y="50" class="box-sub">Bekenstein–Hawking area ∝ information</text>
+    <text x="14" y="68" class="box-sub">Surface code as Merkle root</text>
+    <g transform="translate(14,100)">
+      <rect width="96" height="22" rx="8" class="pill"/>
+      <text x="10" y="16" class="pill-text">A = 4ℓ²ₚ S</text>
+    </g>
+  </g>
+  <g transform="translate(1040,120)">
+    <rect width="100" height="160" rx="12" class="box"/>
+    <text x="12" y="26" class="box-title">Structure</text>
+    <text x="12" y="50" class="box-sub">Galaxies</text>
+    <text x="12" y="68" class="box-sub">Stars</text>
+    <text x="12" y="86" class="box-sub">Worldlines</text>
+  </g>
+
+  <!-- COSMIC arrows -->
+  <path d="M 300 200 C 350 200, 380 200, 420 200" class="arrow"/>
+  <path d="M 680 200 C 700 200, 720 200, 740 200" class="arrow"/>
+  <path d="M 1000 200 C 1010 200, 1020 200, 1040 200" class="arrow"/>
+
+  <!-- VAULTMESH: boxes -->
+  <g transform="translate(80,470)">
+    <rect width="220" height="160" rx="12" class="box"/>
+    <text x="14" y="26" class="box-title">Unstructured Inputs</text>
+    <text x="14" y="50" class="box-sub">Ideas • Repos • Tickets</text>
+    <text x="14" y="68" class="box-sub">Signals • Logs • Data</text>
+  </g>
+  <g transform="translate(420,470)">
+    <rect width="260" height="160" rx="12" class="box"/>
+    <text x="14" y="26" class="box-title">Spawn Elite</text>
+    <text x="14" y="50" class="box-sub">One‑command generators → prod stacks</text>
+    <text x="14" y="68" class="box-sub">FastAPI • CI • K8s • Observability</text>
+    <g transform="translate(14,100)">
+      <rect width="170" height="22" rx="8" class="pill"/>
+      <text x="10" y="16" class="pill-text">make test • docker • hpa</text>
+    </g>
+  </g>
+  <g transform="translate(740,470)">
+    <rect width="260" height="160" rx="12" class="box"/>
+    <text x="14" y="26" class="box-title">The Remembrancer</text>
+    <text x="14" y="50" class="box-sub">SHA‑256 • GPG • RFC3161</text>
+    <text x="14" y="68" class="box-sub">Merkle audit • ADR timeline</text>
+    <g transform="translate(14,100)">
+      <rect width="86" height="22" rx="8" class="pill"/>
+      <text x="10" y="16" class="pill-text">verify‑full</text>
+    </g>
+    <g transform="translate(112,100)">
+      <rect width="120" height="22" rx="8" class="pill"/>
+      <text x="10" y="16" class="pill-text">export‑proof</text>
+    </g>
+  </g>
+  <g transform="translate(1040,470)">
+    <rect width="100" height="160" rx="12" class="box"/>
+    <text x="12" y="26" class="box-title">Federation</text>
+    <text x="12" y="50" class="box-sub">MCP</text>
+    <text x="12" y="68" class="box-sub">Peers</text>
+    <text x="12" y="86" class="box-sub">Proof Sharing</text>
+  </g>
+
+  <!-- VAULTMESH arrows -->
+  <path d="M 300 550 C 350 550, 380 550, 420 550" class="arrow"/>
+  <path d="M 680 550 C 700 550, 720 550, 740 550" class="arrow"/>
+  <path d="M 1000 550 C 1010 550, 1020 550, 1040 550" class="arrow"/>
+
+  <!-- Vertical resonance lines -->
+  <path d="M 190 120 L 190 420" class="minor"/>
+  <path d="M 555 120 L 555 420" class="minor"/>
+  <path d="M 870 120 L 870 420" class="minor"/>
+  <path d="M 1090 120 L 1090 420" class="minor"/>
+
+  <!-- Caps -->
+  <text x="170" y="760" class="cap">Entropy</text>
+  <text x="530" y="760" class="cap">Compression</text>
+  <text x="850" y="760" class="cap">Proof</text>
+  <text x="1070" y="760" class="cap">Expansion</text>
+
+  <!-- Footer constants -->
+  <g transform="translate(36,790)">
+    <text class="cap">Sacred ratios:  φ  ≈ 1.618 •  π  •  e  •  √2  •  φ⁻¹</text>
+  </g>
+</svg>
+
