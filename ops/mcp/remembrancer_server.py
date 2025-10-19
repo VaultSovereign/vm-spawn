@@ -21,7 +21,10 @@ DB   = os.path.join(ROOT, "ops", "data", "remembrancer.db")
 
 # Optional HTTP transport (disabled by default; enable by env)
 STREAMABLE_HTTP = os.getenv("REMEMBRANCER_MCP_HTTP", "").lower() in ("1", "true", "yes")
-mcp = FastMCP("Remembrancer", streamable_http_path=("/mcp" if STREAMABLE_HTTP else None))
+if STREAMABLE_HTTP:
+    mcp = FastMCP("Remembrancer", streamable_http_path="/mcp")
+else:
+    mcp = FastMCP("Remembrancer")
 
 def _run(cmd: List[str]) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True, check=False)
