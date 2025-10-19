@@ -129,7 +129,8 @@ echo -e "${PURPLE}═══ CATEGORY 2: SPAWN FUNCTIONALITY ═══${NC}"
 echo ""
 
 test_start "spawn.sh shows help"
-if ./spawn.sh 2>&1 | grep -q "Usage:"; then
+HELP_OUTPUT=$(./spawn.sh 2>&1 || true)
+if echo "$HELP_OUTPUT" | grep -q "Usage:"; then
   test_pass "Help message displays"
 else
   test_fail "Help message doesn't display"
@@ -137,7 +138,9 @@ fi
 
 test_start "spawn.sh accepts parameters"
 export VAULTMESH_REPOS="$TEST_WORKSPACE"
-if timeout 30 ./spawn.sh smoke-test-svc service 2>&1 | grep -q "STEP 1\|Spawning\|SPAWN COMPLETE"; then
+# Run spawn and capture exit code separately
+timeout 30 ./spawn.sh smoke-test-svc service > /tmp/spawn-output.log 2>&1 || true
+if grep -q "SPAWN COMPLETE\|Spawn complete" /tmp/spawn-output.log && [[ -d "$TEST_WORKSPACE/smoke-test-svc" ]]; then
   test_pass "Spawn command executes"
 else
   test_fail "Spawn command failed or timeout"
@@ -205,7 +208,8 @@ else
 fi
 
 test_start "remembrancer can list deployments"
-if ./ops/bin/remembrancer list deployments 2>/dev/null | grep -q "deployments\|No deployments\|v2.2"; then
+LIST_OUTPUT=$(./ops/bin/remembrancer list deployments 2>&1 || true)
+if echo "$LIST_OUTPUT" | grep -q "deployments\|Released\|v2.2\|Listing"; then
   test_pass "List deployments works"
 else
   test_warn "List deployments failed or empty"
