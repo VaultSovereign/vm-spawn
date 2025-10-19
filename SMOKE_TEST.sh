@@ -351,32 +351,39 @@ test_start "v3.0: GPG signing functionality"
 if ! command -v gpg >/dev/null 2>&1; then
   test_warn "GPG not installed - skipping test (optional)"
 else
-  # Create temporary test artifact
-  TMPDIR="$(mktemp -d)"
-  pushd "$TMPDIR" >/dev/null 2>&1
-  echo "test content for v3.0 signing" > test-artifact.txt
-  
-  # Generate ephemeral test key (1-day, signing-capable)
-  GPG_BATCH_OUTPUT=$(gpg --batch --quick-generate-key "VM Test <test@vaultmesh.local>" rsa3072 sign 1d 2>&1)
-  
-  # Sign using remembrancer
-  if "$SCRIPT_DIR/ops/bin/remembrancer" sign test-artifact.txt --key "test@vaultmesh.local" >/dev/null 2>&1; then
-    if [[ -f test-artifact.txt.asc ]]; then
-      # Verify signature
-      if gpg --verify test-artifact.txt.asc test-artifact.txt >/dev/null 2>&1; then
-        test_pass "GPG signing and verification works"
+  # Find an existing GPG key (prefer GPG_KEY_ID env, else first secret key)
+  KEY_ID="${GPG_KEY_ID:-}"
+  if [[ -z "$KEY_ID" ]]; then
+    KEY_ID=$(gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '/^sec/ {print $5; exit}')
+  fi
+
+  if [[ -z "$KEY_ID" ]]; then
+    test_warn "No GPG key found (set GPG_KEY_ID or import a key) - skipping"
+  else
+    # Create temporary test artifact
+    TMPDIR="$(mktemp -d)"
+    pushd "$TMPDIR" >/dev/null 2>&1
+    echo "test content for v3.0 signing" > test-artifact.txt
+
+    # Sign using existing key
+    if "$SCRIPT_DIR/ops/bin/remembrancer" sign test-artifact.txt --key "$KEY_ID" >/dev/null 2>&1; then
+      if [[ -f test-artifact.txt.asc ]]; then
+        # Verify signature
+        if gpg --verify test-artifact.txt.asc test-artifact.txt >/dev/null 2>&1; then
+          test_pass "GPG signing and verification works (key: ${KEY_ID: -8})"
+        else
+          test_fail "Signature verification failed"
+        fi
       else
-        test_fail "Signature verification failed"
+        test_fail "Signature file not created"
       fi
     else
-      test_fail "Signature file not created"
+      test_warn "Signing failed with key $KEY_ID (check gpg-agent)"
     fi
-  else
-    test_warn "Signing failed (acceptable if no GPG configured)"
+
+    popd >/dev/null 2>&1
+    rm -rf "$TMPDIR"
   fi
-  
-  popd >/dev/null 2>&1
-  rm -rf "$TMPDIR"
 fi
 
 test_start "v3.0: RFC3161 timestamping functionality"
@@ -458,30 +465,46 @@ else
 fi
 
 test_start "v4.0: MCP server boot check"
-if ! command -v uv &>/dev/null; then
-  test_warn "uv not installed (needed for MCP testing) - skipping"
-elif [[ ! -f "$SCRIPT_DIR/ops/mcp/remembrancer_server.py" ]]; then
+if [[ ! -f "$SCRIPT_DIR/ops/mcp/remembrancer_server.py" ]]; then
   test_warn "MCP server not found (v4.0 not installed) - skipping"
 else
-  # Check if MCP server can import
-  if python3 -c "import sys; sys.path.insert(0, '$SCRIPT_DIR/ops/mcp'); import remembrancer_server" 2>/dev/null; then
-    test_pass "MCP server imports successfully"
+  # Try venv first, then uv fallback
+  import_ok=0
+
+  # Strategy 1: Use project venv if available
+  if [[ -x "$SCRIPT_DIR/ops/mcp/.venv/bin/python" ]]; then
+    if "$SCRIPT_DIR/ops/mcp/.venv/bin/python" -c "import sys; sys.path.insert(0, '$SCRIPT_DIR/ops/mcp'); import remembrancer_server" 2>/dev/null; then
+      import_ok=1
+    fi
+  fi
+
+  # Strategy 2: Fallback to uv if venv didn't work
+  if [[ $import_ok -eq 0 ]] && command -v uv &>/dev/null; then
+    pushd "$SCRIPT_DIR/ops/mcp" >/dev/null 2>&1
+    if uv run python -c "import remembrancer_server" 2>/dev/null; then
+      import_ok=1
+    fi
+    popd >/dev/null 2>&1
+  fi
+
+  if [[ $import_ok -eq 1 ]]; then
+    test_pass "MCP server imports successfully (venv/uv)"
   else
-    test_warn "MCP server import check skipped (FastMCP not installed)"
+    test_warn "MCP server import check skipped (FastMCP not available)"
   fi
 fi
 
 test_start "v4.0: Federation sync dry-run"
-if [[ -z "${FED_PEER_URL:-}" ]]; then
-  test_warn "FED_PEER_URL not set - skipping federation sync test"
-elif [[ ! -f "$SCRIPT_DIR/ops/bin/federation_sync.py" ]]; then
+if [[ ! -f "$SCRIPT_DIR/ops/bin/federation_sync.py" ]]; then
   test_warn "Federation sync script not found - skipping"
 else
-  # Try to sync (non-zero exit is acceptable)
-  if "$SCRIPT_DIR/ops/bin/remembrancer" federation sync --peer "${FED_PEER_URL}" >/dev/null 2>&1; then
-    test_pass "Federation sync executed successfully"
+  # Use local://self for deterministic self-sync test (no peer required)
+  PEER_URL="${FED_PEER_URL:-local://self}"
+
+  if "$SCRIPT_DIR/ops/bin/remembrancer" federation sync --peer "$PEER_URL" >/dev/null 2>&1; then
+    test_pass "Federation sync executed successfully (peer: $PEER_URL)"
   else
-    test_warn "Federation sync returned non-zero (acceptable - may be no peer running)"
+    test_fail "Federation sync failed with peer: $PEER_URL"
   fi
 fi
 
