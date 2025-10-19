@@ -1,8 +1,9 @@
 # 🜂 README_IMPORTANT: Post-Migration Security Protocol
 
 **Status:** ⚠️ **CRITICAL** — Execute immediately after node migration  
+**Version:** v3.0-COVENANT-FOUNDATION  
 **Date:** 2025-10-19  
-**Covenant:** VaultMesh Anchor & Hardening Protocol
+**Covenant:** VaultMesh Anchor & Hardening Protocol (GPG + RFC3161 + Merkle)
 
 ---
 
@@ -21,10 +22,12 @@ cd ~/work/vm/vm-umbrella  # or your VaultMesh root
 ```
 
 **Expected Output:**
-- ✅ Remembrancer operational
-- ✅ Merkle root found (64-char hex)
-- ✅ v2.2-PRODUCTION artifact verified
-- ✅ vm-marks operational
+- ✅ Remembrancer v3.0 operational
+- ✅ Merkle root found (0136f28019d21d8c...)
+- ✅ v3.0 cryptographic commands available
+- ✅ GPG signing functional
+- ✅ RFC3161 timestamping functional
+- ✅ Audit verification functional
 
 ### Step 2: First Boot Ritual (Anchor)
 ```bash

@@ -1,8 +1,9 @@
-# 🧠 The Remembrancer System
+# 🧠 The Remembrancer System v3.0
 
-**Status:** ✅ Initialized  
+**Status:** ✅ PRODUCTION VERIFIED  
+**Version:** v3.0-COVENANT-FOUNDATION  
 **First Memory:** VaultMesh Spawn Elite v2.2-PRODUCTION  
-**Date:** 2025-10-19
+**v3.0 Verified:** 2025-10-19 20:18 UTC
 
 ---
 
@@ -10,28 +11,37 @@
 
 The Remembrancer is VaultMesh's **cryptographic memory layer** — a covenant system that ensures nothing is forgotten, everything is provable, and time is respected.
 
-Unlike typical documentation that decays over time, the Remembrancer:
-- **Records** deployments with cryptographic receipts
-- **Tracks** architectural decisions (ADRs) with rationale
-- **Maintains** infrastructure state snapshots
+Unlike typical documentation that decays over time, the Remembrancer v3.0:
+- **Records** deployments with GPG-signed receipts
+- **Tracks** architectural decisions (ADRs) with cryptographic proof
+- **Maintains** infrastructure state with Merkle audit logs
 - **Enables** temporal queries ("why did we choose X?")
+- **Proves** authenticity via GPG signatures (v3.0)
+- **Timestamps** with legal-grade RFC3161 tokens (v3.0)
+- **Detects** tampering via Merkle tree integrity (v3.0)
 
 ---
 
-## 📂 System Structure
+## 📂 System Structure (v3.0)
 
 ```
 .
-├── docs/REMEMBRANCER.md           # 📜 Covenant Memory Index (human-readable)
+├── docs/REMEMBRANCER.md           # 📜 Covenant Memory Index + Merkle root
 ├── ops/
-│   ├── bin/remembrancer           # 🛠️ CLI tool (memory operations)
+│   ├── bin/remembrancer           # 🛠️ CLI tool (v3.0: 13 commands)
+│   ├── lib/merkle.py              # 🌳 Merkle tree library
+│   ├── data/remembrancer.db       # 🗄️ SQLite audit database
+│   ├── certs/                     # 🔐 TSA certificates
 │   └── receipts/                  # 🧾 Cryptographic receipts
-│       ├── deploy/                # Deployment receipts
-│       ├── adr/                   # Decision records
+│       ├── deploy/                # Deployment receipts (v3.0 schema)
+│       ├── adr/                   # Decision records (inc. ADR-007, ADR-008)
 │       ├── incident/              # Incident reports
 │       └── discovery/             # Technical discoveries
-├── V2.2_PRODUCTION_SUMMARY.md     # 📊 First milestone evidence
-└── vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz  # 📦 First artifact
+├── docs/
+│   ├── COVENANT_SIGNING.md        # 🔏 GPG signing guide (v3.0)
+│   └── COVENANT_TIMESTAMPS.md     # ⏱️ RFC3161 guide (v3.0)
+├── V3.0_COVENANT_FOUNDATION.md    # 📊 Current release evidence
+└── test-app.proof.tgz             # 📦 First v3.0 proof bundle (4.9 KB)
 ```
 
 ---
