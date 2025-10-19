@@ -83,6 +83,30 @@ peers:
     trust_anchor: "ops/certs/peer-pubkey.asc"  # GPG public key
 ```
 
+## Strict Mode (v4.1 Preview)
+
+**Enable hard validation on ingest** by setting in `ops/data/federation.yaml`:
+
+```yaml
+trust:
+  require_signatures: true
+```
+
+**Effect:**
+- Artifact/deployment memories **must** carry a valid detached GPG signature (timestamp optional)
+- Invalid/missing signatures are rejected at sync time
+- Non-artifact memories (ADRs, notes) remain permissive
+
+**When to enable:**
+- Production federation between known peers
+- Environments with mature GPG key management
+- After all peers have signing capabilities
+
+**When to keep disabled:**
+- Early development or mixed-legacy environments
+- Testing federation sync with unsigned memories
+- Learning/evaluation deployments
+
 ### Verification Workflow
 
 1. Exchange public keys securely (encrypted email, Signal)

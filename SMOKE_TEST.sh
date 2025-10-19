@@ -485,6 +485,15 @@ else
   fi
 fi
 
+test_start "v4.1: Strict-mode readiness check"
+if [[ ! -f "$SCRIPT_DIR/ops/data/federation.yaml" ]]; then
+  test_warn "No federation.yaml - skipping strict-mode check"
+elif grep -qE 'require_signatures:\s*true' "$SCRIPT_DIR/ops/data/federation.yaml"; then
+  test_pass "Strict mode enabled (config detected)"
+else
+  test_warn "Strict mode disabled (informational - permissive ingest)"
+fi
+
 # ============================================================================
 # FINAL REPORT
 # ============================================================================
