@@ -1,0 +1,40 @@
+REM payload-windows-github.v2.3.0.txt — Windows-first (PowerShell), GitHub clone
+DELAY 1000
+GUI r
+DELAY 400
+STRING powershell -NoExit -WindowStyle Normal
+ENTER
+DELAY 1200
+
+REM Write bootstrap to %TEMP% and execute
+STRING $b=@'
+param([string]$RepoUrl="https://github.com/VaultSovereign/vm-spawn.git",[string]$ZipUrl="https://github.com/VaultSovereign/vm-spawn/archive/refs/heads/main.zip")
+$ErrorActionPreference="Stop"
+try{
+ $dst=Join-Path $env:USERPROFILE "Downloads"
+ if(-not(Test-Path $dst)){New-Item -ItemType Directory -Path $dst|Out-Null}
+ Set-Location $dst
+ if(-not(Test-Path ".\vm-spawn")){
+  if(Get-Command git -ErrorAction SilentlyContinue){git clone $RepoUrl}
+  else{
+   Write-Host "git not found — downloading zip..."
+   $zip=Join-Path $env:TEMP "vm-spawn.zip"
+   Invoke-WebRequest -Uri $ZipUrl -OutFile $zip -UseBasicParsing
+   Expand-Archive -LiteralPath $zip -DestinationPath $dst -Force
+   if(Test-Path (Join-Path $dst "vm-spawn-main")){Rename-Item -Path (Join-Path $dst "vm-spawn-main") -NewName "vm-spawn" -Force}
+   Remove-Item $zip -Force
+  }
+ } else {Write-Host "vm-spawn already present"}
+ Set-Location .\vm-spawn
+ $psHealth=Join-Path (Join-Path (Get-Location) "ops\bin") "health-check.ps1"
+ $bashHealth=Join-Path (Join-Path (Get-Location) "ops\bin") "health-check"
+ if(Test-Path $psHealth){ & $psHealth } elseif(Test-Path $bashHealth){ if(Get-Command bash -ErrorAction SilentlyContinue){ bash $bashHealth } else { Write-Host "bash not found; skipping health-check" } } else { Write-Host "No health-check found" }
+}catch{ Write-Host "bootstrap error: $($_.Exception.Message)" }
+'@
+ENTER
+DELAY 150
+STRING $tmp=Join-Path $env:TEMP "duck_bootstrap.ps1"; $b | Out-File -FilePath $tmp -Encoding UTF8
+ENTER
+DELAY 150
+STRING Set-ExecutionPolicy Bypass -Scope Process -Force; & $tmp
+ENTER

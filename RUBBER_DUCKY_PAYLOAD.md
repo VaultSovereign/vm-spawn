@@ -2,7 +2,24 @@
 
 **Device:** USB Rubber Ducky  
 **Purpose:** Portable VaultMesh Spawn Elite forge  
+**Version:** v2.3.0 (PowerShell-hardened, multi-OS)  
 **Rating:** 10.0/10 (LITERALLY PERFECT + PORTABLE)
+
+---
+
+## 📦 Version History
+
+### v2.3.0 (PowerShell-Hardened, 2025-10-19)
+- ✅ Native PowerShell health-check (`ops/bin/health-check.ps1`) — no bash/WSL dependency
+- ✅ Windows-first DuckyScript payloads with ExecutionPolicy handling
+- ✅ Multi-OS support: Windows, macOS, Linux
+- ✅ Robust fallback strategies (git → zip download, USB label detection)
+- ✅ Process-scoped ExecutionPolicy bypass (ephemeral, safe)
+
+### v2.2 (Legacy, macOS-focused)
+- Basic macOS support via bash
+- GitHub and offline strategies
+- Single-platform focus
 
 ---
 
@@ -18,15 +35,43 @@ Turn your Rubber Ducky into a **VaultMesh deployment device**:
 
 ---
 
-## 📦 Two Deployment Strategies
+## 📦 Deployment Strategies
 
-### Strategy A: Download from GitHub (Requires Internet)
-**Pros:** Always gets latest version, small payload  
-**Cons:** Needs internet connection
+### v2.3.0 Strategies (PowerShell-Hardened)
 
-### Strategy B: Self-Contained (No Internet Required)
-**Pros:** Works offline, sovereign deployment  
-**Cons:** Larger USB storage needed (~100MB)
+#### Windows GitHub (Online)
+- **File:** `payload-windows-github.v2.3.0.txt`
+- **Pros:** PowerShell-native, git-or-zip fallback, always latest version
+- **Cons:** Requires internet
+- **Target:** Windows 10/11 with PowerShell 5.1+
+
+#### Windows Offline (USB)
+- **File:** `payload-windows-offline.v2.3.0.txt`
+- **Pros:** No internet needed, USB label detection (DUCKY/VAULTMESH)
+- **Cons:** Larger USB storage (~100MB)
+- **Target:** Windows 10/11 with PowerShell 5.1+
+
+#### macOS GitHub (Hardened)
+- **File:** `payload-macos-github.v2.3.0.txt`
+- **Pros:** Git-or-curl fallback, robust error handling
+- **Cons:** Requires internet
+- **Target:** macOS 10.13+
+
+#### Linux GitHub (Hardened)
+- **File:** `payload-linux-github.v2.3.0.txt`
+- **Pros:** Git-or-curl fallback, robust error handling
+- **Cons:** Requires internet
+- **Target:** Ubuntu/Debian/Fedora with Ctrl+Alt+T terminal shortcut
+
+### v2.2 Strategies (Legacy)
+
+#### macOS GitHub (Legacy)
+- **File:** `payload-github.txt`
+- **Target:** macOS only, bash-focused
+
+#### macOS Offline (Legacy)
+- **File:** `payload-offline.txt`
+- **Target:** macOS only, USB copy
 
 ---
 
@@ -290,7 +335,22 @@ Receiving objects: 100% (35/35), 85.24 KiB | 2.84 MiB/s, done.
 
 ## 🔐 Security Considerations
 
-### Risks
+### PowerShell-Specific (v2.3.0)
+
+**ExecutionPolicy Bypass (Windows Payloads)**
+- The Windows payloads use `Set-ExecutionPolicy Bypass -Scope Process -Force`
+- **Scope:** Process-only (ephemeral) — resets when PowerShell exits
+- **Duration:** Temporary — does not persist across sessions
+- **Impact:** Minimal — no machine-wide policy changes
+- **Compliance Note:** "For Windows targets, the ExecutionPolicy bypass is scoped to process only and resets after PowerShell exits."
+
+**Native Health-Check (`ops/bin/health-check.ps1`)**
+- Validates: PowerShell version, ExecutionPolicy, Git, .NET, WSL, bash, Python, Docker
+- Network check: HEAD request to `https://github.com` (5-second timeout)
+- Exit codes: 0 = OK, 1 = WARNING, 2 = ERROR
+- No bash/WSL dependency required on Windows
+
+### General Risks
 - ⚠️ Rubber Ducky executes immediately when plugged in
 - ⚠️ Could be used maliciously on wrong machine
 - ⚠️ No authentication (physical access = full access)

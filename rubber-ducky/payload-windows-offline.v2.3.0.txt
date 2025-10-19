@@ -1,0 +1,26 @@
+REM payload-windows-offline.v2.3.0.txt — Windows-first, copy from USB (offline)
+DELAY 1000
+GUI r
+DELAY 400
+STRING powershell -NoExit -WindowStyle Normal
+ENTER
+DELAY 1200
+
+REM Try to detect USB drive by label or fall back to D:
+STRING $usb = (Get-Volume | Where-Object { $_.FileSystemLabel -match "DUCKY|VAULTMESH" } | Select-Object -First 1).DriveLetter
+ENTER
+DELAY 150
+STRING if (-not $usb) { $usb = 'D' }
+ENTER
+DELAY 150
+STRING $src = "$usb`:\PAYLOAD\vm-spawn"
+ENTER
+DELAY 100
+STRING $dst = Join-Path $env:USERPROFILE 'Downloads\vm-spawn'
+ENTER
+DELAY 100
+STRING if (Test-Path $src) { Copy-Item -Path $src -Destination $dst -Recurse -Force } else { Write-Host "Source not found: $src" }
+ENTER
+DELAY 400
+STRING if (Test-Path $dst) { Set-Location $dst; $psh='ops\bin\health-check.ps1'; if (Test-Path $psh) { & $psh } elseif (Test-Path 'ops\bin\health-check') { if (Get-Command bash -ErrorAction SilentlyContinue) { bash ops/bin/health-check } else { Write-Host 'bash missing, skipping' } } else { Write-Host 'No health-check present' } } else { Write-Host 'Destination copy failed' }
+ENTER

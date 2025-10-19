@@ -1,0 +1,25 @@
+VaultMesh Rubber Ducky — Encoder notes (v2.3.0)
+=================================================
+You selected: provide payloads as .txt, with an optional helper script placeholder.
+
+To build inject.bin (optional):
+  # Java DuckEncoder (place DuckEncoder.jar next to this folder)
+  java -jar DuckEncoder.jar -i payload-windows-github.v2.3.0.txt -o inject.bin -l EN
+
+  # Or use the helper (make_inject.sh) after placing DuckEncoder.jar adjacent:
+  ./make_inject.sh DuckEncoder.jar payload-windows-github.v2.3.0.txt inject.bin
+
+Payload files in this pack:
+ - payload-windows-github.v2.3.0.txt
+ - payload-windows-offline.v2.3.0.txt
+ - payload-macos-github.v2.3.0.txt
+ - payload-linux-github.v2.3.0.txt
+
+Bootstrap & health:
+ - duck_bootstrap.ps1
+ - ops/bin/health-check.ps1  (native Windows PowerShell health-check)
+
+Ethics & safety:
+ - Only deploy on systems you own or have explicit authorization to manage.
+ - Prefer VM snapshots during testing.
+ - Keep inject.bin under version control and checksum artifacts.

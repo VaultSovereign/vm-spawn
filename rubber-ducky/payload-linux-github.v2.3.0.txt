@@ -1,0 +1,15 @@
+REM payload-linux-github.v2.3.0.txt — Linux terminal, GitHub clone
+DELAY 800
+CTRL ALT T
+DELAY 1200
+STRING cd ~/Downloads || cd $HOME/Downloads
+ENTER
+DELAY 200
+STRING if [ ! -d vm-spawn ]; then git clone https://github.com/VaultSovereign/vm-spawn.git || (curl -L -o vm-spawn.zip https://github.com/VaultSovereign/vm-spawn/archive/refs/heads/main.zip && unzip -q vm-spawn.zip && mv vm-spawn-main vm-spawn && rm vm-spawn.zip); fi
+ENTER
+DELAY 2500
+STRING cd vm-spawn && chmod +x ./ops/bin/health-check 2>/dev/null || true
+ENTER
+DELAY 200
+STRING ./ops/bin/health-check 2>/dev/null || bash ./ops/bin/health-check 2>/dev/null || echo "health-check failed"
+ENTER

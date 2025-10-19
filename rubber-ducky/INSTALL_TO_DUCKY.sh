@@ -44,44 +44,61 @@ fi
 echo -e "${GREEN}✅ Found Rubber Ducky at: $DUCKY_PATH${NC}"
 echo ""
 
+# Helper function to build inject.bin
+build_inject() {
+  local payload_file="$1"
+  local description="$2"
+  
+  if [[ -f "make_inject.sh" && -f "duckencoder.jar" ]]; then
+    echo "Encoding payload with make_inject.sh..."
+    ./make_inject.sh duckencoder.jar "$payload_file" inject.bin
+    cp inject.bin "$DUCKY_PATH/"
+    echo -e "${GREEN}✅ Encoded and installed inject.bin${NC}"
+  elif [[ -f "duckencoder.jar" ]]; then
+    echo "Encoding payload..."
+    java -jar duckencoder.jar -i "$payload_file" -o inject.bin
+    cp inject.bin "$DUCKY_PATH/"
+    echo -e "${GREEN}✅ Encoded and installed inject.bin${NC}"
+  else
+    echo -e "${YELLOW}⚠️  DuckEncoder not found${NC}"
+    echo ""
+    echo "You'll need to encode the payload manually:"
+    echo "  1. Get DuckEncoder from: https://github.com/hak5darren/USB-Rubber-Ducky"
+    echo "  2. Run: java -jar duckencoder.jar -i $payload_file -o inject.bin"
+    echo "  3. Copy inject.bin to $DUCKY_PATH/"
+    echo ""
+    echo "For now, copying raw payload..."
+    cp "$payload_file" "$DUCKY_PATH/payload.txt"
+    echo -e "${GREEN}✅ Copied $payload_file to Rubber Ducky${NC}"
+  fi
+}
+
 # Ask user which strategy
 echo -e "${CYAN}📦 Choose deployment strategy:${NC}"
 echo ""
-echo "  1) GitHub Strategy (requires internet, ~2 KB payload)"
-echo "  2) Offline Strategy (no internet needed, ~87 KB payload)"
+echo "  Legacy (v2.2):"
+echo "    1) macOS GitHub (legacy, requires internet)"
+echo "    2) macOS Offline (legacy, USB copy)"
 echo ""
-read -p "Enter choice [1 or 2]: " STRATEGY
+echo "  PowerShell-Hardened (v2.3.0):"
+echo "    3) Windows GitHub (PowerShell, internet required)"
+echo "    4) Windows Offline (PowerShell, USB copy)"
+echo "    5) macOS GitHub (bash + fallback)"
+echo "    6) Linux GitHub (bash + fallback)"
+echo ""
+read -p "Enter choice [1-6]: " STRATEGY
 
 case "$STRATEGY" in
   1)
     echo ""
-    echo -e "${CYAN}📡 Installing GitHub Strategy...${NC}"
+    echo -e "${CYAN}📡 Installing macOS GitHub Strategy (v2.2 legacy)...${NC}"
     echo ""
-    
-    # Check if encoder available
-    if [[ ! -f "duckencoder.jar" ]]; then
-      echo -e "${YELLOW}⚠️  DuckEncoder not found${NC}"
-      echo ""
-      echo "You'll need to encode the payload manually:"
-      echo "  1. Get DuckEncoder from: https://github.com/hak5darren/USB-Rubber-Ducky"
-      echo "  2. Run: java -jar duckencoder.jar -i payload-github.txt -o inject.bin"
-      echo "  3. Copy inject.bin to $DUCKY_PATH/"
-      echo ""
-      echo "For now, copying raw payload..."
-      cp payload-github.txt "$DUCKY_PATH/payload.txt"
-      echo -e "${GREEN}✅ Copied payload-github.txt to Rubber Ducky${NC}"
-    else
-      echo "Encoding payload..."
-      java -jar duckencoder.jar -i payload-github.txt -o inject.bin
-      cp inject.bin "$DUCKY_PATH/"
-      echo -e "${GREEN}✅ Encoded and installed inject.bin${NC}"
-    fi
-    
+    build_inject "payload-github.txt" "macOS legacy"
     echo ""
-    echo -e "${GREEN}🎉 GitHub Strategy installed!${NC}"
+    echo -e "${GREEN}🎉 macOS GitHub Strategy installed!${NC}"
     echo ""
     echo "When you plug in the Rubber Ducky, it will:"
-    echo "  1. Open terminal"
+    echo "  1. Open terminal (macOS Spotlight)"
     echo "  2. Clone from GitHub"
     echo "  3. Run health check"
     echo "  4. Show welcome message"
@@ -89,7 +106,7 @@ case "$STRATEGY" in
     
   2)
     echo ""
-    echo -e "${CYAN}💾 Installing Offline Strategy...${NC}"
+    echo -e "${CYAN}💾 Installing macOS Offline Strategy (v2.2 legacy)...${NC}"
     echo ""
     
     # Create PAYLOAD directory
@@ -107,30 +124,14 @@ case "$STRATEGY" in
     
     echo -e "${GREEN}✅ Copied VaultMesh to USB ($(du -sh "$DUCKY_PATH/PAYLOAD/vm-spawn" | awk '{print $1}'))${NC}"
     
-    # Encode payload
-    if [[ ! -f "duckencoder.jar" ]]; then
-      echo -e "${YELLOW}⚠️  DuckEncoder not found${NC}"
-      echo ""
-      echo "You'll need to encode the payload manually:"
-      echo "  1. Get DuckEncoder from: https://github.com/hak5darren/USB-Rubber-Ducky"
-      echo "  2. Run: java -jar duckencoder.jar -i payload-offline.txt -o inject.bin"
-      echo "  3. Copy inject.bin to $DUCKY_PATH/"
-      echo ""
-      echo "For now, copying raw payload..."
-      cp payload-offline.txt "$DUCKY_PATH/payload.txt"
-      echo -e "${GREEN}✅ Copied payload-offline.txt to Rubber Ducky${NC}"
-    else
-      echo "Encoding payload..."
-      java -jar duckencoder.jar -i payload-offline.txt -o inject.bin
-      cp inject.bin "$DUCKY_PATH/"
-      echo -e "${GREEN}✅ Encoded and installed inject.bin${NC}"
-    fi
+    # Build inject.bin for offline payload
+    build_inject "payload-offline.txt" "macOS offline"
     
     echo ""
-    echo -e "${GREEN}🎉 Offline Strategy installed!${NC}"
+    echo -e "${GREEN}🎉 macOS Offline Strategy installed!${NC}"
     echo ""
     echo "When you plug in the Rubber Ducky, it will:"
-    echo "  1. Open terminal"
+    echo "  1. Open terminal (macOS)"
     echo "  2. Copy from USB (no internet needed)"
     echo "  3. Run health check"
     echo "  4. Show welcome message"
@@ -138,6 +139,86 @@ case "$STRATEGY" in
     echo "USB contents:"
     echo "  - inject.bin (payload)"
     echo "  - PAYLOAD/vm-spawn/ (full system)"
+    ;;
+    
+  3)
+    echo ""
+    echo -e "${CYAN}🪟 Installing Windows GitHub Strategy (v2.3.0 PowerShell)...${NC}"
+    echo ""
+    build_inject "payload-windows-github.v2.3.0.txt" "Windows PowerShell"
+    echo ""
+    echo -e "${GREEN}🎉 Windows GitHub Strategy installed!${NC}"
+    echo ""
+    echo "When you plug in the Rubber Ducky, it will:"
+    echo "  1. Open PowerShell (Windows Run dialog)"
+    echo "  2. Clone from GitHub (or download zip if git absent)"
+    echo "  3. Run native PowerShell health-check"
+    echo "  4. ExecutionPolicy: Bypass (process-scoped, ephemeral)"
+    ;;
+    
+  4)
+    echo ""
+    echo -e "${CYAN}🪟💾 Installing Windows Offline Strategy (v2.3.0 PowerShell)...${NC}"
+    echo ""
+    
+    # Create PAYLOAD directory
+    mkdir -p "$DUCKY_PATH/PAYLOAD"
+    
+    # Copy entire vm-spawn including native PS health-check
+    echo "Copying VaultMesh to USB (with native PowerShell health-check)..."
+    cp -r ../ "$DUCKY_PATH/PAYLOAD/vm-spawn/"
+    
+    # Remove git history to save space
+    rm -rf "$DUCKY_PATH/PAYLOAD/vm-spawn/.git" 2>/dev/null || true
+    rm -rf "$DUCKY_PATH/PAYLOAD/vm-spawn/rubber-ducky" 2>/dev/null || true
+    
+    echo -e "${GREEN}✅ Copied VaultMesh to USB ($(du -sh "$DUCKY_PATH/PAYLOAD/vm-spawn" | awk '{print $1}'))${NC}"
+    
+    # Build inject.bin for Windows offline
+    build_inject "payload-windows-offline.v2.3.0.txt" "Windows offline"
+    
+    echo ""
+    echo -e "${GREEN}🎉 Windows Offline Strategy installed!${NC}"
+    echo ""
+    echo "When you plug in the Rubber Ducky, it will:"
+    echo "  1. Open PowerShell"
+    echo "  2. Detect USB drive (DUCKY/VAULTMESH label or D:)"
+    echo "  3. Copy PAYLOAD/vm-spawn to ~/Downloads/"
+    echo "  4. Run native PowerShell health-check (no bash needed)"
+    echo ""
+    echo "USB contents:"
+    echo "  - inject.bin (payload)"
+    echo "  - PAYLOAD/vm-spawn/ (full system + ops/bin/health-check.ps1)"
+    ;;
+    
+  5)
+    echo ""
+    echo -e "${CYAN}🍎 Installing macOS GitHub Strategy (v2.3.0 hardened)...${NC}"
+    echo ""
+    build_inject "payload-macos-github.v2.3.0.txt" "macOS v2.3.0"
+    echo ""
+    echo -e "${GREEN}🎉 macOS GitHub Strategy (v2.3.0) installed!${NC}"
+    echo ""
+    echo "When you plug in the Rubber Ducky, it will:"
+    echo "  1. Open terminal (Spotlight)"
+    echo "  2. Clone from GitHub (or curl+unzip fallback)"
+    echo "  3. Run bash health-check"
+    echo "  4. Robust fallback handling"
+    ;;
+    
+  6)
+    echo ""
+    echo -e "${CYAN}🐧 Installing Linux GitHub Strategy (v2.3.0 hardened)...${NC}"
+    echo ""
+    build_inject "payload-linux-github.v2.3.0.txt" "Linux v2.3.0"
+    echo ""
+    echo -e "${GREEN}🎉 Linux GitHub Strategy (v2.3.0) installed!${NC}"
+    echo ""
+    echo "When you plug in the Rubber Ducky, it will:"
+    echo "  1. Open terminal (Ctrl+Alt+T)"
+    echo "  2. Clone from GitHub (or curl+unzip fallback)"
+    echo "  3. Run bash health-check"
+    echo "  4. Robust fallback handling"
     ;;
     
   *)

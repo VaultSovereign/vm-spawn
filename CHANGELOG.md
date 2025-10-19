@@ -2,6 +2,85 @@
 
 All notable changes to VaultMesh Spawn Elite will be documented in this file.
 
+## [v2.3.0-DUCKY-POWERSHELL] - 2025-10-19
+
+### 🦆 Rubber Ducky PowerShell-Hardened Payloads
+
+**Status**: ✅ **PRODUCTION READY** — Multi-OS support with native Windows PowerShell
+
+VaultMesh Rubber Ducky now supports Windows-first deployment with native PowerShell health-checks, alongside hardened macOS and Linux variants.
+
+#### Major Features
+
+**Native PowerShell Support**
+- ✅ `ops/bin/health-check.ps1` — Native Windows health-check (103 lines)
+  - No bash/WSL dependency required
+  - Validates: PowerShell version (≥5.1), ExecutionPolicy, Git, .NET, WSL, Python, Docker
+  - Network check: GitHub reachability (5s timeout)
+  - Exit codes: 0=OK, 1=WARNING, 2=ERROR
+- ✅ `rubber-ducky/duck_bootstrap.ps1` — Standalone PowerShell bootstrap (55 lines)
+  - Git-or-zip fallback (Invoke-WebRequest + Expand-Archive)
+  - Prefers native PS health-check, falls back to bash if available
+
+**PowerShell-Hardened DuckyScript Payloads**
+- ✅ `payload-windows-github.v2.3.0.txt` — Windows GitHub online (41 lines)
+  - Opens PowerShell via Windows Run dialog (GUI r)
+  - Writes bootstrap to %TEMP%, executes with `Set-ExecutionPolicy Bypass -Scope Process`
+  - **ExecutionPolicy:** Process-scoped bypass (ephemeral, resets after exit)
+- ✅ `payload-windows-offline.v2.3.0.txt` — Windows USB offline (27 lines)
+  - Detects USB drive by label (DUCKY|VAULTMESH) or falls back to D:
+  - Copies PAYLOAD\vm-spawn from USB to ~/Downloads/
+- ✅ `payload-macos-github.v2.3.0.txt` — macOS hardened (19 lines)
+  - Git-or-curl+unzip fallback, robust error handling
+- ✅ `payload-linux-github.v2.3.0.txt` — Linux hardened (16 lines)
+  - Ctrl+Alt+T terminal launch, git-or-curl+unzip fallback
+
+**Encoder Tooling**
+- ✅ `rubber-ducky/make_inject.sh` — Helper script for DuckEncoder invocation (12 lines)
+- ✅ `rubber-ducky/ENCODE_NOTES.v2.3.0.txt` — Encoder instructions and usage guide (26 lines)
+
+**Installer Enhancements**
+- ✅ Updated `rubber-ducky/INSTALL_TO_DUCKY.sh` with 6-option menu:
+  - Options 1-2: Legacy v2.2 (macOS GitHub/Offline)
+  - Options 3-6: v2.3.0 (Windows GitHub/Offline, macOS, Linux)
+  - New `build_inject()` function consolidates encoder logic
+
+#### Files Created/Modified
+- **Created**: 8 files
+  - `ops/bin/health-check.ps1`
+  - `rubber-ducky/duck_bootstrap.ps1`
+  - `rubber-ducky/payload-windows-github.v2.3.0.txt`
+  - `rubber-ducky/payload-windows-offline.v2.3.0.txt`
+  - `rubber-ducky/payload-macos-github.v2.3.0.txt`
+  - `rubber-ducky/payload-linux-github.v2.3.0.txt`
+  - `rubber-ducky/ENCODE_NOTES.v2.3.0.txt`
+  - `rubber-ducky/make_inject.sh`
+- **Modified**: 2 files
+  - `rubber-ducky/INSTALL_TO_DUCKY.sh` (added v2.3.0 menu options)
+  - `RUBBER_DUCKY_PAYLOAD.md` (added v2.3.0 documentation, PowerShell security notes)
+- **Lines**: ~350 added
+
+#### Security & Compliance
+
+**ExecutionPolicy Handling**
+- Windows payloads use `Set-ExecutionPolicy Bypass -Scope Process -Force`
+- **Scope**: Process-only (ephemeral) — resets when PowerShell exits
+- **Duration**: Temporary — does not persist across sessions
+- **Impact**: Minimal — no machine-wide policy changes
+- **Compliance Note**: "For Windows targets, the ExecutionPolicy bypass is scoped to process only and resets after PowerShell exits."
+
+**Checksum Record** (Op-RDX-23)
+```
+7f59644954fa27a7f5aefc92cd151defcfdb9762f2a8ef6299c447565cfa100f  ops/bin/health-check.ps1
+```
+
+#### Migration Notes
+- v2.2 payloads (`payload-github.txt`, `payload-offline.txt`) remain untouched — backward compatible
+- v2.3.0 files use explicit versioning (`.v2.3.0.txt`) to avoid conflicts
+- INSTALL_TO_DUCKY.sh preserves legacy options (menu items 1-2)
+
+---
+
 ## [v4.0.0-alpha.1-FEDERATION-FOUNDATION] - 2025-10-19 (PRODUCTION READY)
 
 ### 🎉 Federation Foundation Complete
