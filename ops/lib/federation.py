@@ -38,18 +38,53 @@ class FederationConfig:
 
 class MerkleDiff:
     @staticmethod
-    def compute_diff(local_root: str, remote_root: str, db_path: str) -> List[str]:
+    def compute_diff(local_ids: List[str], remote_ids: List[str]) -> List[str]:
         """
-        MVP: return empty (no diff). Later: identify missing memory IDs via frontier snapshots.
+        Return IDs that exist on remote but not locally (simple, robust MVP).
+        Optimize later with frontier snapshots / Merkle projection.
         """
-        return []
+        lset = set(local_ids)
+        return [mid for mid in remote_ids if mid not in lset]
 
 class MemoryValidator:
     def __init__(self, trust_anchors: Dict[str, str]):
         self.trust_anchors = trust_anchors  # node_id -> path to GPG pubkey
     def verify_memory(self, memory: Dict, node_id: str) -> bool:
         """
-        MVP: accept all. Later: verify GPG signatures + RFC3161.
+        Validate a memory:
+          - If 'sig' present and 'data' includes 'artifact' and 'sig_file', verify GPG (detached).
+          - If 'data' includes 'tsr' token, verify RFC3161 if TSA CA is available.
+        All checks are best-effort; return False on hard failures.
         """
-        return True
+        try:
+            import subprocess
+            # GPG verification (optional)
+            art = None
+            sig_file = None
+            data = memory.get("data") or {}
+            if isinstance(data, str):
+                try:
+                    data = json.loads(data)
+                except Exception:
+                    data = {}
+            art = data.get("artifact")
+            sig_file = data.get("sig") or data.get("sig_file")
+
+            if art and sig_file and os.path.isfile(art) and os.path.isfile(sig_file):
+                g = subprocess.run(["gpg","--verify",sig_file,art], text=True, capture_output=True)
+                if g.returncode != 0:
+                    return False
+
+            # RFC3161 timestamp (optional)
+            tsr = data.get("tsr") or data.get("token_file")
+            ca  = os.getenv("FREETSA_CA") or os.path.join("ops","certs","freetsa-ca.pem")
+            if art and tsr and os.path.isfile(tsr) and os.path.isfile(art) and os.path.isfile(ca):
+                t = subprocess.run(["openssl","ts","-verify","-data",art,"-in",tsr,"-CAfile",ca],
+                                   text=True, capture_output=True)
+                if t.returncode != 0:
+                    return False
+
+            return True
+        except Exception:
+            return False
 

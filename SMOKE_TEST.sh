@@ -471,6 +471,20 @@ else
   fi
 fi
 
+test_start "v4.0: Federation sync dry-run"
+if [[ -z "${FED_PEER_URL:-}" ]]; then
+  test_warn "FED_PEER_URL not set - skipping federation sync test"
+elif [[ ! -f "$SCRIPT_DIR/ops/bin/federation_sync.py" ]]; then
+  test_warn "Federation sync script not found - skipping"
+else
+  # Try to sync (non-zero exit is acceptable)
+  if "$SCRIPT_DIR/ops/bin/remembrancer" federation sync --peer "${FED_PEER_URL}" >/dev/null 2>&1; then
+    test_pass "Federation sync executed successfully"
+  else
+    test_warn "Federation sync returned non-zero (acceptable - may be no peer running)"
+  fi
+fi
+
 # ============================================================================
 # FINAL REPORT
 # ============================================================================

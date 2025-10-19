@@ -664,19 +664,34 @@ open("ops/data/federation.yaml","w",encoding="utf-8").write(yaml.safe_dump(doc, 
 print("✅ Peer appended:", peer)
 PY
           ;;
-        status)
-          if [[ -f "$WORKSPACE_ROOT/ops/data/federation.yaml" ]]; then
-            cat "$WORKSPACE_ROOT/ops/data/federation.yaml"
-          else
-            echo "No federation.yaml present."
-          fi
-          ;;
-        *)
-          echo "Usage: remembrancer federation {init|join --peer <url> --trust-anchor <pubkey>|status}"
+      status)
+        if [[ -f "$WORKSPACE_ROOT/ops/data/federation.yaml" ]]; then
+          cat "$WORKSPACE_ROOT/ops/data/federation.yaml"
+        else
+          echo "No federation.yaml present."
+        fi
+        ;;
+      sync)
+        # Usage: remembrancer federation sync --peer http://peer:8001/mcp
+        local peer=""
+        while [[ $# -gt 0 ]]; do
+          case "$1" in
+            --peer) peer="$2"; shift 2;;
+            *) break;;
+          esac
+        done
+        if [[ -z "$peer" ]]; then
+          echo "Usage: remembrancer federation sync --peer <mcp-http-url>"
           exit 1
-          ;;
-      esac
-      ;;
+        fi
+        python3 "$WORKSPACE_ROOT/ops/bin/federation_sync.py" "$peer"
+        ;;
+      *)
+        echo "Usage: remembrancer federation {init|join --peer <url> --trust-anchor <pubkey>|status|sync --peer <url>}"
+        exit 1
+        ;;
+    esac
+    ;;
     -h|--help)
       usage
       ;;
