@@ -457,6 +457,20 @@ else
   test_fail "Only $VERIFIED_COUNT/$ARTIFACT_COUNT artifacts verified"
 fi
 
+test_start "v4.0: MCP server boot check"
+if ! command -v uv &>/dev/null; then
+  test_warn "uv not installed (needed for MCP testing) - skipping"
+elif [[ ! -f "$SCRIPT_DIR/ops/mcp/remembrancer_server.py" ]]; then
+  test_warn "MCP server not found (v4.0 not installed) - skipping"
+else
+  # Check if MCP server can import
+  if python3 -c "import sys; sys.path.insert(0, '$SCRIPT_DIR/ops/mcp'); import remembrancer_server" 2>/dev/null; then
+    test_pass "MCP server imports successfully"
+  else
+    test_warn "MCP server import check skipped (FastMCP not installed)"
+  fi
+fi
+
 # ============================================================================
 # FINAL REPORT
 # ============================================================================

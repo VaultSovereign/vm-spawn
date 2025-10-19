@@ -629,11 +629,59 @@ main() {
       fi
       record_receipt_v3 "$@"
       ;;
+    federation)
+      local sub="${1:-}"
+      shift || true
+      case "$sub" in
+        init)
+          # Create example config; operator adjusts node_id
+          mkdir -p "$WORKSPACE_ROOT/ops/data"
+          if [[ ! -f "$WORKSPACE_ROOT/ops/data/federation.yaml" ]]; then
+            cp "$WORKSPACE_ROOT/ops/data/federation.yaml.example" "$WORKSPACE_ROOT/ops/data/federation.yaml" 2>/dev/null || true
+          fi
+          echo "✅ federation.yaml created at ops/data/federation.yaml (edit node_id)"
+          ;;
+        join)
+          # Append peer to federation.yaml
+          local peer_url="" anchor=""
+          while [[ $# -gt 0 ]]; do
+            case "$1" in
+              --peer) peer_url="$2"; shift 2;;
+              --trust-anchor) anchor="$2"; shift 2;;
+              *) break;;
+            esac
+          done
+          if [[ ! -f "$WORKSPACE_ROOT/ops/data/federation.yaml" ]]; then
+            echo "❌ Missing ops/data/federation.yaml. Run 'remembrancer federation init'." >&2
+            exit 1
+          fi
+          python3 - "$peer_url" "$anchor" <<'PY'
+import sys, yaml
+peer, anchor = sys.argv[1], sys.argv[2]
+doc = yaml.safe_load(open("ops/data/federation.yaml","r",encoding="utf-8"))
+doc.setdefault("peers", []).append({"node_id": "UNKNOWN", "mcp_url": peer, "trust_anchor": anchor})
+open("ops/data/federation.yaml","w",encoding="utf-8").write(yaml.safe_dump(doc, sort_keys=False))
+print("✅ Peer appended:", peer)
+PY
+          ;;
+        status)
+          if [[ -f "$WORKSPACE_ROOT/ops/data/federation.yaml" ]]; then
+            cat "$WORKSPACE_ROOT/ops/data/federation.yaml"
+          else
+            echo "No federation.yaml present."
+          fi
+          ;;
+        *)
+          echo "Usage: remembrancer federation {init|join --peer <url> --trust-anchor <pubkey>|status}"
+          exit 1
+          ;;
+      esac
+      ;;
     -h|--help)
       usage
       ;;
     -v|--version)
-      echo "remembrancer v3.0.0 (VaultMesh Covenant Foundation)"
+      echo "remembrancer v4.0.0 (VaultMesh Federated C3L Kickoff)"
       ;;
     *)
       echo -e "${RED}❌ Unknown command: $command${NC}"

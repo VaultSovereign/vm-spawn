@@ -1,0 +1,15 @@
+node_id: "replace-with-your-node-uuid"
+peers:
+  - node_id: "peer-uuid-1"
+    mcp_url: "http://peer1.example.com:8001/mcp"
+    trust_anchor: "ops/certs/peer1-pubkey.asc"
+  - node_id: "peer-uuid-2"
+    mcp_url: "http://peer2.example.com:8001/mcp"
+    trust_anchor: "ops/certs/peer2-pubkey.asc"
+sync:
+  interval_seconds: 60
+  retry_backoff: [5, 10, 30]
+trust:
+  require_signatures: true
+  min_quorum: 2
+
