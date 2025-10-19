@@ -1,0 +1,102 @@
+name: Covenant Guard
+on:
+  push:
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: [main]
+
+jobs:
+  covenant-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck sqlite3 gpg openssl python3
+      
+      - name: Lint remembrancer
+        run: |
+          if [[ -f ops/bin/remembrancer ]]; then
+            shellcheck -S warning ops/bin/remembrancer || true
+          fi
+      
+      - name: Python syntax check
+        run: |
+          if [[ -f ops/lib/merkle.py ]]; then
+            python3 -m py_compile ops/lib/merkle.py
+          fi
+      
+      - name: Verify Merkle library works
+        run: |
+          if [[ -f ops/lib/merkle.py ]]; then
+            cd ops/lib
+            python3 -c "import merkle; print('Merkle library OK')"
+            cd ../..
+          fi
+      
+      - name: Verify artifact proofs (if present)
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          ca="ops/certs/freetsa-ca.pem"
+          
+          # Check all artifacts in dist/
+          count=0
+          for artifact in dist/*.tar.gz dist/*.txt; do
+            [[ -f "$artifact" ]] || continue
+            echo "→ Checking artifact: $artifact"
+            
+            # Verify full chain (hash + sig + timestamp)
+            ops/bin/remembrancer verify-full "$artifact" || {
+              echo "❌ verify-full failed for $artifact"
+              exit 1
+            }
+            
+            # If CA is present, enforce timestamp verification
+            if [[ -f "$ca" && -f "${artifact}.tsr" ]]; then
+              echo "  → Verifying timestamp against CA"
+              openssl ts -verify -data "$artifact" -in "${artifact}.tsr" -CAfile "$ca" >/dev/null || {
+                echo "❌ Timestamp verification failed for $artifact"
+                exit 1
+              }
+            fi
+            
+            count=$((count + 1))
+          done
+          
+          if [[ $count -eq 0 ]]; then
+            echo "ℹ️  No artifacts found in dist/ (skipping)"
+          else
+            echo "✅ All $count artifacts verified"
+          fi
+      
+      - name: Merkle audit integrity
+        run: |
+          if [[ -f ops/data/remembrancer.db ]]; then
+            echo "→ Computing Merkle root from DB"
+            computed_root=$(python3 ops/lib/merkle.py --compute --from-sqlite ops/data/remembrancer.db)
+            echo "Computed root: $computed_root"
+            
+            # Check if published root exists
+            if grep -q "^Merkle Root:" docs/REMEMBRANCER.md; then
+              published_root=$(grep -m1 -E '^Merkle Root:' docs/REMEMBRANCER.md | awk '{print $3}')
+              echo "Published root: $published_root"
+              
+              if [[ "$computed_root" != "$published_root" ]]; then
+                echo "❌ Merkle root mismatch!"
+                echo "   Computed:  $computed_root"
+                echo "   Published: $published_root"
+                exit 1
+              fi
+              echo "✅ Merkle root matches"
+            else
+              echo "ℹ️  No published Merkle root found (first run)"
+            fi
+          else
+            echo "ℹ️  No remembrancer.db found yet"
+          fi
+

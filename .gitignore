@@ -58,3 +58,9 @@ logs/
 # Documentation should be tracked
 !*.md
 
+# --- Covenant v3.0: keep TSA CA PEMs out of VCS ---
+ops/certs/*.pem
+!ops/certs/.gitignore
+!ops/certs/README.md
+!ops/certs/freetsa-ca.pem.example
+

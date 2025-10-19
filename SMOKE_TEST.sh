@@ -423,6 +423,40 @@ else
   fi
 fi
 
+test_start "v3.0: Covenant invariant — artifact proof verification"
+# Test that all artifacts in dist/ have valid proof chains
+shopt -s nullglob
+CA_FILE="$SCRIPT_DIR/ops/certs/freetsa-ca.pem"
+ARTIFACT_COUNT=0
+VERIFIED_COUNT=0
+
+for artifact in "$SCRIPT_DIR/dist"/*.tar.gz "$SCRIPT_DIR/dist"/*.txt; do
+  [[ -f "$artifact" ]] || continue
+  ((ARTIFACT_COUNT++))
+  
+  # Check if remembrancer verify-full works
+  if "$SCRIPT_DIR/ops/bin/remembrancer" verify-full "$artifact" >/dev/null 2>&1; then
+    ((VERIFIED_COUNT++))
+    
+    # Optional: verify timestamp if CA present (non-fatal)
+    if [[ -f "$CA_FILE" && -f "${artifact}.tsr" ]]; then
+      if ! openssl ts -verify -data "$artifact" -in "${artifact}.tsr" -CAfile "$CA_FILE" >/dev/null 2>&1; then
+        echo "  ⚠️  Timestamp verification failed for $(basename "$artifact") (non-fatal)"
+      fi
+    fi
+  else
+    echo "  ❌ verify-full failed for $(basename "$artifact")"
+  fi
+done
+
+if [[ $ARTIFACT_COUNT -eq 0 ]]; then
+  test_warn "No artifacts found in dist/ (acceptable on clean system)"
+elif [[ $VERIFIED_COUNT -eq $ARTIFACT_COUNT ]]; then
+  test_pass "Verified $VERIFIED_COUNT artifacts with proof chains"
+else
+  test_fail "Only $VERIFIED_COUNT/$ARTIFACT_COUNT artifacts verified"
+fi
+
 # ============================================================================
 # FINAL REPORT
 # ============================================================================
