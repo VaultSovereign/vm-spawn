@@ -6,6 +6,7 @@ set -euo pipefail
 
 REPO_NAME="${1:-}"
 REPO_TYPE="${2:-service}"  # service, infra, tool
+REPO_BASE="${VAULTMESH_REPOS:-$HOME/repos}"
 
 if [[ -z "$REPO_NAME" ]]; then
   cat <<'EOF'
@@ -24,7 +25,7 @@ EOF
   exit 1
 fi
 
-REPO_DIR="$HOME/repos/$REPO_NAME"
+REPO_DIR="$REPO_BASE/$REPO_NAME"
 
 if [[ -d "$REPO_DIR" ]]; then
   echo "❌ Repository already exists: $REPO_DIR"
