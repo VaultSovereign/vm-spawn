@@ -1,5 +1,23 @@
 # Threat Model — VaultMesh v4.0 Federation Foundation
 
+**Version:** 1.0  
+**Last Updated:** 2025-10-19 (v4.0 Phase 3)  
+**Scope:** Remembrancer (CLI + MCP), federation sync (Phase 3 MVP), covenant receipts, cryptographic proofs
+
+## Assumptions & Scope
+
+**In Scope:**
+- v3.0 cryptographic layer (GPG, RFC3161, Merkle) is active and additive
+- MCP HTTP is for trusted networks only (behind mTLS/reverse proxy)
+- SQLite is local to host; receipts are committed to git (immutable history)
+- Federation sync protocol (Phase 3 MVP)
+
+**Out of Scope:**
+- Public internet MCP exposure (explicitly prohibited)
+- Multi-signature quorum (planned for v4.1)
+- Encrypted memory fields (planned for v4.2)
+- Byzantine fault tolerance (future consideration)
+
 ## Assets
 
 ### Primary
@@ -18,41 +36,53 @@
 
 ## Adversaries
 
-### 1. Passive Observer (Network Sniffing)
+### A1) Passive Observer (Network Sniffing)
+
+**Impact:** `LOW`
 
 **Capabilities:**
-- Monitor unencrypted MCP HTTP traffic
+- Sniff unprotected MCP HTTP traffic
 - Read SQLite database if host compromised
 
 **Goals:**
-- Exfiltrate deployment history and architectural decisions
-- Map infrastructure topology via ADRs
+- Exfiltrate deployment/ADR history
+- Map infrastructure topology
 
-**Impact:** `LOW` (if MCP HTTP uses TLS/mTLS; SQLite has file permissions)
+**Mitigations:**
+- TLS/mTLS on MCP HTTP (required in production)
+- SQLite file permissions (`chmod 600`)
 
-### 2. Active Injector (Malicious Peer)
+### A2) Active Injector (Malicious Peer)
+
+**Impact:** `MEDIUM`
 
 **Capabilities:**
 - Send forged memories via federation sync
-- Attempt to poison Merkle tree with invalid signatures
+- Flood with invalid entries to cause DoS
 
 **Goals:**
 - Insert backdoored artifacts into trusted memory
-- Cause denial-of-service by flooding with invalid memories
+- Cause denial-of-service on sync/validation
 
-**Impact:** `MEDIUM` (mitigated by signature validation in Phase 3)
+**Mitigations:**
+- `MemoryValidator` checks GPG + RFC3161 (v4.0 Phase 3) ✅
+- Federation trust anchors (manual verification required)
 
-### 3. Insider with Limited Access
+### A3) Insider (Limited Access)
+
+**Impact:** `MEDIUM`
 
 **Capabilities:**
 - Read-only access to SQLite database
 - Access to public MCP endpoints (if misconfigured)
 
 **Goals:**
-- Leak sensitive ADRs or deployment receipts
-- Tamper with memories if write access gained
+- Leak sensitive ADRs/receipts
+- Tamper with memories if write access obtained
 
-**Impact:** `MEDIUM` (mitigated by file permissions, audit logs)
+**Mitigations:**
+- Least-privilege filesystem permissions
+- Merkle audit log + git receipts (immutable history)
 
 ## Controls
 
@@ -60,145 +90,227 @@
 
 | Control | Threat Mitigated | Status |
 |---------|------------------|--------|
-| **GPG Detached Signatures** | Forged artifacts | ✅ Active (v3.0) |
-| **RFC3161 Timestamps** | Backdated proofs | ✅ Active (v3.0) |
-| **Merkle Audit Log** | Tampered memories | ✅ Active (v3.0) |
-| **Signature Validation** | Malicious peer injection | ✅ Active (v4.0 Phase 3) |
+| GPG detached signatures | Forged artifacts | ✅ Active (v3.0) |
+| RFC3161 timestamps | Backdated proofs | ✅ Active (v3.0) |
+| Merkle audit log | Memory tampering | ✅ Active (v3.0) |
+| Signature validation on ingest | Malicious peer injection | ✅ Active (v4.0-P3) |
 
 ### Access Control
 
 | Control | Threat Mitigated | Status |
 |---------|------------------|--------|
-| **MCP HTTP auth (mTLS/proxy)** | Passive observer | ⚠️ Required in prod |
-| **SQLite file permissions (0600)** | Insider read access | ✅ Configurable |
-| **Federation trust anchors** | Malicious peer | ✅ Active (v4.0 Phase 3) |
+| MCP HTTP auth (mTLS / reverse proxy) | Passive observer | ⚠️ Required in prod |
+| SQLite file perms (0600) | Insider read access | ✅ Configurable |
+| Federation trust anchors | Untrusted peer | ✅ Active (v4.0-P3) |
 
 ### Observability
 
 | Control | Threat Mitigated | Status |
 |---------|------------------|--------|
-| **Covenant Guard CI** | Unsigned artifacts in VCS | ✅ Active (v4.0 Phase 1) |
-| **Pre-commit hooks** | Accidental TSA CA commits | ✅ Active (v4.0 Phase 1) |
-| **Merkle root recompute** | Database tampering | ✅ Active (v3.0) |
+| Covenant Guard CI | Unsigned artifacts | ✅ v4.0-P1 |
+| Pre-commit hook | Accidental TSA CA commits | ✅ v4.0-P1 |
+| Merkle recompute vs. published | DB tampering | ✅ v3.0 |
 
 ## Attack Scenarios
 
-### Scenario 1: Compromised MCP Endpoint
+### S1) Compromised MCP Endpoint
+
+**Likelihood:** `LOW` / **Impact:** `HIGH`
 
 **Attack Path:**
-1. Attacker discovers unsecured `/mcp` endpoint (misconfigured)
-2. Calls `list_memory_ids` and `get_memory` tools to exfiltrate data
-3. Maps deployment history and infrastructure topology
-
-**Likelihood:** `LOW` (requires misconfiguration)  
-**Impact:** `HIGH` (full data exfiltration)
+1. Public `/mcp` exposed without auth
+2. Attacker calls `list_memory_ids` / `get_memory` tools
+3. Full data exfiltration + infrastructure topology mapping
 
 **Mitigations:**
-- Enforce mTLS or reverse proxy auth (documented in `SECURITY.md`)
-- Monitor `/mcp` access logs for anomalous patterns
-- Network isolation (VPN/Wireguard) for federation
+- Enforce mTLS or reverse-proxy auth (documented in `SECURITY.md`)
+- Network isolation (VPN/Wireguard)
 
-### Scenario 2: Malicious Federation Peer
+**Detection:**
+```bash
+# Review proxy logs for unauthenticated calls
+grep "POST /mcp" /var/log/nginx/access.log | grep -v "200 OK"
+
+# Check for burst of list_memory_ids calls
+journalctl -u remembrancer-mcp | grep list_memory_ids | wc -l
+```
+
+**Response:**
+- Rotate peer tokens/trust anchors
+- Disable HTTP mode temporarily
+- Restore from last green commit if tampering detected
+
+### S2) Malicious Federation Peer
+
+**Likelihood:** `MEDIUM` / **Impact:** `MEDIUM`
 
 **Attack Path:**
-1. Attacker joins federation with forged node credentials
-2. Injects memories with invalid signatures or backdated timestamps
+1. Joins federation with misconfigured trust anchor
+2. Injects memories with invalid signatures/backdated timestamps
 3. Attempts to trigger artifact execution via poisoned receipts
 
-**Likelihood:** `MEDIUM` (requires trust anchor misconfiguration)  
-**Impact:** `MEDIUM` (caught by signature validation)
-
 **Mitigations:**
-- `MemoryValidator.verify_memory()` checks GPG + RFC3161 (v4.0 Phase 3) ✅
-- Manual trust anchor verification (out-of-band fingerprint check)
-- Audit synced memories: `sqlite3 ops/data/remembrancer.db "SELECT * FROM memories ORDER BY timestamp DESC LIMIT 10"`
+- `MemoryValidator.verify_memory()` checks GPG + RFC3161 (best-effort) ✅
+- Manual trust anchor fingerprint verification (out-of-band)
 
-### Scenario 3: TSA CA Certificate Compromise
+**Detection:**
+```bash
+# Audit recent memories for suspicious entries
+sqlite3 ops/data/remembrancer.db \
+ 'SELECT id,timestamp,type FROM memories ORDER BY timestamp DESC LIMIT 20'
+
+# Check for unsigned memories from peer
+sqlite3 ops/data/remembrancer.db \
+ 'SELECT COUNT(*) FROM memories WHERE sig IS NULL OR sig = ""'
+```
+
+**Response:**
+- Rebuild from receipts (git history)
+- Quarantine peer (remove from `federation.yaml`)
+- Rotate trust anchor
+- Re-sync from trusted peers only
+
+### S3) TSA CA Compromise
+
+**Likelihood:** `VERY LOW` / **Impact:** `HIGH`
 
 **Attack Path:**
 1. FreeTSA CA private key leaks or is revoked
-2. Attacker can forge RFC3161 timestamps for artifacts
-3. Backdated proofs appear legitimate
-
-**Likelihood:** `VERY LOW` (requires CA compromise)  
-**Impact:** `HIGH` (proof chain broken)
+2. Attacker forges RFC3161 tokens for backdated artifacts
+3. Forged timestamps appear legitimate
 
 **Mitigations:**
-- Monitor TSA status (subscribe to FreeTSA alerts)
-- Use multiple TSAs for critical artifacts (future enhancement)
-- Re-timestamp artifacts with alternate TSA if CA revoked
-- Document CA switch in ADR
+- Monitor TSA revocation status (subscribe to alerts)
+- Multi-TSA support (future v4.1)
+- Re-timestamp critical artifacts if CA compromised
 
-### Scenario 4: Database Tamper (Direct SQLite Edit)
+**Detection:**
+```bash
+# Cross-verify timestamps with alternate TSA
+openssl ts -verify -data artifact.tar.gz -in artifact.tar.gz.tsr \
+  -CAfile /path/to/alternate-tsa-ca.pem
+
+# Monitor TSA feeds for revocation notices
+```
+
+**Response:**
+- Add ADR documenting CA switch
+- Re-attest critical artifacts with alternate TSA
+- Update `ops/certs/` with new CA
+
+### S4) Direct DB Tamper
+
+**Likelihood:** `LOW` / **Impact:** `HIGH`
 
 **Attack Path:**
 1. Attacker gains write access to `ops/data/remembrancer.db`
-2. Modifies memory rows or deletes entries
-3. Recomputes Merkle root to match
-
-**Likelihood:** `LOW` (requires host compromise)  
-**Impact:** `HIGH` (memory loss, audit trail broken)
+2. Modifies/deletes memory rows
+3. Recomputes Merkle root to hide tampering
 
 **Mitigations:**
 - File permissions: `chmod 600 ops/data/remembrancer.db`
-- Merkle root published in `docs/REMEMBRANCER.md` (Git history is immutable)
+- Published Merkle root in `docs/REMEMBRANCER.md` (Git immutable)
 - CI verifies published root vs. computed root (Covenant Guard)
-- Recovery: restore DB from last good commit + receipts
 
-## Residual Risks
+**Detection:**
+```bash
+# Manually recompute and compare
+python3 ops/lib/merkle.py --compute --from-sqlite ops/data/remembrancer.db
+grep "^Merkle Root:" docs/REMEMBRANCER.md
 
-### 1. Misconfigured HTTP MCP (No Auth)
+# Check git history for uncommitted changes
+git diff docs/REMEMBRANCER.md
+```
 
-**Risk:** MCP endpoint exposed without authentication allows full data exfiltration.
+**Response:**
+- Restore DB from last good commit
+- Replay receipts from `ops/receipts/deploy/`
+- Investigate host compromise (forensics)
 
-**Acceptance Criteria:** Document in `SECURITY.md`; operator responsibility.
+## Residual Risks (Phase 3 MVP)
 
-**Detection:** Audit nginx/Caddy config; monitor access logs for unauthenticated requests.
+### 1. Unauthenticated MCP HTTP
 
-### 2. Missing TSA CA in Production
+**Risk:** Full data exfiltration if `/mcp` exposed without auth.
 
-**Risk:** RFC3161 timestamps not verifiable if `FREETSA_CA` absent; proofs degrade to GPG-only.
+**Acceptance:** Operational responsibility; documented in `SECURITY.md`.
 
-**Acceptance Criteria:** Non-fatal; system warns but continues (permissive mode).
+**Detection:**
+- Proxy/host logs review
+- Routine config audits (`nginx -t`, test curl without auth)
 
-**Detection:** `remembrancer verify-full` emits warning; Covenant Guard logs it.
+### 2. Missing TSA CA
 
-### 3. Unverified Peer Memories (Unsigned)
+**Risk:** RFC3161 timestamps unverifiable → proofs degrade to GPG-only.
 
-**Risk:** If peer sends memories without signatures, validator accepts them (permissive mode in v4.0).
+**Acceptance:** Non-fatal; warnings logged; Covenant Guard surfaces issues.
 
-**Acceptance Criteria:** Phase 3 MVP; strict mode deferred to v4.1.
+**Detection:**
+```bash
+# Verify-full warns if CA missing
+./ops/bin/remembrancer verify-full dist/artifact.tar.gz 2>&1 | grep -i "timestamp"
+```
 
-**Mitigation:** Operators can enable `require_signatures: true` in `federation.yaml` (future).
+### 3. Unsigned Peer Memories Allowed (Permissive)
+
+**Risk:** Phase 3 accepts unsigned memories; strict mode deferred to v4.1.
+
+**Acceptance:** MVP permissive mode balances usability vs. security.
+
+**Mitigation (planned):**
+```yaml
+# ops/data/federation.yaml (v4.1)
+trust:
+  require_signatures: true   # hard-fail on unsigned memories
+  min_quorum: 2              # future: multi-signature validation
+```
 
 ## Security Roadmap
 
 ### v4.0 Phase 3 (Current)
 
-- [x] Signature validation (GPG + RFC3161) in `MemoryValidator`
-- [x] MCP HTTP access control documentation
-- [x] Federation trust anchor model
+- ✅ Signature validation on ingest (GPG + RFC3161, best-effort)
+- ✅ HTTP access control documented (`SECURITY.md`)
+- ✅ Trust anchor model (manual verification)
 
-### v4.1 (Future)
+### v4.1 (Planned)
 
-- [ ] Strict validation mode (hard-fail on missing signatures)
-- [ ] Multi-TSA support (parallel timestamp requests)
-- [ ] Automated trust anchor rotation
+- ☐ Strict mode (hard-fail on missing/invalid signatures)
+- ☐ Multi-TSA support (parallel timestamp requests)
+- ☐ Automated trust anchor rotation
 
-### v4.2 (Future)
+### v4.2 (Planned)
 
-- [ ] Encrypted memory fields (GPG symmetric encryption for sensitive ADRs)
-- [ ] Audit log streaming (send Merkle root updates to immutable log)
-- [ ] Intrusion detection (anomaly detection on sync patterns)
+- ☐ Encrypted memory fields (selected ADRs, GPG symmetric)
+- ☐ Streaming Merkle updates (immutable log)
+- ☐ Anomaly detection on sync patterns
+
+## Operator Toggles (Planned)
+
+These configuration options will be available in future releases:
+
+```yaml
+# ops/data/federation.yaml
+trust:
+  require_signatures: true   # v4.1 strict mode (hard-fail on unsigned)
+  min_quorum: 2              # future: multi-signature memories
+
+tsa:
+  urls:                      # v4.1 multi-TSA expansion
+    - "https://freetsa.org/tsr"
+    - "http://timestamp.digicert.com"
+  require_all: false         # if true, all TSAs must succeed
+```
 
 ## References
 
-- [SECURITY.md](SECURITY.md) — Operational security guidelines
-- [docs/COVENANT_HARDENING.md](docs/COVENANT_HARDENING.md) — CI and validation
+- [SECURITY.md](SECURITY.md) — Operational security guardrails
+- [docs/COVENANT_HARDENING.md](docs/COVENANT_HARDENING.md) — CI & validation
 - [V4.0_KICKOFF.md](V4.0_KICKOFF.md) — Federation architecture
 
 ---
 
+**Status:** Aligned with v4.0 Phase 3 (commit 18edbdb) and live configuration.  
 **Last Updated:** 2025-10-19 (v4.0 Phase 3)  
 **Threat Model Version:** 1.0
 
