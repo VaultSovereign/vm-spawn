@@ -1,0 +1,36 @@
+version: "3.9"
+services:
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: c3l-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI
+      - "15692:15692"  # Prometheus metrics
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:-guest}"
+      RABBITMQ_SERVER_ADDITIONAL_ERL_ARGS: "-rabbitmq_prometheus"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Optional dead-letter exchange declaration (first-time init via rabbitmqadmin)
+  rabbitmq-setup:
+    image: rabbitmq:3.13-management
+    depends_on: ["rabbitmq"]
+    entrypoint: ["/bin/bash","-lc"]
+    command: >
+      "sleep 5 &&
+       rabbitmqadmin declare exchange name=c3l.dlx type=direct && 
+       echo 'DLX ready'"
+    environment:
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:-guest}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:-guest}"
+
+volumes:
+  rabbitmq_data: {}

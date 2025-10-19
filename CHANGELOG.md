@@ -2,6 +2,57 @@
 
 All notable changes to VaultMesh Spawn Elite will be documented in this file.
 
+## [v2.5-C3L] - 2025-10-19
+
+### 🌐 C3L INTEGRATION - Critical Civilization Communication Layer
+
+#### Added
+- ✅ **Model Context Protocol (MCP)** integration
+  - `generators/mcp-server.sh` - MCP server generator using FastMCP
+  - `templates/mcp/server-template.py` - MCP server skeleton (resources, tools, prompts)
+  - `--with-mcp` flag in spawn.sh
+  - Supports stdio and Streamable HTTP transports
+- ✅ **Message Queue** integration
+  - `generators/message-queue.sh` - RabbitMQ/NATS client generator
+  - `templates/message-queue/rabbitmq-compose.yml` - RabbitMQ stack with Prometheus
+  - `--with-mq {rabbitmq|nats}` flag in spawn.sh
+  - CloudEvents envelopes with W3C traceparent propagation
+- ✅ **Documentation**
+  - `PROPOSAL_MCP_COMMUNICATION_LAYER.md` - 851-line comprehensive proposal
+  - `docs/C3L_ARCHITECTURE.md` - Technical architecture with diagrams
+  - `docs/REMEMBRANCER.md` - MCP integration section (125 lines)
+  - `README.md` - C3L section with quickstart
+- ✅ **ADRs** (in proposal)
+  - ADR-004: Why Model Context Protocol?
+  - ADR-005: Why Message Queues over REST?
+  - ADR-006: Why Federate the Remembrancer?
+
+#### Changed
+- ✅ spawn.sh extended with C3L flags (backward compatible)
+- ✅ Usage examples updated with C3L options
+- ✅ Final output includes C3L features when enabled
+
+#### Technical Details
+- **Generator Count:** 11 (9 existing + 2 C3L)
+- **Templates:** Added mcp/ and message-queue/ directories
+- **Standards:** CloudEvents v1.0, W3C Trace Context, MCP SDK ≥1.2.0
+- **Observability:** RabbitMQ Prometheus plugin, Grafana integration
+- **Security:** Optional Sigstore Rekor, RFC-3161 timestamps
+
+#### Testing
+- ✅ Smoke test: **19/19 PASSED (100%)**
+- ✅ Backward compatible: baseline spawn works without flags
+- ✅ Help text includes C3L options
+- ✅ Integration record: `C3L_INTEGRATION_RECORD.md`
+
+#### Covenant Alignment
+- Self-Verifying: MCP resources expose provable data
+- Self-Auditing: Message queues log events with traceparent
+- Self-Attesting: CloudEvents provide cryptographic proof
+- Modular: Clean extension without breaking v2.4
+
+---
+
 ## [v2.4-MODULAR] - 2025-10-19
 
 ### 🜞 LITERALLY PERFECT - 10.0/10 (Smoke Test: 19/19 PASSED)

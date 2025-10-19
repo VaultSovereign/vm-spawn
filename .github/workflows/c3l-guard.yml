@@ -1,0 +1,30 @@
+name: C3L Guard
+on: [push, pull_request]
+jobs:
+  lint-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck -S warning spawn.sh generators/*.sh
+      
+      - name: Spawn smoke (no flags - baseline)
+        run: |
+          bash -euxo pipefail -c './spawn.sh demo-basic service; test -d services/demo-basic'
+      
+      - name: Spawn smoke (MCP)
+        run: |
+          bash -euxo pipefail -c './spawn.sh demo-mcp service --with-mcp; test -f services/demo-mcp/mcp/server.py'
+      
+      - name: Spawn smoke (MQ rabbitmq)
+        run: |
+          bash -euxo pipefail -c './spawn.sh demo-mq service --with-mq rabbitmq; test -f services/demo-mq/mq/mq.py'
+      
+      - name: Validate proposal length (851-852 acceptable)
+        run: |
+          L=$(awk 'END{print NR}' PROPOSAL_MCP_COMMUNICATION_LAYER.md)
+          test $L -ge 851 && test $L -le 852 || (echo "Linecount=$L (expected 851-852)" && exit 1)
+

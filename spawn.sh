@@ -21,6 +21,11 @@ REPO_TYPE="${2:-service}"
 REPO_BASE="${VAULTMESH_REPOS:-$HOME/repos}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# C3L Configuration (default off; harmless if unused)
+WITH_MCP=0
+WITH_MQ=0
+MQ_KIND="rabbitmq"   # or 'nats'
+
 # ============================================================================
 # PRE-FLIGHT VALIDATION
 # ============================================================================
@@ -76,17 +81,24 @@ preflight_check() {
 # ============================================================================
 usage() {
   cat <<'EOF'
-Usage: spawn.sh <name> [type]
+Usage: spawn.sh <name> [type] [--with-mcp] [--with-mq {rabbitmq|nats}]
 
 Types:
   service   - Python/FastAPI microservice (default)
   worker    - Background worker service
   api       - REST API service
 
+C3L Options (non-breaking):
+  --with-mcp           Scaffold an MCP server skeleton
+  --with-mq <type>     Add MQ client skeleton (rabbitmq or nats)
+
 Examples:
   spawn.sh payment-service service
   spawn.sh email-worker worker
   spawn.sh auth-api api
+  spawn.sh herald service --with-mcp
+  spawn.sh worker service --with-mq rabbitmq
+  spawn.sh full service --with-mcp --with-mq nats
 
 Environment Variables:
   VAULTMESH_REPOS   - Base directory for repos (default: ~/repos)
@@ -160,6 +172,35 @@ DOC
   bash "$SCRIPT_DIR/generators/dockerfile.sh" "$name"
   bash "$SCRIPT_DIR/generators/monitoring.sh" "$name"
   
+  # C3L features (optional) - graceful degradation if generators missing/fail
+  if [[ $WITH_MCP -eq 1 ]]; then
+    echo ""
+    echo -e "${BLUE}🌐 Adding MCP server...${NC}"
+    if [[ -x "$SCRIPT_DIR/generators/mcp-server.sh" ]]; then
+      if ! bash "$SCRIPT_DIR/generators/mcp-server.sh" "$name" --dir "$target"; then
+        echo -e "${YELLOW}⚠️  MCP generator failed — continuing without MCP scaffold.${NC}"
+        WITH_MCP=0
+      fi
+    else
+      echo -e "${YELLOW}⚠️  MCP generator missing or not executable (generators/mcp-server.sh)${NC}"
+      WITH_MCP=0
+    fi
+  fi
+  
+  if [[ $WITH_MQ -eq 1 ]]; then
+    echo ""
+    echo -e "${BLUE}📬 Adding message queue client ($MQ_KIND)...${NC}"
+    if [[ -x "$SCRIPT_DIR/generators/message-queue.sh" ]]; then
+      if ! bash "$SCRIPT_DIR/generators/message-queue.sh" "$name" --dir "$target" --type "$MQ_KIND"; then
+        echo -e "${YELLOW}⚠️  MQ generator failed — continuing without MQ scaffold.${NC}"
+        WITH_MQ=0
+      fi
+    else
+      echo -e "${YELLOW}⚠️  MQ generator missing or not executable (generators/message-queue.sh)${NC}"
+      WITH_MQ=0
+    fi
+  fi
+  
   # Clean up .bak files
   echo -e "${BLUE}🧹 Cleaning up...${NC}"
   find "$target" -name "*.bak" -type f -delete 2>/dev/null || true
@@ -177,6 +218,33 @@ DOC
 if [[ -z "$REPO_NAME" ]]; then
   usage
 fi
+
+# Parse C3L flags (shift past name and type first)
+shift 2 2>/dev/null || true
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --with-mcp)
+      WITH_MCP=1
+      shift
+      ;;
+    --with-mq)
+      WITH_MQ=1
+      MQ_KIND="${2:-rabbitmq}"
+      if [[ "$MQ_KIND" != "rabbitmq" && "$MQ_KIND" != "nats" ]]; then
+        echo -e "${RED}❌ --with-mq expects 'rabbitmq' or 'nats', got: $MQ_KIND${NC}"
+        exit 2
+      fi
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      ;;
+    *)
+      echo -e "${RED}❌ Unknown option: $1${NC}"
+      usage
+      ;;
+  esac
+done
 
 echo ""
 echo -e "${PURPLE}╔═══════════════════════════════════════════════════════╗${NC}"
@@ -209,6 +277,12 @@ echo "  ✅ Kubernetes manifests + HPA"
 echo "  ✅ Docker Compose + monitoring stack"
 echo "  ✅ Prometheus + Grafana configs"
 echo "  ✅ Elite multi-stage Dockerfile"
+if [[ $WITH_MCP -eq 1 ]]; then
+  echo "  ✅ MCP server (Model Context Protocol)"
+fi
+if [[ -n "$WITH_MQ" ]]; then
+  echo "  ✅ Message queue client ($WITH_MQ)"
+fi
 echo ""
 echo "Next steps:"
 echo -e "  ${CYAN}cd $REPO_BASE/$REPO_NAME${NC}"
@@ -217,6 +291,16 @@ echo -e "  ${CYAN}.venv/bin/pip install -r requirements.txt${NC}"
 echo -e "  ${CYAN}make test${NC}                 # Run tests"
 echo -e "  ${CYAN}make dev${NC}                  # Start development"
 echo -e "  ${CYAN}docker-compose up -d${NC}      # Full stack with monitoring"
+if [[ $WITH_MCP -eq 1 ]]; then
+  echo ""
+  echo "C3L - MCP Server:"
+  echo -e "  ${CYAN}cd $REPO_BASE/$REPO_NAME && uv run mcp dev mcp/server.py${NC}"
+fi
+if [[ $WITH_MQ -eq 1 ]]; then
+  echo ""
+  echo "C3L - Message Queue ($MQ_KIND):"
+  echo -e "  ${CYAN}cd $REPO_BASE/$REPO_NAME && uv run python mq/mq.py${NC}"
+fi
 echo ""
 echo -e "${PURPLE}🜞 The forge is modular. The generators are pure. Perfection achieved.${NC}"
 echo ""

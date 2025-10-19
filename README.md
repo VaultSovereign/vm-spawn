@@ -441,6 +441,53 @@ The GitHub Actions pipeline automatically:
 
 ---
 
+## 🌐 C3L: Critical Civilization Communication Layer
+
+**C3L** extends VaultMesh with **Model Context Protocol (MCP)** and **Message Queues** to enable distributed communication, AI agent coordination, and federated knowledge sharing across spawned services.
+
+### What You Get
+
+- **MCP Servers**: Expose service context and capabilities via Model Context Protocol
+- **Message Queues**: Event-driven coordination with RabbitMQ or NATS
+- **Federated Remembrancer**: Query historical decisions across services
+- **CloudEvents**: Standard event envelopes for interoperability
+- **Distributed Tracing**: W3C traceparent propagation
+
+### Quick Start
+
+```bash
+# 1. Spawn a service with C3L capabilities
+./spawn.sh herald service --with-mcp --with-mq rabbitmq
+
+# 2. Start RabbitMQ (development)
+docker compose -f templates/message-queue/rabbitmq-compose.yml up -d
+
+# 3. Run the MCP server
+cd ~/repos/herald
+uv run mcp dev mcp/server.py
+
+# 4. Run the message queue worker
+uv run python mq/mq.py
+```
+
+### Documentation
+
+- **[Full Proposal](PROPOSAL_MCP_COMMUNICATION_LAYER.md)** — 851 lines covering vision, architecture, and implementation
+- **[C3L Architecture](docs/C3L_ARCHITECTURE.md)** — Technical diagrams and patterns
+- **[Remembrancer MCP](docs/REMEMBRANCER.md)** — MCP integration for covenant memory
+
+### Why C3L?
+
+**Traditional microservices:** Tight coupling via REST, knowledge silos, no shared context  
+**With C3L:** Event-driven coordination, federated memory, AI agents can query decisions
+
+**The Covenant Extended:**
+- Self-Verifying Communication (message integrity)
+- Self-Auditing Coordination (logged events)
+- Self-Attesting Systems (provable message flows)
+
+---
+
 ## 📈 Roadmap
 
 ### Phase 2: Automation

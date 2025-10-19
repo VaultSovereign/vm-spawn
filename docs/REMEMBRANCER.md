@@ -235,3 +235,126 @@ The Remembrancer ensures that **knowledge compounds**, not entropy.
 **Maintained By:** The Remembrancer (AI Memory Keeper)  
 **Covenant Status:** ✅ Active
 
+---
+
+## 🌐 MCP Integration
+
+### The Remembrancer as an MCP Server
+
+The Remembrancer is exposed as a **Model Context Protocol (MCP) server** that provides standardized access to covenant memory for AI agents and services.
+
+#### Resources Exposed
+
+**Memory Resources:**
+- `memory://{namespace}/{id}` — Individual memory entries (deployments, ADRs, incidents)
+- `adr://{year}/ADR-{num}` — Architectural Decision Records by year
+
+**Example:**
+```
+memory://spawn-elite/v2.2-production
+adr://2025/ADR-001
+```
+
+#### Tools Available
+
+**`search_memories`**
+- Search covenant memory with semantic or keyword queries
+- Parameters: `query` (string), `type` (optional filter)
+- Returns: Matching memory entries with context
+
+**`record_decision`**
+- Record a new architectural decision
+- Parameters: `title`, `decision`, `rationale`, `trade_offs`
+- Returns: ADR ID and receipt
+
+**`index_artifact`**
+- Index and verify a deployment artifact
+- Parameters: `component`, `version`, `sha256`, `evidence`
+- Returns: Cryptographic receipt
+
+#### Prompts Available
+
+**`decision_summary`**
+- Generate a summary of decisions for a given context
+- Parameters: `context` (e.g., "monitoring", "bash scripts")
+- Returns: Formatted summary with ADR references
+
+**`risk_register`**
+- Generate a risk assessment from historical incidents
+- Parameters: `scope` (component or system-wide)
+- Returns: Risk matrix with mitigations
+
+### Running the Remembrancer MCP Server
+
+#### Development (stdio transport)
+```bash
+cd /Users/sovereign/Downloads/files\ \(1\)
+uv run mcp dev ops/bin/remembrancer-mcp-server.py
+```
+
+#### Production (HTTP transport)
+```bash
+# Streamable HTTP on port 8080
+uv run python ops/bin/remembrancer-mcp-server.py --http --port 8080
+```
+
+### Security & Access Control
+
+#### Per-Namespace RBAC
+- Each namespace (e.g., `spawn-elite`, `auth-service`) has scoped access
+- Token-based authentication for production deployments
+- Read-only queries by default, write operations require elevated permissions
+
+#### Event Signing (Optional)
+- Critical memories can be signed with GPG or Sigstore
+- Transparency logs (Rekor) for tamper-proof audit trails
+- RFC-3161 timestamps for legal compliance
+
+### Federation
+
+#### Cross-Service Memory Access
+
+Services spawned with `--with-mcp` can query the Remembrancer:
+
+```python
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
+
+# Connect to Remembrancer MCP server
+server_params = StdioServerParameters(
+    command="remembrancer",
+    args=["mcp-server"]
+)
+
+async with stdio_client(server_params) as (read, write):
+    async with ClientSession(read, write) as session:
+        # Search for decisions
+        result = await session.call_tool(
+            "search_memories",
+            arguments={"query": "why bash scripts?"}
+        )
+        print(result)
+```
+
+#### Cache & Reconciliation
+
+- Services cache memory projections locally (SQLite/DuckDB)
+- Reconcile via domain events on the message queue
+- Eventual consistency model for distributed deployments
+
+### Integration with C3L
+
+The Remembrancer MCP server is the **knowledge backbone** of C3L:
+
+1. **Services query decisions** via MCP tools
+2. **Events are recorded** automatically via message queue listeners
+3. **ADRs are indexed** and searchable across the federation
+4. **Temporal context** is preserved with W3C traceparent
+
+**The Covenant:** Knowledge compounds across services, not just repos.
+
+---
+
+**MCP Integration Status:** ✅ Designed, ready for implementation  
+**Federation Status:** 🚧 Phase 4 roadmap item
+
