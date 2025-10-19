@@ -1,0 +1,60 @@
+# VaultMesh Spawn Elite + Remembrancer System
+# Git Ignore Configuration
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+.*.sw[a-z]
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs
+*.log
+logs/
+
+# Local development
+.env
+.env.local
+*.local
+
+# Generated artifacts (keep the production tarball)
+!vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz
+
+# Receipts should be tracked (they're cryptographic proof)
+!ops/receipts/**/*.receipt
+
+# Documentation should be tracked
+!*.md
+

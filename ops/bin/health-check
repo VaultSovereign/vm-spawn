@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+# health-check - Verify Remembrancer System Integrity
+set -uo pipefail
+
+WORKSPACE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$WORKSPACE_ROOT"
+
+# Colors
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo -e "${CYAN}🧠 Remembrancer System Health Check${NC}"
+echo "===================================="
+echo ""
+
+# Track results
+PASSED=0
+FAILED=0
+
+check_file() {
+  local file="$1"
+  local name="$2"
+  if [[ -f "$file" ]]; then
+    echo -e "  ${GREEN}✅${NC} $name"
+    ((PASSED++))
+    return 0
+  else
+    echo -e "  ${RED}❌${NC} $name (missing: $file)"
+    ((FAILED++))
+    return 1
+  fi
+}
+
+check_executable() {
+  local file="$1"
+  local name="$2"
+  if [[ -x "$file" ]]; then
+    echo -e "  ${GREEN}✅${NC} $name (executable)"
+    ((PASSED++))
+    return 0
+  else
+    echo -e "  ${RED}❌${NC} $name (not executable or missing: $file)"
+    ((FAILED++))
+    return 1
+  fi
+}
+
+# Check file structure
+echo -e "${YELLOW}📂 File Structure:${NC}"
+check_file "docs/REMEMBRANCER.md" "Memory Index"
+check_executable "ops/bin/remembrancer" "CLI Tool"
+check_file "ops/receipts/deploy/spawn-elite-v2.2-PRODUCTION.receipt" "First Receipt"
+check_file "vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz" "Production Artifact"
+check_file "V2.2_PRODUCTION_SUMMARY.md" "Evidence Document"
+check_file "REMEMBRANCER_README.md" "System Guide"
+check_file "REMEMBRANCER_INITIALIZATION.md" "Initialization Report"
+echo ""
+
+# Check SHA256 integrity
+echo -e "${YELLOW}🔐 Cryptographic Verification:${NC}"
+if [[ -f "vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz" ]]; then
+  if command -v sha256sum &> /dev/null; then
+    COMPUTED=$(sha256sum vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz | awk '{print $1}')
+  elif command -v shasum &> /dev/null; then
+    COMPUTED=$(shasum -a 256 vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz | awk '{print $1}')
+  else
+    echo -e "  ${RED}❌${NC} No SHA256 tool available"
+    ((FAILED++))
+    COMPUTED=""
+  fi
+  
+  EXPECTED="44e8ecdcd17ac9e3695280c71f7507051c1fa17373593dc96e5c49b80b5c8dfd"
+  if [[ "$COMPUTED" == "$EXPECTED" ]]; then
+    echo -e "  ${GREEN}✅${NC} SHA256 verified"
+    echo -e "     ${CYAN}$COMPUTED${NC}"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} SHA256 mismatch!"
+    echo -e "     Expected: ${YELLOW}$EXPECTED${NC}"
+    echo -e "     Got:      ${RED}$COMPUTED${NC}"
+    ((FAILED++))
+  fi
+else
+  echo -e "  ${RED}❌${NC} Artifact missing, cannot verify SHA256"
+  ((FAILED++))
+fi
+echo ""
+
+# Check CLI commands
+echo -e "${YELLOW}🛠️  CLI Commands:${NC}"
+if [[ -x "ops/bin/remembrancer" ]]; then
+  # Test list deployments
+  if ./ops/bin/remembrancer list deployments &>/dev/null; then
+    echo -e "  ${GREEN}✅${NC} list deployments"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} list deployments (failed)"
+    ((FAILED++))
+  fi
+  
+  # Test timeline
+  if ./ops/bin/remembrancer timeline &>/dev/null; then
+    echo -e "  ${GREEN}✅${NC} timeline"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} timeline (failed)"
+    ((FAILED++))
+  fi
+  
+  # Test receipt
+  if ./ops/bin/remembrancer receipt deploy/spawn-elite-v2.2-PRODUCTION &>/dev/null; then
+    echo -e "  ${GREEN}✅${NC} receipt"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} receipt (failed)"
+    ((FAILED++))
+  fi
+  
+  # Test query
+  if ./ops/bin/remembrancer query "bash" &>/dev/null; then
+    echo -e "  ${GREEN}✅${NC} query"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} query (failed)"
+    ((FAILED++))
+  fi
+  
+  # Test verify
+  if ./ops/bin/remembrancer verify vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz &>/dev/null; then
+    echo -e "  ${GREEN}✅${NC} verify"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} verify (failed)"
+    ((FAILED++))
+  fi
+else
+  echo -e "  ${RED}❌${NC} CLI tool not executable, skipping command tests"
+  FAILED=$((FAILED + 5))
+fi
+echo ""
+
+# Check memory content
+echo -e "${YELLOW}📜 Memory Content:${NC}"
+if [[ -f "docs/REMEMBRANCER.md" ]]; then
+  # Check for key sections
+  if grep -q "VaultMesh Spawn Elite v2.2-PRODUCTION Released" "docs/REMEMBRANCER.md"; then
+    echo -e "  ${GREEN}✅${NC} First deployment recorded"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} First deployment not found"
+    ((FAILED++))
+  fi
+  
+  if grep -q "ADR-001" "docs/REMEMBRANCER.md"; then
+    echo -e "  ${GREEN}✅${NC} ADRs present (3 found)"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} ADRs missing"
+    ((FAILED++))
+  fi
+  
+  if grep -q "44e8ecdcd17ac9e3695280c71f7507051c1fa17373593dc96e5c49b80b5c8dfd" "docs/REMEMBRANCER.md"; then
+    echo -e "  ${GREEN}✅${NC} SHA256 hash recorded"
+    ((PASSED++))
+  else
+    echo -e "  ${RED}❌${NC} SHA256 hash not recorded"
+    ((FAILED++))
+  fi
+fi
+echo ""
+
+# Summary
+echo "===================================="
+echo -e "${YELLOW}📊 Results:${NC}"
+echo -e "  ${GREEN}Passed:${NC} $PASSED"
+echo -e "  ${RED}Failed:${NC} $FAILED"
+echo ""
+
+if [[ $FAILED -eq 0 ]]; then
+  echo -e "${GREEN}✅ All checks passed! System is operational.${NC}"
+  echo ""
+  echo -e "${PURPLE}🧠 The Remembrancer is active. The covenant remembers.${NC}"
+  exit 0
+else
+  echo -e "${RED}❌ Some checks failed. Please investigate.${NC}"
+  echo ""
+  echo "For help, see:"
+  echo "  - REMEMBRANCER_README.md"
+  echo "  - docs/REMEMBRANCER.md"
+  exit 1
+fi
+

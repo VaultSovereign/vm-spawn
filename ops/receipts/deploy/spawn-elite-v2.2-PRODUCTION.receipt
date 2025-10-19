@@ -1,0 +1,23 @@
+---
+type: deployment
+component: spawn-elite
+version: v2.2-PRODUCTION
+timestamp: 2025-10-19T17:30:09Z
+evidence:
+  artifact: vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz
+  sha256: 44e8ecdcd17ac9e3695280c71f7507051c1fa17373593dc96e5c49b80b5c8dfd
+status: active
+verified_by: remembrancer-cli
+---
+
+This receipt cryptographically attests to the deployment of:
+
+  Component: spawn-elite
+  Version: v2.2-PRODUCTION
+  Timestamp: 2025-10-19T17:30:09Z
+  SHA256: 44e8ecdcd17ac9e3695280c71f7507051c1fa17373593dc96e5c49b80b5c8dfd
+
+Verification:
+  shasum -a 256 vaultmesh-spawn-elite-v2.2-PRODUCTION.tar.gz
+
+This memory is recorded in the VaultMesh Covenant Index.
