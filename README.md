@@ -625,6 +625,29 @@ The GitHub Actions pipeline automatically:
 3. ✅ Builds Docker images
 4. ✅ Deploys on merge to main
 
+### Rubber Ducky Deployment (v2.3.0)
+Deploy VaultMesh to any machine via USB:
+```bash
+# Prepare Rubber Ducky with installer
+cd rubber-ducky
+./INSTALL_TO_DUCKY.sh
+
+# Select strategy:
+#   Windows (PowerShell, online/offline)
+#   macOS (hardened bash + fallback)
+#   Linux (hardened bash + fallback)
+
+# Plug into target machine → VaultMesh installs automatically
+```
+
+**Features:**
+- ✅ **Windows PowerShell-native** (no bash/WSL dependency)
+- ✅ **Multi-OS support** (Windows 10/11, macOS, Linux)
+- ✅ **Offline capable** (USB copy, no internet required)
+- ✅ **Robust fallbacks** (git → zip download, USB label detection)
+
+**Guide:** [RUBBER_DUCKY_PAYLOAD.md](RUBBER_DUCKY_PAYLOAD.md)
+
 ---
 
 ## 🎓 Philosophy

@@ -85,12 +85,16 @@ ops/bin/health-check        🏥 System verification
 docs/REMEMBRANCER.md        📜 Memory index
 ```
 
-### Rubber Ducky
+### Rubber Ducky (v2.3.0 PowerShell-Hardened)
 ```
 rubber-ducky/
-├── INSTALL_TO_DUCKY.sh    🦆 USB installer
-├── payload-github.txt     📡 Online strategy
-└── payload-offline.txt    💾 Offline strategy
+├── INSTALL_TO_DUCKY.sh               🦆 USB installer (6 strategies)
+├── payload-windows-github.v2.3.0.txt 🪟 Windows PowerShell online
+├── payload-windows-offline.v2.3.0.txt🪟 Windows PowerShell USB
+├── payload-macos-github.v2.3.0.txt   🍎 macOS hardened
+├── payload-linux-github.v2.3.0.txt   🐧 Linux hardened
+├── payload-github.txt                📡 Legacy v2.2 (macOS)
+└── payload-offline.txt               💾 Legacy v2.2 (macOS)
 ```
 
 ### Security Rituals
