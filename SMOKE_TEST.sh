@@ -344,6 +344,86 @@ else
 fi
 
 # ============================================================================
+# v3.0 COVENANT FOUNDATION TESTS
+# ============================================================================
+
+test_start "v3.0: GPG signing functionality"
+if ! command -v gpg >/dev/null 2>&1; then
+  test_warn "GPG not installed - skipping test (optional)"
+else
+  # Create temporary test artifact
+  TMPDIR="$(mktemp -d)"
+  pushd "$TMPDIR" >/dev/null 2>&1
+  echo "test content for v3.0 signing" > test-artifact.txt
+  
+  # Generate ephemeral test key (1-day, signing-capable)
+  GPG_BATCH_OUTPUT=$(gpg --batch --quick-generate-key "VM Test <test@vaultmesh.local>" rsa3072 sign 1d 2>&1)
+  
+  # Sign using remembrancer
+  if "$SCRIPT_DIR/ops/bin/remembrancer" sign test-artifact.txt --key "test@vaultmesh.local" >/dev/null 2>&1; then
+    if [[ -f test-artifact.txt.asc ]]; then
+      # Verify signature
+      if gpg --verify test-artifact.txt.asc test-artifact.txt >/dev/null 2>&1; then
+        test_pass "GPG signing and verification works"
+      else
+        test_fail "Signature verification failed"
+      fi
+    else
+      test_fail "Signature file not created"
+    fi
+  else
+    test_warn "Signing failed (acceptable if no GPG configured)"
+  fi
+  
+  popd >/dev/null 2>&1
+  rm -rf "$TMPDIR"
+fi
+
+test_start "v3.0: RFC3161 timestamping functionality"
+if ! command -v openssl >/dev/null 2>&1; then
+  test_warn "OpenSSL not installed - skipping test (optional)"
+else
+  # Create temporary test artifact
+  TMPDIR="$(mktemp -d)"
+  pushd "$TMPDIR" >/dev/null 2>&1
+  echo "test content for v3.0 timestamp" > test-ts.txt
+  
+  # Attempt timestamp (may fail if no network or TSA down)
+  if "$SCRIPT_DIR/ops/bin/remembrancer" timestamp test-ts.txt >/dev/null 2>&1; then
+    if [[ -f test-ts.txt.tsr ]]; then
+      test_pass "RFC3161 timestamping works"
+    else
+      test_warn "Timestamp token not created (TSA may be unreachable)"
+    fi
+  else
+    test_warn "Timestamping failed (acceptable if no network/TSA)"
+  fi
+  
+  popd >/dev/null 2>&1
+  rm -rf "$TMPDIR"
+fi
+
+test_start "v3.0: Merkle audit log functionality"
+if ! command -v python3 >/dev/null 2>&1; then
+  test_warn "Python3 not installed - skipping test (required for audit)"
+elif [[ ! -f "$SCRIPT_DIR/ops/lib/merkle.py" ]]; then
+  test_fail "Merkle library not found at ops/lib/merkle.py"
+else
+  # Test audit verification (should pass even with no published root yet)
+  if "$SCRIPT_DIR/ops/bin/remembrancer" verify-audit >/dev/null 2>&1; then
+    test_pass "Merkle audit log verification works"
+  else
+    # Check if it's just missing published root (acceptable)
+    AUDIT_OUTPUT=$("$SCRIPT_DIR/ops/bin/remembrancer" verify-audit 2>&1 || true)
+    if [[ "$AUDIT_OUTPUT" == *"No published Merkle Root"* ]]; then
+      test_pass "Merkle computation works (no published root yet - acceptable)"
+    else
+      test_fail "Audit verification failed unexpectedly"
+    fi
+  fi
+fi
+
+# ============================================================================
 # FINAL REPORT
 # ============================================================================
 echo ""

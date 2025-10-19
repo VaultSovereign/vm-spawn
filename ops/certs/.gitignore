@@ -1,0 +1,7 @@
+# Keep CA certificates untracked (operators place at runtime)
+# Only commit documentation
+
+*
+!README.md
+!.gitignore
+

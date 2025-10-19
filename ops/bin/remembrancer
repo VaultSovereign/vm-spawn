@@ -36,6 +36,13 @@ ${YELLOW}COMMANDS:${NC}
   ${GREEN}timeline${NC}      Show chronological memory timeline
   ${GREEN}adr${NC}           Architectural Decision Record operations
 
+${YELLOW}v3.0 COVENANT FOUNDATION:${NC}
+  ${GREEN}sign${NC}          Sign artifact with GPG (detached signature)
+  ${GREEN}timestamp${NC}     Create RFC3161 timestamp for artifact
+  ${GREEN}verify-full${NC}   Verify hash + signature + timestamp chain
+  ${GREEN}export-proof${NC}  Bundle artifact + signature + timestamp
+  ${GREEN}verify-audit${NC}  Verify Merkle root integrity
+
 ${YELLOW}EXAMPLES:${NC}
   # Record a deployment
   remembrancer record deploy \\
@@ -61,6 +68,18 @@ ${YELLOW}EXAMPLES:${NC}
 
   # Create ADR
   remembrancer adr create "Use PostgreSQL for persistent storage"
+
+  # v3.0: Sign artifact
+  remembrancer sign vaultmesh-v3.0.tar.gz --key <your-key-id>
+
+  # v3.0: Timestamp artifact
+  remembrancer timestamp vaultmesh-v3.0.tar.gz
+
+  # v3.0: Verify full chain
+  remembrancer verify-full vaultmesh-v3.0.tar.gz
+
+  # v3.0: Verify audit log
+  remembrancer verify-audit
 
 ${YELLOW}OPTIONS:${NC}
   -h, --help       Show this help message
@@ -259,6 +278,231 @@ EOF
   echo -e "${YELLOW}⚠️  Manual step: Add the above to $MEMORY_INDEX${NC}"
 }
 
+# ───────────────────────────────
+# v3.0 Covenant Foundation hooks
+# ───────────────────────────────
+
+REM_DB="${REM_DB:-$WORKSPACE_ROOT/ops/data/remembrancer.db}"
+REM_CERTS_DIR="${REM_CERTS_DIR:-$WORKSPACE_ROOT/ops/certs}"
+FREETSA_CA="${FREETSA_CA:-${REM_CERTS_DIR}/freetsa-ca.pem}"
+DEFAULT_TSA_URL="${DEFAULT_TSA_URL:-https://freetsa.org/tsr}"
+
+# --- deps & utilities ---------------------------------------------------------
+sha256_of() {
+  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then shasum -a 256 "$1" | awk '{print $1}'
+  else echo "No sha256 tool found" >&2; return 1; fi
+}
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing dependency: $1" >&2; exit 2; }; }
+
+ensure_db() {
+  mkdir -p "$(dirname "$REM_DB")"
+  if [[ ! -f "$REM_DB" ]]; then
+    need sqlite3
+    sqlite3 "$REM_DB" <<'SQL'
+CREATE TABLE IF NOT EXISTS memories (
+  id TEXT PRIMARY KEY,
+  timestamp TEXT NOT NULL,
+  type TEXT NOT NULL,
+  component TEXT,
+  version TEXT,
+  hash TEXT,
+  sig TEXT,
+  data JSON,
+  merkle_root TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_timestamp ON memories(timestamp);
+CREATE INDEX IF NOT EXISTS idx_component ON memories(component);
+CREATE INDEX IF NOT EXISTS idx_type ON memories(type);
+SQL
+  fi
+}
+
+insert_memory() {
+  # args: id, ts, type, component, version, hash, sig, data_json, merkle_root
+  ensure_db
+  sqlite3 "$REM_DB" \
+    "INSERT OR REPLACE INTO memories (id,timestamp,type,component,version,hash,sig,data,merkle_root)
+     VALUES (?,?,?,?,?,?,?,?,?);" \
+     "$1" "$2" "$3" "$4" "$5" "$6" "$7" "$8" "$9"
+}
+
+# --- signing ------------------------------------------------------------------
+sign_artifact() {
+  local artifact="$1"; local key_id="$2"
+  need gpg
+  [[ -f "$artifact" ]] || { echo "Error: Artifact not found: $artifact" >&2; exit 1; }
+  local asc="${artifact}.asc"
+
+  # Detached, armored signature with explicit output (non-interactive safe)
+  gpg --batch --yes --armor --detach-sign \
+      --local-user "$key_id" \
+      --output "$asc" "$artifact"
+
+  local sig_sha256; sig_sha256="$(sha256_of "$asc")"
+  echo "✅ Signature created: $asc (sha256=$sig_sha256)"
+
+  # Optional index into audit DB as a 'signature' memory
+  local now; now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  insert_memory \
+    "sig:${artifact}" "$now" "signature" "remembrancer" "v3.0" \
+    "$(sha256_of "$artifact")" "$sig_sha256" \
+    "{\"artifact\":\"$artifact\",\"sig\":\"$asc\",\"keyid\":\"$key_id\"}" \
+    "" 2>/dev/null || true
+}
+
+verify_signature() {
+  local artifact="$1"
+  local asc="${artifact}.asc"
+  need gpg
+  [[ -f "$artifact" && -f "$asc" ]] || { echo "Missing $artifact or $asc" >&2; exit 1; }
+  if gpg --verify "$asc" "$artifact" 2>&1; then
+    echo "✅ GPG signature valid for $artifact"
+  else
+    echo "❌ GPG verification failed for $artifact" >&2; exit 1
+  fi
+}
+
+# --- timestamping (RFC3161) ---------------------------------------------------
+timestamp_artifact() {
+  local artifact="$1"; local tsa="${2:-$DEFAULT_TSA_URL}"
+  need openssl; need curl
+  [[ -f "$artifact" ]] || { echo "Error: Artifact not found: $artifact" >&2; exit 1; }
+
+  local tsq="${artifact}.tsq"; local tsr="${artifact}.tsr"
+  # Include -cert so TSA cert is returned in the response (helps verify)
+  openssl ts -query -data "$artifact" -sha256 -cert -out "$tsq"
+  curl -sS -H "Content-Type: application/timestamp-query" --data-binary "@${tsq}" "$tsa" > "$tsr"
+  echo "✅ Timestamp token received: $tsr"
+
+  # Verify if CA is present; FreeTSA uses a self-signed CA you must provide.
+  if [[ -f "$FREETSA_CA" ]]; then
+    if openssl ts -verify -data "$artifact" -in "$tsr" -CAfile "$FREETSA_CA" >/dev/null 2>&1; then
+      echo "✅ Timestamp verified against TSA CA ($FREETSA_CA)"
+    else
+      echo "⚠️  Timestamp present but could not be verified with provided CA ($FREETSA_CA)" >&2
+    fi
+  else
+    echo "ℹ️  Timestamp created; provide TSA CA at ${REM_CERTS_DIR}/freetsa-ca.pem to verify."
+  fi
+
+  # Optional index into audit DB
+  local now; now="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  insert_memory \
+    "ts:${artifact}" "$now" "timestamp" "remembrancer" "v3.0" \
+    "$(sha256_of "$artifact")" "" \
+    "{\"artifact\":\"$artifact\",\"tsr\":\"${artifact}.tsr\",\"tsa\":\"$tsa\"}" \
+    "" 2>/dev/null || true
+}
+
+# --- export proof bundle ------------------------------------------------------
+export_proof() {
+  local artifact="$1"
+  local asc="${artifact}.asc"; local tsr="${artifact}.tsr"
+  [[ -f "$artifact" ]] || { echo "Missing $artifact" >&2; exit 1; }
+  [[ -f "$asc" ]] || echo "⚠️  No signature found at $asc"
+  [[ -f "$tsr" ]] || echo "⚠️  No timestamp found at $tsr"
+  local out="${artifact%.tar.gz}.proof.tgz"
+  tar -czf "$out" "$artifact" $([[ -f "$asc" ]] && echo "$asc") $([[ -f "$tsr" ]] && echo "$tsr")
+  echo "✅ Proof bundle: $out"
+}
+
+# --- verify-full: hash + signature + timestamp --------------------------------
+verify_full() {
+  local artifact="$1"
+  [[ -f "$artifact" ]] || { echo "Missing $artifact" >&2; exit 1; }
+  echo "• sha256: $(sha256_of "$artifact")"
+
+  # 1) GPG signature (if exists)
+  if [[ -f "${artifact}.asc" ]]; then
+    verify_signature "$artifact"
+  else
+    echo "ℹ️  No .asc signature present — skipping"
+  fi
+
+  # 2) RFC3161 timestamp (if exists)
+  if [[ -f "${artifact}.tsr" ]]; then
+    if [[ -f "$FREETSA_CA" ]]; then
+      if openssl ts -verify -data "$artifact" -in "${artifact}.tsr" -CAfile "$FREETSA_CA" >/dev/null 2>&1; then
+        echo "✅ RFC3161 timestamp valid"
+      else
+        echo "❌ RFC3161 timestamp verification failed" >&2; exit 1
+      fi
+    else
+      echo "ℹ️  TSA CA not installed; timestamp present but not verified"
+    fi
+  else
+    echo "ℹ️  No .tsr timestamp present — skipping"
+  fi
+
+  echo "✅ verify-full PASSED for $artifact"
+}
+
+# --- audit: Merkle root computation & verification ----------------------------
+verify_audit() {
+  need python3
+  
+  # Compute Merkle root from database
+  python3 "$WORKSPACE_ROOT/ops/lib/merkle.py" --compute --from-sqlite "$REM_DB" > .merkle_root.tmp 2>/dev/null || true
+  local computed_root; computed_root="$(cat .merkle_root.tmp 2>/dev/null || true)"
+  rm -f .merkle_root.tmp
+  
+  # Extract root from "Merkle Root: <hash>" or "**Merkle Root:** <hash>" format
+  local published_root; published_root="$(grep -m1 -i "Merkle Root" "$MEMORY_INDEX" 2>/dev/null | grep -oE '[0-9a-f]{64}' 2>/dev/null | head -1 || true)"
+
+  # No published root = dev mode, show computed root
+  if [[ -z "$published_root" ]]; then
+    echo "ℹ️  No published Merkle Root found in docs/REMEMBRANCER.md"
+    if [[ -n "$computed_root" ]]; then
+      echo "→ Computed Merkle Root: $computed_root"
+    fi
+    return 0
+  fi
+
+  # Both roots present = verify integrity
+  if [[ "$computed_root" == "$published_root" ]]; then
+    echo "✅ Audit log integrity verified (root=$computed_root)"
+    return 0
+  else
+    echo "❌ AUDIT LOG TAMPERED — computed=$computed_root published=$published_root" >&2
+    return 1
+  fi
+}
+
+# --- receipts: add v3.0 fields ------------------------------------------------
+record_receipt_v3() {
+  # args: component version artifact keyid tsa_url
+  local component="$1" version="$2" artifact="$3" key="$4" tsa="${5:-$DEFAULT_TSA_URL}"
+  local ts; ts="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  local sha; sha="$(sha256_of "$artifact")"
+  local asc="${artifact}.asc"; local sigsha=""; [[ -f "$asc" ]] && sigsha="$(sha256_of "$asc")"
+  local tsr="${artifact}.tsr"
+
+  cat <<YAML
+---
+schema_version: "3.0"
+type: deployment
+component: ${component}
+version: ${version}
+timestamp: ${ts}
+evidence:
+  artifact: ${artifact}
+  sha256: ${sha}
+signatures:
+  - type: gpg
+    keyid: ${key}
+    sig_file: ${asc}
+    sig_sha256: ${sigsha}
+timestamps:
+  - type: rfc3161
+    tsa: ${tsa}
+    token_file: ${tsr}
+status: active
+---
+YAML
+}
+
 # Main command dispatcher
 main() {
   if [[ $# -eq 0 ]]; then
@@ -331,11 +575,65 @@ main() {
           ;;
       esac
       ;;
+    sign)
+      # remembrancer sign <artifact> --key <id>
+      local artifact="${1:-}"
+      shift || true
+      local key_id=""
+      if [[ "${1:-}" == "--key" ]]; then
+        key_id="${2:-}"
+      fi
+      if [[ -z "$artifact" || -z "$key_id" ]]; then
+        echo "Usage: remembrancer sign <artifact> --key <gpg-key-id>"
+        exit 1
+      fi
+      sign_artifact "$artifact" "$key_id"
+      ;;
+    timestamp)
+      # remembrancer timestamp <artifact> [tsa-url]
+      local artifact="${1:-}"
+      local tsa="${2:-$DEFAULT_TSA_URL}"
+      if [[ -z "$artifact" ]]; then
+        echo "Usage: remembrancer timestamp <artifact> [tsa-url]"
+        exit 1
+      fi
+      timestamp_artifact "$artifact" "$tsa"
+      ;;
+    verify-full)
+      # remembrancer verify-full <artifact>
+      local artifact="${1:-}"
+      if [[ -z "$artifact" ]]; then
+        echo "Usage: remembrancer verify-full <artifact>"
+        exit 1
+      fi
+      verify_full "$artifact"
+      ;;
+    export-proof)
+      # remembrancer export-proof <artifact>
+      local artifact="${1:-}"
+      if [[ -z "$artifact" ]]; then
+        echo "Usage: remembrancer export-proof <artifact>"
+        exit 1
+      fi
+      export_proof "$artifact"
+      ;;
+    verify-audit)
+      # remembrancer verify-audit
+      verify_audit
+      ;;
+    record-receipt-v3)
+      # remembrancer record-receipt-v3 <component> <version> <artifact> <keyid> [tsa-url]
+      if [[ $# -lt 4 ]]; then
+        echo "Usage: remembrancer record-receipt-v3 <component> <version> <artifact> <keyid> [tsa-url]"
+        exit 1
+      fi
+      record_receipt_v3 "$@"
+      ;;
     -h|--help)
       usage
       ;;
     -v|--version)
-      echo "remembrancer v1.0.0 (VaultMesh Covenant Memory)"
+      echo "remembrancer v3.0.0 (VaultMesh Covenant Foundation)"
       ;;
     *)
       echo -e "${RED}❌ Unknown command: $command${NC}"

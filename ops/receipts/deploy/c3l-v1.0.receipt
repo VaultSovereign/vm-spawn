@@ -1,0 +1,23 @@
+---
+type: deployment
+component: c3l
+version: v1.0
+timestamp: 2025-10-19T19:33:40Z
+evidence:
+  artifact: PROPOSAL_MCP_COMMUNICATION_LAYER.md
+  sha256: 7d0451d59b91c30b0caff65b263b7c901dd05d1c2ba844693d47c1c186f64df9
+status: active
+verified_by: remembrancer-cli
+---
+
+This receipt cryptographically attests to the deployment of:
+
+  Component: c3l
+  Version: v1.0
+  Timestamp: 2025-10-19T19:33:40Z
+  SHA256: 7d0451d59b91c30b0caff65b263b7c901dd05d1c2ba844693d47c1c186f64df9
+
+Verification:
+  shasum -a 256 PROPOSAL_MCP_COMMUNICATION_LAYER.md
+
+This memory is recorded in the VaultMesh Covenant Index.
