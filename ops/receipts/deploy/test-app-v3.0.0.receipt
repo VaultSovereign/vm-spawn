@@ -1,0 +1,23 @@
+---
+type: deployment
+component: test-app
+version: v3.0.0
+timestamp: 2025-10-19T20:12:20Z
+evidence:
+  artifact: ops/test-artifacts/test-app.tar.gz
+  sha256: daf975c58917ba77c3f0f5e016c4cb8d59ba7c958adb2123e1034c81da9a170a
+status: active
+verified_by: remembrancer-cli
+---
+
+This receipt cryptographically attests to the deployment of:
+
+  Component: test-app
+  Version: v3.0.0
+  Timestamp: 2025-10-19T20:12:20Z
+  SHA256: daf975c58917ba77c3f0f5e016c4cb8d59ba7c958adb2123e1034c81da9a170a
+
+Verification:
+  shasum -a 256 ops/test-artifacts/test-app.tar.gz
+
+This memory is recorded in the VaultMesh Covenant Index.

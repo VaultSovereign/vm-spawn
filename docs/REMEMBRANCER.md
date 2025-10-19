@@ -3,7 +3,8 @@
 **Purpose:** Cryptographic memory layer for civilization infrastructure  
 **Initialized:** 2025-10-19  
 **Covenant:** Self-verifying, self-auditing, self-attesting systems  
-**Merkle Root:** _(compute with: `python3 ops/lib/merkle.py --compute --from-sqlite ops/data/remembrancer.db`)_
+**Merkle Root:** `0136f28019d21d8c7eb599bd211af488a25ef0ea585401e1ef5b84fa3099e866`  
+**Last Updated:** 2025-10-19 20:18 UTC (post v3.0 testing)
 
 ---
 
