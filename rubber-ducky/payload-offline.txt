@@ -1,0 +1,111 @@
+REM VaultMesh Spawn Elite - Rubber Ducky Self-Contained (Offline Strategy)
+REM Author: VaultSovereign
+REM Target: macOS
+REM Description: Installs VaultMesh from USB (no internet required)
+REM Requires: vm-spawn folder in PAYLOAD/ directory on USB
+
+DELAY 1000
+
+REM Open Terminal via Spotlight (macOS)
+GUI SPACE
+DELAY 800
+STRING terminal
+DELAY 600
+ENTER
+DELAY 2500
+
+REM Find USB mount point
+STRING DUCKY_PATH=$(ls -d /Volumes/DUCKY* /Volumes/*DUCKY* 2>/dev/null | head -1)
+ENTER
+DELAY 500
+
+REM Verify USB is mounted
+STRING if [ -z "$DUCKY_PATH" ]; then echo "❌ Rubber Ducky not found!"; exit 1; fi
+ENTER
+DELAY 500
+
+REM Show USB detection
+STRING echo "🦆 Rubber Ducky detected at: $DUCKY_PATH"
+ENTER
+DELAY 500
+
+REM Copy from USB to system
+STRING echo "📦 Copying VaultMesh from USB..."
+ENTER
+STRING cp -r "$DUCKY_PATH/PAYLOAD/vm-spawn" ~/Downloads/
+ENTER
+DELAY 3000
+
+REM Enter directory
+STRING cd ~/Downloads/vm-spawn
+ENTER
+DELAY 500
+
+REM Make scripts executable
+STRING chmod +x spawn.sh ops/bin/* generators/* *.sh
+ENTER
+DELAY 500
+
+REM Run health check
+STRING clear && ./ops/bin/health-check
+ENTER
+DELAY 3000
+
+REM Show welcome banner
+STRING clear
+ENTER
+DELAY 300
+
+STRING echo "╔═══════════════════════════════════════════════════════════════╗"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "║   🦆  RUBBER DUCKY FORGE - OFFLINE MODE                       ║"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "║   VaultMesh Spawn Elite v2.3 Installed from USB             ║"
+ENTER
+STRING echo "║   Status: ✅ READY (No Internet Required)                     ║"
+ENTER
+STRING echo "║   Rating: 10.0/10 + SOVEREIGN                                ║"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "║   🧠 The forge is portable                                   ║"
+ENTER
+STRING echo "║   ⚔️ The memory is USB-based                                 ║"
+ENTER
+STRING echo "║   🦆 The civilization fits in your pocket                    ║"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "╚═══════════════════════════════════════════════════════════════╝"
+ENTER
+DELAY 300
+
+STRING echo ""
+ENTER
+STRING echo "🚀 Ready to spawn (OFFLINE):"
+ENTER
+STRING echo "   ./spawn.sh my-service service"
+ENTER
+STRING echo ""
+ENTER
+STRING echo "📚 Documentation:"
+ENTER
+STRING echo "   cat START_HERE.md | less"
+ENTER
+STRING echo ""
+ENTER
+STRING echo "💾 Installed from: $DUCKY_PATH"
+ENTER
+STRING echo "💾 Running from: ~/Downloads/vm-spawn"
+ENTER
+STRING echo ""
+ENTER
+STRING echo "🦆 You can now safely eject the Rubber Ducky"
+ENTER
+STRING echo ""
+ENTER
+

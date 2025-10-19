@@ -1,0 +1,90 @@
+REM VaultMesh Spawn Elite - Rubber Ducky Installer (GitHub Strategy)
+REM Author: VaultSovereign
+REM Target: macOS
+REM Description: Auto-installs VaultMesh from GitHub
+REM Repository: https://github.com/VaultSovereign/vm-spawn
+
+DELAY 1000
+
+REM Open Terminal via Spotlight (macOS)
+GUI SPACE
+DELAY 800
+STRING terminal
+DELAY 600
+ENTER
+DELAY 2500
+
+REM Clone repository from GitHub
+STRING cd ~/Downloads && git clone https://github.com/VaultSovereign/vm-spawn.git 2>&1 | tee vm-spawn-install.log
+ENTER
+DELAY 4000
+
+REM Enter directory
+STRING cd vm-spawn
+ENTER
+DELAY 500
+
+REM Make scripts executable
+STRING chmod +x spawn.sh ops/bin/* generators/* *.sh
+ENTER
+DELAY 500
+
+REM Run health check
+STRING clear && ./ops/bin/health-check
+ENTER
+DELAY 3000
+
+REM Show welcome banner
+STRING clear
+ENTER
+DELAY 300
+
+STRING echo "╔═══════════════════════════════════════════════════════════════╗"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "║   🦆  RUBBER DUCKY FORGE ACTIVATED                            ║"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "║   VaultMesh Spawn Elite v2.3 - Ready to Deploy              ║"
+ENTER
+STRING echo "║   Rating: 10.0/10 LITERALLY PERFECT                          ║"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "║   🧠 The Remembrancer watches from USB                       ║"
+ENTER
+STRING echo "║   ⚔️ The covenant deploys at 480 Mbps                        ║"
+ENTER
+STRING echo "║                                                               ║"
+ENTER
+STRING echo "╚═══════════════════════════════════════════════════════════════╝"
+ENTER
+DELAY 300
+
+STRING echo ""
+ENTER
+STRING echo "🚀 Ready to spawn services:"
+ENTER
+STRING echo "   ./spawn.sh my-service service"
+ENTER
+STRING echo ""
+ENTER
+STRING echo "📚 Quick start:"
+ENTER
+STRING echo "   cat START_HERE.md | less"
+ENTER
+STRING echo ""
+ENTER
+STRING echo "🧠 Query memory:"
+ENTER
+STRING echo "   ./ops/bin/remembrancer query 'bash scripts'"
+ENTER
+STRING echo ""
+ENTER
+STRING echo "💾 Installed in: ~/Downloads/vm-spawn"
+ENTER
+STRING echo ""
+ENTER
+
