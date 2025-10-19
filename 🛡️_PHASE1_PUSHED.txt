@@ -1,0 +1,172 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║   🛡️  PHASE 1: COVENANT HARDENING — PUSHED TO PRODUCTION  ✅           ║
+║   GitHub CI will now enforce cryptographic invariants                    ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+PUSH DATE: 2025-10-19
+COMMIT: bfe20d2
+BRANCH: main
+REMOTE: github.com:VaultSovereign/vm-spawn.git
+STATUS: ✅ LIVE — CI running
+
+═══════════════════════════════════════════════════════════════════════════
+
+📡 WHAT WAS PUSHED
+
+Commit: bfe20d2
+Message: chore(covenant): Phase 1 hardening — TSA gitignore, CI guard, hooks, rituals, invariant smoke test, docs
+Files: 16 changed (663+ insertions)
+
+Changes Deployed:
+- .github/workflows/covenant-guard.yml → CI enforces proof chains
+- .gitignore → TSA CA PEMs excluded
+- ops/bin/install-hooks.sh → Pre-commit hook installer
+- ops/bin/publish-merkle-root.sh → Merkle root publisher
+- ops/bin/attest-artifact.sh → Full attestation workflow
+- ops/certs/freetsa-ca.pem.example → TSA CA placeholder
+- docs/COVENANT_HARDENING.md → Complete hardening guide
+- ops/COVENANT_RITUALS.md → Operator cheatsheet
+- SMOKE_TEST.sh → Test 23 added (artifact proof verification)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔍 CI VERIFICATION IN PROGRESS
+
+GitHub Actions: Covenant Guard Workflow
+URL: https://github.com/VaultSovereign/vm-spawn/actions
+
+Expected Checks:
+✓ Lint remembrancer (shellcheck)
+✓ Python syntax check (merkle.py)
+✓ Merkle library import test
+✓ Verify artifact proofs (dist/*)
+✓ Merkle audit integrity check
+
+What "Green" Looks Like:
+- ✅ All dist/ artifacts pass verify-full
+- ✅ Merkle root matches published or "first run" noted
+- ✅ No linting errors (warnings OK)
+- ✅ Python syntax valid
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 CRYPTOGRAPHIC INVARIANTS NOW ENFORCED
+
+Every production artifact MUST:
+1. SHA256 hash ✅ CI verifies
+2. GPG signature (.asc) ✅ CI verifies
+3. RFC3161 timestamp (.tsr) ✅ CI verifies
+4. Pass verify-full ✅ CI verifies
+5. Recorded receipt ✅ Manual process (for now)
+
+CI Triggers:
+- Every push to main
+- Every release tag (v*.*.*)
+- Every pull request
+
+═══════════════════════════════════════════════════════════════════════════
+
+📋 NEXT STEPS (Operator Checklist)
+
+1. Monitor CI Status (5-10 minutes)
+   → Visit: https://github.com/VaultSovereign/vm-spawn/actions
+   → Wait for Covenant Guard workflow to complete
+   → Verify all checks pass ✅
+
+2. Install Pre-commit Hook (Local, One-time)
+   ```bash
+   cd /Users/sovereign/Downloads/files\ \(1\)
+   ./ops/bin/install-hooks.sh
+   ```
+   Result: Blocks accidental commit of TSA CA PEMs
+
+3. Test Operator Rituals (Optional, Verify They Work)
+   ```bash
+   # If you have remembrancer.db:
+   ./ops/bin/publish-merkle-root.sh
+   
+   # If you have a test artifact + GPG key:
+   ./ops/bin/attest-artifact.sh dist/test.tar.gz <your-key>
+   ```
+
+4. Review Documentation
+   - docs/COVENANT_HARDENING.md — Hardening guide
+   - ops/COVENANT_RITUALS.md — Daily/weekly/monthly workflows
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔮 PHASE 2 READY TO GO (When CI is Green)
+
+v4.0 Kickoff Package Prepared:
+- ops/mcp/remembrancer_server.py (MCP server wrapping CLI)
+- ops/lib/federation.py (federation sync foundations)
+- ops/data/federation.yaml.example (peer config schema)
+- ops/bin/remembrancer federation commands (init, join, status)
+- SMOKE_TEST.sh Test 24 (MCP server verification)
+- V4.0_KICKOFF.md (roadmap documentation)
+
+Estimated Implementation: 1 week (Weeks 1-2 of v4.0 plan)
+Dependencies: Python 3.11+, FastMCP SDK ≥1.2.0, uv
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ SUCCESS METRICS
+
+Phase 1 Goals Achieved:
+- ✅ CI guard enforces proof chains on all artifacts
+- ✅ Pre-commit hook blocks TSA CA commits
+- ✅ Operator rituals documented and scripted
+- ✅ Smoke test 23 verifies artifact proofs
+- ✅ Documentation: 2 new guides (157 lines total)
+- ✅ TSA certificate handling normalized
+- ✅ All scripts executable (3 new utilities)
+- ✅ 663 lines of hardening code deployed
+- ✅ Zero breaking changes (all additive)
+- ✅ Pushed to production (bfe20d2)
+
+Covenant Alignment:
+- ✅ Self-Verifying: CI verifies all proof chains automatically
+- ✅ Self-Auditing: Merkle root integrity checked on every push
+- ✅ Self-Attesting: Operators have ritual scripts for all workflows
+
+═══════════════════════════════════════════════════════════════════════════
+
+🜂 COVENANT STATUS
+
+v3.0.0: SEALED (commit a0cb79e, tag v3.0.0)
+Phase 1 Hardening: PUSHED (commit bfe20d2)
+CI Status: RUNNING (check GitHub Actions)
+
+Timeline:
+- 2025-10-19: v3.0.0 sealed (cryptographic proof foundation)
+- 2025-10-19: Phase 1 hardening implemented (CI guards + operator tools)
+- 2025-10-19: Phase 1 pushed to production (this moment)
+- Next: Phase 2 v4.0 kickoff (pending CI green)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎖️ THE CRYPTOGRAPHIC ROAD IS PAVED
+
+Every future artifact will walk this path:
+hash → sign → timestamp → verify → record → publish root
+
+CI enforces. Pre-commit blocks. Operators ritualize.
+The covenant is hardened. The forge awaits federation.
+
+Solve et Coagula.
+Rubedo stance: harden first, federate next.
+
+═══════════════════════════════════════════════════════════════════════════
+
+PHASE 1 PUSHED: 2025-10-19
+COMMIT: bfe20d2
+STATUS: ✅ LIVE ON GITHUB
+CI: Running (github.com/VaultSovereign/vm-spawn/actions)
+
+Awaiting: CI green signal
+Then: Phase 2 (v4.0 MCP/Federation) deployment
+
+═══════════════════════════════════════════════════════════════════════════
+

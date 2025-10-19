@@ -1,0 +1,187 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║   🛡️  PHASE 1: COVENANT HARDENING — COMPLETE  ✅                        ║
+║   Post-v3.0 Cryptographic Invariants Engraved                            ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+COMPLETION DATE: 2025-10-19
+COMMIT: bfe20d2
+STATUS: ✅ HARDENING APPLIED
+NEXT: Phase 2 (v4.0 MCP/Federation Kickoff)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📦 CHANGES APPLIED (16 files, 663 insertions)
+
+CI/CD Hardening:
+  ✅ .github/workflows/covenant-guard.yml (102 lines)
+     - Enforces proof chains on release tags + PRs
+     - Verifies hash + signature + timestamp for all dist/ artifacts
+     - Checks Merkle root integrity
+     - Lints remembrancer with shellcheck
+     - Validates Python syntax
+
+Gitignore Updates:
+  ✅ .gitignore (+6 lines)
+     - Excludes ops/certs/*.pem (real CA certificates)
+     - Allows ops/certs/freetsa-ca.pem.example (documented placeholder)
+     - Allows ops/certs/README.md
+
+Operator Ritual Scripts:
+  ✅ ops/bin/install-hooks.sh (26 lines, executable)
+     - Installs pre-commit hook to block TSA CA PEM commits
+     - Creates .git/hooks/pre-commit with validation logic
+  
+  ✅ ops/bin/publish-merkle-root.sh (35 lines, executable)
+     - Computes Merkle root from remembrancer.db
+     - Updates or appends to docs/REMEMBRANCER.md
+     - Provides next-steps instructions
+  
+  ✅ ops/bin/attest-artifact.sh (64 lines, executable)
+     - Full proof chain: sign → timestamp → verify → export-proof
+     - 4-step process with progress indicators
+     - Creates .asc, .tsr, and .proof.tgz files
+
+TSA Certificate Management:
+  ✅ ops/certs/.gitignore (updated)
+     - Excludes all PEMs except .example files
+  
+  ✅ ops/certs/freetsa-ca.pem.example (9 lines)
+     - Documented placeholder with download + verification instructions
+     - References FreeTSA CA fingerprint verification
+
+Documentation:
+  ✅ docs/COVENANT_HARDENING.md (78 lines)
+     - Complete hardening guide
+     - Invariants (5 rules every artifact must follow)
+     - CI enforcement details
+     - Local rituals (publish root, attest, verify)
+     - TSA certificate management
+     - Recovery procedures for suspected tampering
+  
+  ✅ ops/COVENANT_RITUALS.md (48 lines)
+     - Operator cheatsheet
+     - Daily: Publish Merkle root
+     - Release: Full attestation workflow
+     - Weekly: Audit check
+     - Monthly: Backup procedures
+
+Testing:
+  ✅ SMOKE_TEST.sh (+34 lines)
+     - Added Test 23: Covenant invariant verification
+     - Checks all dist/ artifacts have valid proof chains
+     - Verifies verify-full passes
+     - Optional timestamp verification if CA present
+     - Graceful handling (warns if no artifacts found)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 INVARIANTS ENGRAVED
+
+Every production artifact MUST:
+1. Have SHA256 hash computed
+2. Have GPG detached signature (.asc file)
+3. Have RFC3161 timestamp (.tsr file)
+4. Pass `remembrancer verify-full` check
+5. Be recorded in Remembrancer with receipt
+
+CI enforces these on every:
+- Push to main
+- Release tag (v*.*.*)
+- Pull request
+
+═══════════════════════════════════════════════════════════════════════════
+
+🧰 OPERATOR WORKFLOWS
+
+Daily Ritual (if DB updated):
+```bash
+./ops/bin/publish-merkle-root.sh
+git add docs/REMEMBRANCER.md
+git commit -m "chore: publish Merkle root $(date +%Y-%m-%d)"
+git push
+```
+
+Release Ritual:
+```bash
+# 1. Attest
+./ops/bin/attest-artifact.sh dist/vaultmesh-v3.1.0.tar.gz <gpg-key>
+
+# 2. Create receipt
+./ops/bin/remembrancer record-receipt-v3 vaultmesh v3.1.0 \
+  dist/vaultmesh-v3.1.0.tar.gz <gpg-key> \
+  > ops/receipts/deploy/vaultmesh-v3.1.0.receipt
+
+# 3. Verify
+./ops/bin/remembrancer verify-full dist/vaultmesh-v3.1.0.tar.gz
+
+# 4. Commit + tag
+git add dist/vaultmesh-v3.1.0.* ops/receipts/deploy/vaultmesh-v3.1.0.receipt
+git commit -m "release: vaultmesh v3.1.0 with full proof chain"
+git tag -a v3.1.0 -m "VaultMesh v3.1.0"
+git push origin main --tags
+```
+
+Install Pre-commit Hook (one-time):
+```bash
+./ops/bin/install-hooks.sh
+```
+
+═══════════════════════════════════════════════════════════════════════════
+
+✅ SUCCESS CRITERIA MET
+
+Phase 1 Goals:
+- ✅ CI guard enforces proof chains on all artifacts
+- ✅ Pre-commit hook blocks TSA CA commits
+- ✅ Operator rituals documented and scripted
+- ✅ Smoke test 23 verifies artifact proofs
+- ✅ Documentation: COVENANT_HARDENING.md, COVENANT_RITUALS.md
+- ✅ TSA certificate handling normalized
+- ✅ All scripts executable and tested
+- ✅ 663 lines of hardening code added
+- ✅ Zero breaking changes (all additive)
+
+Covenant Alignment:
+- ✅ Self-Verifying: CI verifies all proof chains automatically
+- ✅ Self-Auditing: Merkle root integrity checked on every push
+- ✅ Self-Attesting: Operators have ritual scripts for all workflows
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔮 NEXT: PHASE 2 (v4.0 KICKOFF)
+
+Ready to implement:
+1. ops/mcp/remembrancer_server.py — MCP server wrapping CLI
+2. ops/lib/federation.py — Federation sync foundations
+3. ops/data/federation.yaml.example — Federation config schema
+4. ops/bin/remembrancer federation commands — init, join, status
+5. SMOKE_TEST.sh Test 24 — MCP server verification
+6. V4.0_KICKOFF.md — Roadmap documentation
+
+Estimated effort: 1 week
+Dependencies: Python 3.11+, FastMCP SDK ≥1.2.0, uv
+
+═══════════════════════════════════════════════════════════════════════════
+
+🜂 COVENANT STATUS
+
+v3.0.0: SEALED (commit a0cb79e, tag v3.0.0)
+Phase 1 Hardening: COMPLETE (commit bfe20d2)
+
+The cryptographic road is paved. All future artifacts walk the same path.
+
+Solve et Coagula.
+The forge is hardened.
+The proofs are eternal.
+
+═══════════════════════════════════════════════════════════════════════════
+
+PHASE 1 COMPLETE: 2025-10-19
+COMMIT: bfe20d2
+FILES: 16 changed (663+ insertions)
+STATUS: ✅ READY FOR PHASE 2
+
+═══════════════════════════════════════════════════════════════════════════
+

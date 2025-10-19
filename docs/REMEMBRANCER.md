@@ -3,7 +3,6 @@
 **Purpose:** Cryptographic memory layer for civilization infrastructure  
 **Initialized:** 2025-10-19  
 **Covenant:** Self-verifying, self-auditing, self-attesting systems  
-**Merkle Root:** `0136f28019d21d8c7eb599bd211af488a25ef0ea585401e1ef5b84fa3099e866`  
 **Last Updated:** 2025-10-19 20:18 UTC (post v3.0 testing)
 
 ---
@@ -360,3 +359,5 @@ The Remembrancer MCP server is the **knowledge backbone** of C3L:
 **MCP Integration Status:** ✅ Designed, ready for implementation  
 **Federation Status:** 🚧 Phase 4 roadmap item
 
+
+Merkle Root: 

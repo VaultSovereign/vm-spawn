@@ -1,0 +1,198 @@
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                                                                           ║
+║   ⚡ PHASE 2: v4.0 KICKOFF — READY TO DEPLOY  ⚡                        ║
+║   Federation Package Prepared, Awaiting Signal                           ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+
+PREPARATION DATE: 2025-10-19
+STATUS: ⏳ AWAITING CI GREEN + SOVEREIGN SIGNAL
+PHASE 1: ✅ PUSHED (commit bfe20d2)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 CURRENT STATE
+
+Phase 1 Status:
+- ✅ Pushed to GitHub (bfe20d2)
+- ✅ Pre-commit hook installed locally
+- ⏳ CI running (Covenant Guard workflow)
+- ⏳ Awaiting CI green signal
+
+Local Readiness:
+- ✅ Pre-commit hook: Installed
+- ✅ Python toolchain: Ready for MCP development
+- ✅ Git status: Clean (on main branch)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📦 PHASE 2 PACKAGE READY TO DEPLOY
+
+When you say **"PROCEED v4.0"** or **"BEGIN PHASE 2"**, I will deploy:
+
+Week 1: Remembrancer MCP Server (~500 lines)
+├── ops/mcp/remembrancer_server.py
+│   ├── Resources: memory://, adr://, receipt://, merkle://root
+│   ├── Tools: search_memories, verify_artifact, sign_artifact, record_decision
+│   ├── Prompts: adr_template, deployment_postmortem
+│   └── Transports: stdio + optional HTTP
+│
+└── Testing: Smoke test 24 (MCP server boot/respond)
+
+Week 2: Federation Foundations (~400 lines)
+├── ops/lib/federation.py
+│   ├── MemoryProjection (node state snapshot)
+│   ├── FederationConfig (load federation.yaml)
+│   ├── MerkleDiff (identify missing leaves)
+│   └── MemoryValidator (verify signatures)
+│
+├── ops/data/federation.yaml.example
+│   └── Peer config schema (node_id, mcp_url, trust_anchor)
+│
+├── ops/bin/remembrancer (extend)
+│   ├── federation init --node-id <uuid>
+│   ├── federation join --peer <url> --trust-anchor <key>
+│   └── federation status
+│
+└── V4.0_KICKOFF.md
+    └── Roadmap, progress tracking, operator notes
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔍 WHAT TO WATCH FOR (CI GREEN)
+
+GitHub Actions: https://github.com/VaultSovereign/vm-spawn/actions
+
+Expected Results:
+✓ Lint remembrancer (shellcheck) — warnings OK, no errors
+✓ Python syntax (merkle.py) — compiles clean
+✓ Merkle library import — imports without error
+✓ Verify artifact proofs — all dist/* pass verify-full
+✓ Merkle audit integrity — computed = published OR "first run"
+
+Green = All checks passed ✅
+Yellow = Some warnings (acceptable)
+Red = Blocking issue (investigate)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🛠️ OPTIONAL: STAGE THE GROUND (NON-INVASIVE PREP)
+
+You can safely run these while CI completes:
+
+Create v4.0 Branch (optional):
+```bash
+git checkout -b v4.0-kickoff
+git push -u origin v4.0-kickoff
+```
+
+Verify Python Toolchain:
+```bash
+python3 --version        # Need 3.11+
+pip3 install --upgrade mcp
+```
+
+Install uv (for MCP testing):
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.cargo/env  # or restart shell
+uv --version
+```
+
+Stage RabbitMQ (for future federation tests):
+```bash
+docker compose -f templates/message-queue/rabbitmq-compose.yml up -d
+# Starts: RabbitMQ + Management UI (localhost:15672)
+```
+
+═══════════════════════════════════════════════════════════════════════════
+
+📋 DEPENDENCIES FOR PHASE 2
+
+Required (must have):
+- ✅ Python 3.11+ (async/await, type hints)
+- ✅ pip3 (package manager)
+- ✅ git (version control)
+
+Phase 2 Specific (will install during deployment):
+- ⏳ FastMCP SDK ≥1.2.0 (pip install mcp)
+- ⏳ uv (MCP development tool)
+
+Optional (for later phases):
+- RabbitMQ or NATS (federation message bus)
+- Docker (for service orchestration)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 PHASE 2 SUCCESS CRITERIA
+
+Week 1 Goals:
+- ✅ ops/mcp/remembrancer_server.py created and functional
+- ✅ MCP server responds to stdio (via `uv run mcp dev`)
+- ✅ Resources exposed: memory://, adr://, receipt://, merkle://root
+- ✅ Tools working: search_memories, verify_artifact, sign_artifact
+- ✅ Smoke test 24 passes (MCP server boot check)
+
+Week 2 Goals:
+- ✅ ops/lib/federation.py foundations laid
+- ✅ ops/data/federation.yaml.example schema defined
+- ✅ CLI commands: federation init, join, status
+- ✅ V4.0_KICKOFF.md documented
+- ✅ Zero breaking changes to v3.0
+
+Covenant Alignment:
+- ✅ Self-Verifying: MCP resources expose provable data
+- ✅ Self-Auditing: Federation events logged with provenance
+- ✅ Self-Attesting: MCP tools provide cryptographic verification
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚡ THE SIGNAL
+
+When you're ready to deploy Phase 2, say one of these:
+
+- **"PROCEED v4.0"**
+- **"BEGIN PHASE 2"**
+- **"DEPLOY v4.0 KICKOFF"**
+- **"START FEDERATION"**
+
+I will immediately:
+1. Create all Phase 2 files (~900 lines total)
+2. Make scripts executable
+3. Add smoke test 24
+4. Create documentation
+5. Commit with message: "feat(v4.0): MCP server + federation foundations"
+6. Push to branch or main (your choice)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🜂 COVENANT STATUS
+
+v3.0.0: SEALED (commit a0cb79e, tag v3.0.0)
+Phase 1 Hardening: PUSHED (commit bfe20d2, CI running)
+Phase 2 v4.0 Kickoff: READY (awaiting signal)
+
+Timeline:
+- 2025-10-19: v3.0.0 sealed (cryptographic proof)
+- 2025-10-19: Phase 1 hardening (CI guards + rituals)
+- 2025-10-19: Phase 1 pushed (this moment)
+- Next: Phase 2 v4.0 kickoff (awaiting your command)
+
+The cryptographic road is paved.
+The covenant enforces itself.
+The federation awaits the breath.
+
+═══════════════════════════════════════════════════════════════════════════
+
+Solve et Coagula.
+Rubedo stance: hardened foundation, federation next.
+Tem watches the bus.
+
+═══════════════════════════════════════════════════════════════════════════
+
+PHASE 2 STATUS: ⚡ READY
+AWAITING: CI green + Sovereign signal
+PACKAGE: ~900 lines prepared (MCP server + federation)
+
+═══════════════════════════════════════════════════════════════════════════
+
