@@ -1,0 +1,28 @@
+name: Covenants
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  judge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Prepare
+        run: |
+          chmod +x ops/bin/* || true
+      - name: Health
+        run: ./ops/bin/health-check
+      - name: Assert Machine Truth
+        run: ./ops/bin/assert-tests-consistent
+      - name: Covenants
+        run: make covenant
+      - name: Publish badge (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ops-status-badge
+          path: ops/status/badge.json
+

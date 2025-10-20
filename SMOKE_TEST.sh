@@ -586,3 +586,8 @@ else
   exit 1
 fi
 
+
+# [VaultMesh] Machine-readable test summary for CI
+if [ -n "${TESTS_PASSED:-}" ] && [ -n "${TESTS_RUN:-}" ]; then
+  echo "SMOKE_JSON={\"pass\":${TESTS_PASSED},\"total\":${TESTS_RUN}}"
+fi

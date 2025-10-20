@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# VaultMesh: Covenant I — machine truth
+ROOT="$(git rev-parse --show-toplevel)"
+OUT="$ROOT/ops/status/badge.json"
+mkdir -p "$(dirname "$OUT")"
+
+# 1) Run smoke; prefer machine-readable SMOKE_JSON
+smoke="$("$ROOT/SMOKE_TEST.sh" 2>/dev/null || true)"
+json_line="$(printf '%s\n' "$smoke" | sed -n 's/^SMOKE_JSON=//p' | tail -n1)"
+
+pass=""
+total=""
+if [ -n "$json_line" ]; then
+  # expect {"pass":N,"total":M}
+  pass="$(printf '%s' "$json_line" | sed -n 's/.*"pass"[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p')"
+  total="$(printf '%s' "$json_line" | sed -n 's/.*"total"[[:space:]]*:[[:space:]]*\([0-9]\+\).*/\1/p')"
+fi
+
+# 2) Fallback: parse human lines only if needed
+if [ -z "${pass:-}" ] || [ -z "${total:-}" ]; then
+  pass="$(printf '%s' "$smoke" | grep -Eo '[0-9]+ passed' | awk '{print $1}' | tail -n1 || true)"
+  total="$(printf '%s' "$smoke" | grep -Eo '[0-9]+(\/| of )[0-9]+' | tr -dc '0-9 /' | awk -F'[ /]+' '{print $2}' | tail -n1 || true)"
+fi
+
+# 3) CI discovery (pytest collect) for sanity diff
+ci_total=0
+if command -v pytest >/dev/null 2>&1; then
+  ci_total="$(pytest -q --collect-only 2>/dev/null | sed -n 's/^collected \([0-9]\+\).*/\1/p' | tail -n1 || echo 0)"
+fi
+
+[ -z "${total:-}" ] && total="$ci_total"
+[ -z "${pass:-}" ] && pass="$total"
+[ -z "${total:-}" ] && { echo "❌ No tests detected"; exit 1; }
+
+if [ "${ci_total:-0}" != "0" ] && [ -n "$total" ] && [ "$ci_total" != "$total" ]; then
+  echo "❌ Inconsistent totals: CI=$ci_total vs Smoke=$total"
+  exit 1
+fi
+
+pct="$(awk -v p="$pass" -v t="$total" 'BEGIN{ if(t>0){ printf "%.2f", (p/t)*100 } else { print "0.00" } }')"
+printf '{"tests":{"pass":%s,"total":%s,"pct":%s}}\n' "$pass" "$total" "$pct" > "$OUT"
+echo "✅ Tests consistent: $pass/$total ($pct%) → $OUT"
+

@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Idempotently append SMOKE_JSON emission to SMOKE_TEST.sh
+ROOT="$(git rev-parse --show-toplevel)"
+F="$ROOT/SMOKE_TEST.sh"
+[ -f "$F" ] || { echo "SMOKE_TEST.sh not found"; exit 1; }
+if grep -q '^SMOKE_JSON=' "$F"; then
+  echo "SMOKE_JSON already present; nothing to do."
+  exit 0
+fi
+cat >> "$F" <<'EOF'
+
+# [VaultMesh] Machine-readable test summary for CI
+if [ -n "${TESTS_PASSED:-}" ] && [ -n "${TESTS_RUN:-}" ]; then
+  echo "SMOKE_JSON={\"pass\":${TESTS_PASSED},\"total\":${TESTS_RUN}}"
+fi
+EOF
+echo "✅ SMOKE_TEST.sh patched with SMOKE_JSON output"
+

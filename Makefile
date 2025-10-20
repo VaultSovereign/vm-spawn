@@ -1,6 +1,9 @@
 # VaultMesh — Sovereign Infrastructure Forge
 # Makefile for covenant rituals and development workflows
 
+# VaultMesh Covenants
+include ops/make.d/covenants.mk
+
 .PHONY: help codex-seal codex-verify test health
 
 # Default GPG key (override with: make codex-seal KEY=YOUR_KEY_ID)

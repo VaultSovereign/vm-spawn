@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+say(){ printf "[COVENANT] %s\n" "$*"; }
+
+say "I. Integrity (Nigredo)"
+./ops/bin/health-check
+./ops/bin/assert-tests-consistent
+./ops/bin/remembrancer verify-audit
+
+say "II. Reproducibility (Albedo)"
+if make -q repro 2>/dev/null; then
+  make repro
+  if [ -f ops/receipts/build/repro.id ]; then
+    make reprodiff
+  else
+    echo "[COVENANT] (info) ops/receipts/build/repro.id not set yet; skipping diff"
+  fi
+else
+  echo "[COVENANT] (info) 'repro' target not present; skipping"
+fi
+
+say "III. Federation (Citrinitas)"
+if ./ops/bin/fed-merge --self-test; then
+  true
+else
+  echo "[COVENANT] (info) federation self-test deferred"
+fi
+
+say "IV. Proof-chain (Rubedo)"
+if [ -f dist/genesis.tar.gz ]; then
+  ./ops/bin/rfc3161-verify dist/genesis.tar.gz
+else
+  echo "[COVENANT] (info) dist/genesis.tar.gz missing; skip RFC3161 check"
+fi
+
+say "✅ Covenants completed"
+

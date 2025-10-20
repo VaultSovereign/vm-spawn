@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+TAG="${1:-v4.1-genesis}"
+GENESIS="GENESIS"
+META="GENESIS.yaml"
+mkdir -p dist
+
+git tag -s "$TAG" -m "VaultMesh Genesis" || true
+git archive --format=tar "$TAG" | sha256sum | awk '{print $1}' > "$GENESIS"
+EPOCH="$(git log -1 --pretty=%ct "$TAG")"
+
+cat > "$META" <<YAML
+genesis:
+  repo: $(git config --get remote.origin.url)
+  tag: $TAG
+  commit: $(git rev-parse "$TAG")
+  tree_hash_method: "git archive --format=tar $TAG | sha256sum"
+  source_date_epoch: $EPOCH
+  tsas:
+    - name: public
+      url: ${REMEMBRANCER_TSA_URL_1:-unset}
+    - name: enterprise
+      url: ${REMEMBRANCER_TSA_URL_2:-unset}
+  operator_key_id: ${REMEMBRANCER_KEY_ID:-unset}
+  verification:
+    gpg_verify: "gpg --verify dist/genesis.tar.gz.asc dist/genesis.tar.gz"
+    ts_verify_public: "openssl ts -verify -in dist/genesis.tar.gz.tsr -data dist/genesis.tar.gz -CAfile ops/certs/cache/public.ca.pem -untrusted ops/certs/cache/public.tsa.crt"
+    ts_verify_enterprise: "openssl ts -verify -in dist/genesis.tar.gz.tsr -data dist/genesis.tar.gz -CAfile ops/certs/cache/enterprise.ca.pem -untrusted ops/certs/cache/enterprise.tsa.crt"
+YAML
+
+tar czf dist/genesis.tar.gz "$GENESIS" "$META"
+./ops/bin/remembrancer sign dist/genesis.tar.gz --key "${REMEMBRANCER_KEY_ID:?}"
+./ops/bin/remembrancer timestamp dist/genesis.tar.gz
+REMEMBRANCER_TSA_URL="${REMEMBRANCER_TSA_URL_2:-}" ./ops/bin/remembrancer timestamp dist/genesis.tar.gz || true
+./ops/bin/rfc3161-verify dist/genesis.tar.gz
+
+./ops/bin/remembrancer record deploy --component vaultmesh --version "$TAG" \
+  --sha256 "$(sha256sum dist/genesis.tar.gz | awk '{print $1}')" \
+  --evidence dist/genesis.tar.gz
+./ops/bin/remembrancer verify-audit
+echo "✅ GENESIS sealed: $TAG"
+

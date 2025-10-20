@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# VaultMesh: Covenant IV — independent RFC3161 verification (dual-rail)
+A="${1:?artifact missing}"; TSR="${A}.tsr"; TSQ="${A}.tsq"
+ROOT="$(git rev-parse --show-toplevel)"
+CACHE="$ROOT/ops/certs/cache"
+[ -f "$TSR" ] || { echo "ERROR: $TSR missing"; exit 1; }
+
+verify_with() {
+  local name="$1"
+  local ca="$CACHE/${name}.ca.pem"
+  local tsa="$CACHE/${name}.tsa.crt"
+  [ -f "$ca" ] && [ -f "$tsa" ] || return 1
+  if [ -f "$TSQ" ]; then
+    openssl ts -verify -in "$TSR" -queryfile "$TSQ" -CAfile "$ca" -untrusted "$tsa"
+  else
+    openssl ts -verify -in "$TSR" -data "$A" -CAfile "$ca" -untrusted "$tsa"
+  fi
+}
+
+verify_with public     && { echo "✅ RFC3161 verified via public TSA"; exit 0; }
+verify_with enterprise && { echo "✅ RFC3161 verified via enterprise TSA"; exit 0; }
+echo "ERROR: RFC3161 verification failed on all configured chains"
+exit 1
+

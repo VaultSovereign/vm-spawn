@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# VaultMesh: Covenant IV substrate — fetch & pin TSA certs (CA + TSA signer)
+ROOT="$(git rev-parse --show-toplevel)"
+CACHE="$ROOT/ops/certs/cache"
+mkdir -p "$CACHE"
+
+need() { command -v "$1" >/dev/null 2>&1 || { echo "❌ require $1"; exit 1; }; }
+need curl; need openssl
+
+fetch() { curl -fsSL "$1" -o "$2"; }
+spki_pin() {
+  openssl x509 -in "$1" -pubkey -noout \
+  | openssl pkey -pubin -outform der \
+  | openssl dgst -sha256 -binary | base64
+}
+
+echo "→ Public TSA (if configured)…"
+if [ -n "${REMEMBRANCER_TSA_CA_CERT_1:-}" ]; then
+  fetch "$REMEMBRANCER_TSA_CA_CERT_1" "$CACHE/public.ca.pem"
+  if [ -n "${REMEMBRANCER_TSA1_CA_PIN_B64:-}" ]; then
+    got="$(spki_pin "$CACHE/public.ca.pem")"
+    [ "$got" = "$REMEMBRANCER_TSA1_CA_PIN_B64" ] || { echo "❌ SPKI mismatch (public CA)"; exit 1; }
+  fi
+fi
+if [ -n "${REMEMBRANCER_TSA_CERT_1:-}" ]; then
+  fetch "$REMEMBRANCER_TSA_CERT_1" "$CACHE/public.tsa.crt"
+  if [ -n "${REMEMBRANCER_TSA1_TSA_PIN_B64:-}" ]; then
+    got="$(spki_pin "$CACHE/public.tsa.crt")"
+    [ "$got" = "$REMEMBRANCER_TSA1_TSA_PIN_B64" ] || { echo "❌ SPKI mismatch (public TSA)"; exit 1; }
+  fi
+fi
+
+echo "→ Enterprise TSA (if configured)…"
+if [ -n "${REMEMBRANCER_TSA_CA_CERT_2:-}" ]; then
+  fetch "$REMEMBRANCER_TSA_CA_CERT_2" "$CACHE/enterprise.ca.pem"
+  if [ -n "${REMEMBRANCER_TSA2_CA_PIN_B64:-}" ]; then
+    got="$(spki_pin "$CACHE/enterprise.ca.pem")"
+    [ "$got" = "$REMEMBRANCER_TSA2_CA_PIN_B64" ] || { echo "❌ SPKI mismatch (enterprise CA)"; exit 1; }
+  fi
+fi
+if [ -n "${REMEMBRANCER_TSA_CERT_2:-}" ]; then
+  fetch "$REMEMBRANCER_TSA_CERT_2" "$CACHE/enterprise.tsa.crt"
+  if [ -n "${REMEMBRANCER_TSA2_TSA_PIN_B64:-}" ]; then
+    got="$(spki_pin "$CACHE/enterprise.tsa.crt")"
+    [ "$got" = "$REMEMBRANCER_TSA2_TSA_PIN_B64" ] || { echo "❌ SPKI mismatch (enterprise TSA)"; exit 1; }
+  fi
+fi
+echo "✅ TSA bootstrap complete → $CACHE"
+

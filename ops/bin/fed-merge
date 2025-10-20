@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# Deterministic merge wrapper (Phase I)
+ROOT="$(git rev-parse --show-toplevel)"
+PY="$ROOT/ops/lib/federation_merge.py"
+
+if [ "${1:-}" = "--self-test" ]; then
+  python3 "$PY" --self-test
+  exit 0
+fi
+
+LEFT="${1:?left log json required}"
+RIGHT="${2:?right log json required}"
+OUT="${3:-$ROOT/ops/receipts/merge/merge.receipt}"
+
+python3 "$PY" --left "$LEFT" --right "$RIGHT" --out "$OUT"
+echo "✅ MERGE_RECEIPT → $OUT"
+

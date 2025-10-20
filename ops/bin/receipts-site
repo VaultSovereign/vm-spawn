@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -euo pipefail
+ROOT="$(git rev-parse --show-toplevel)"
+DST="$ROOT/docs/receipts"
+mkdir -p "$DST"
+
+MERKLE="$(./ops/bin/remembrancer verify-audit 2>/dev/null | awk '/Merkle root/{print $3}' | tail -n1)"
+[ -z "$MERKLE" ] && MERKLE="unknown"
+
+{
+  echo "# VaultMesh Receipts"
+  echo
+  echo "**Current Merkle root:** \`$MERKLE\`"
+  echo
+  find "$ROOT/ops/receipts" -type f -name '*.receipt' | sort | while read -r f; do
+    h="$(sha256sum "$f" | awk '{print $1}')"
+    echo "- $(basename "$f"): \`$h\`"
+  done
+  cat <<'MD'
+
+### Verify examples
+```bash
+gpg --verify dist/genesis.tar.gz.asc dist/genesis.tar.gz
+openssl ts -reply -in dist/genesis.tar.gz.tsr -text
+openssl ts -verify -in dist/genesis.tar.gz.tsr -data dist/genesis.tar.gz \
+  -CAfile ops/certs/cache/public.ca.pem -untrusted ops/certs/cache/public.tsa.crt
+```
+MD
+} > "$DST/index.md"
+echo "✅ Receipts index → $DST/index.md"
+
