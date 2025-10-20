@@ -1,0 +1,83 @@
+{
+  "version": "1.0",
+  "chainId": "1",
+  "note": {
+    "title": "VaultMesh Genesis v4.1 - Cryptographic Memory Standard Adopted",
+    "description": "DAO has adopted VaultMesh Remembrancer as the official memory standard. All governance decisions will be cryptographically attested with GPG signatures, dual RFC 3161 timestamps, and Merkle audit receipts.",
+    "metadata": {
+      "genesis": {
+        "version": "v4.1-genesis",
+        "commit": "a7d97d0",
+        "merkle_root": "d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea",
+        "sealed_date": "2025-10-20",
+        "artifact": "dist/genesis.tar.gz"
+      },
+      "verification": {
+        "gpg_signature": "dist/genesis.tar.gz.asc",
+        "rfc3161_timestamp": "dist/genesis.tar.gz.tsr",
+        "independent_verify": "./ops/bin/rfc3161-verify dist/genesis.tar.gz"
+      },
+      "infrastructure": {
+        "health_status": "16/16 passing",
+        "test_status": "10/10 (100%)",
+        "covenant_status": "All operational"
+      },
+      "tsas": [
+        {
+          "name": "public",
+          "url": "https://freetsa.org/tsr",
+          "ca_cert": "ops/certs/cache/public.ca.pem",
+          "tsa_cert": "ops/certs/cache/public.tsa.crt"
+        },
+        {
+          "name": "enterprise",
+          "url": "<configured_on_deployment>",
+          "ca_cert": "ops/certs/cache/enterprise.ca.pem",
+          "tsa_cert": "ops/certs/cache/enterprise.tsa.crt"
+        }
+      ],
+      "operator_key": "<REMEMBRANCER_KEY_ID>",
+      "verification_commands": {
+        "gpg": "gpg --verify dist/genesis.tar.gz.asc dist/genesis.tar.gz",
+        "timestamp_public": "openssl ts -verify -in dist/genesis.tar.gz.tsr -data dist/genesis.tar.gz -CAfile ops/certs/cache/public.ca.pem -untrusted ops/certs/cache/public.tsa.crt",
+        "merkle_audit": "./ops/bin/remembrancer verify-audit"
+      },
+      "receipts_index": "docs/receipts/index.md",
+      "documentation": [
+        "FOUR_COVENANTS_DEPLOYED.md",
+        "V4.1_GENESIS_COMPLETE.md",
+        "docs/FEDERATION_SEMANTICS.md",
+        "docs/COVENANT_SIGNING.md",
+        "docs/COVENANT_TIMESTAMPS.md"
+      ]
+    },
+    "actions": [
+      {
+        "type": "governance_decision",
+        "description": "Adopted VaultMesh Remembrancer as DAO memory standard",
+        "proposal_id": "<snapshot_or_tally_proposal_id>",
+        "execution_tx": "<transaction_hash_if_onchain>",
+        "chain_ref": "eip155:1/tx:0x<tx_hash>"
+      }
+    ],
+    "next_steps": [
+      "1. Bootstrap TSA certificates: ./ops/bin/tsa-bootstrap",
+      "2. Seal Genesis: export REMEMBRANCER_KEY_ID=<key> && ./ops/bin/genesis-seal",
+      "3. Verify dual-rail: ./ops/bin/rfc3161-verify dist/genesis.tar.gz",
+      "4. Publish receipts: ./ops/bin/receipts-site",
+      "5. Record all future governance with chain refs"
+    ],
+    "compliance": {
+      "standards": [
+        "RFC 3161 (IETF Time-Stamp Protocol)",
+        "OpenPGP (RFC 4880)",
+        "JCS (JSON Canonicalization Scheme)",
+        "MCP (Model Context Protocol)"
+      ],
+      "audit_trail": "Merkle audit log with deterministic verification",
+      "legal_recognition": "Court-admissible RFC 3161 timestamps",
+      "transparency": "Public receipts index with independent verification commands"
+    }
+  }
+}
+
