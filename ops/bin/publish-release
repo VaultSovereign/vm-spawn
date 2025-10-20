@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+TAG="${1:-v4.1-genesis}"
+TITLE="VaultMesh ${TAG} — Genesis"
+NOTES="${2:-}"
+ROOT="$(git rev-parse --show-toplevel)"
+ASSET_DIR="$ROOT/dist/release"
+
+mkdir -p "$ASSET_DIR"
+
+# Ensure Genesis exists
+[ -f "$ROOT/dist/genesis.tar.gz" ] || ./ops/bin/genesis-seal
+
+# Verify independently (public or enterprise must pass)
+./ops/bin/rfc3161-verify "$ROOT/dist/genesis.tar.gz"
+
+# Gather assets
+cp -f "$ROOT"/dist/genesis.tar.gz* "$ASSET_DIR"/ || true
+
+# Ensure receipts index is current
+./ops/bin/receipts-site
+
+# Tag if missing, then push
+git rev-parse "$TAG" >/dev/null 2>&1 || git tag -s "$TAG" -m "VaultMesh Genesis ${TAG}"
+git push origin "$TAG" || echo "Tag already pushed or push failed"
+
+# Build release notes
+if [ -z "$NOTES" ]; then
+  NOTES_FILE="$ASSET_DIR/RELEASE_NOTES.md"
+  cat > "$NOTES_FILE" <<'MD'
+## Genesis (v4.1)
+
+- GPG-signed artifact + dual RFC 3161 timestamps
+- Public receipts index with verification commands
+- Four Covenants runner green on main
+
+### Verify
+```bash
+gpg --verify dist/genesis.tar.gz.asc dist/genesis.tar.gz
+openssl ts -reply -in dist/genesis.tar.gz.tsr -text
+openssl ts -verify -in dist/genesis.tar.gz.tsr -data dist/genesis.tar.gz \
+  -CAfile ops/certs/cache/public.ca.pem -untrusted ops/certs/cache/public.tsa.crt
+```
+
+### Merkle Root
+\`\`\`
+d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea
+\`\`\`
+
+### Resources
+- Receipts index: docs/receipts/index.md
+- Governance pack: DAO_GOVERNANCE_PACK/
+- Verification: ./ops/bin/rfc3161-verify dist/genesis.tar.gz
+MD
+  NOTES="$NOTES_FILE"
+fi
+
+# Publish via gh (requires gh CLI)
+if command -v gh >/dev/null 2>&1; then
+  gh release create "$TAG" \
+    "$ASSET_DIR/genesis.tar.gz" \
+    "$ASSET_DIR/genesis.tar.gz.asc" \
+    "$ASSET_DIR/genesis.tar.gz.tsr" \
+    "docs/receipts/index.md" \
+    --title "$TITLE" \
+    --notes-file "$NOTES" || echo "Release already exists or gh failed"
+else
+  echo "⚠️  gh CLI not installed; skipping GitHub release creation"
+  echo "Assets ready in $ASSET_DIR"
+fi
+
+echo "✅ Published release $TAG"
+

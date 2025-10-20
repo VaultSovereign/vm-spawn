@@ -2,6 +2,10 @@ name: Covenants
 on:
   push:
   workflow_dispatch:
+
+permissions:
+  contents: write
+
 jobs:
   judge:
     runs-on: ubuntu-latest
@@ -25,4 +29,12 @@ jobs:
         with:
           name: ops-status-badge
           path: ops/status/badge.json
+      - name: Commit covenant badge
+        if: github.ref == 'refs/heads/main'
+        run: |
+          git config user.name "covenants-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add ops/status/badge.json
+          git commit -m "ci: update covenant badge" || echo "no changes"
+          git push
 

@@ -14,7 +14,18 @@
       },
       "verification": {
         "gpg_signature": "dist/genesis.tar.gz.asc",
-        "rfc3161_timestamp": "dist/genesis.tar.gz.tsr",
+        "timestamps": [
+          {
+            "name": "public",
+            "file": "dist/genesis.tar.gz.tsr",
+            "tsa_url": "https://freetsa.org/tsr"
+          },
+          {
+            "name": "enterprise",
+            "file": "dist/genesis.tar.gz.tsr.2",
+            "tsa_url": "<configured_on_deployment>"
+          }
+        ],
         "independent_verify": "./ops/bin/rfc3161-verify dist/genesis.tar.gz"
       },
       "infrastructure": {
@@ -27,13 +38,21 @@
           "name": "public",
           "url": "https://freetsa.org/tsr",
           "ca_cert": "ops/certs/cache/public.ca.pem",
-          "tsa_cert": "ops/certs/cache/public.tsa.crt"
+          "tsa_cert": "ops/certs/cache/public.tsa.crt",
+          "pins": {
+            "ca_spki_sha256_b64": "<computed_at_seal_time>",
+            "tsa_spki_sha256_b64": "<computed_at_seal_time>"
+          }
         },
         {
           "name": "enterprise",
           "url": "<configured_on_deployment>",
           "ca_cert": "ops/certs/cache/enterprise.ca.pem",
-          "tsa_cert": "ops/certs/cache/enterprise.tsa.crt"
+          "tsa_cert": "ops/certs/cache/enterprise.tsa.crt",
+          "pins": {
+            "ca_spki_sha256_b64": "<computed_at_seal_time>",
+            "tsa_spki_sha256_b64": "<computed_at_seal_time>"
+          }
         }
       ],
       "operator_key": "<REMEMBRANCER_KEY_ID>",

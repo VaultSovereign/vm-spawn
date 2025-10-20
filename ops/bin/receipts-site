@@ -12,6 +12,16 @@ MERKLE="$(./ops/bin/remembrancer verify-audit 2>/dev/null | awk '/Merkle root/{p
   echo
   echo "**Current Merkle root:** \`$MERKLE\`"
   echo
+  cat <<'VERIFY'
+> **Verify Genesis quickly**
+> ```bash
+> gpg --verify dist/genesis.tar.gz.asc dist/genesis.tar.gz
+> openssl ts -verify -in dist/genesis.tar.gz.tsr -data dist/genesis.tar.gz \
+>   -CAfile ops/certs/cache/public.ca.pem -untrusted ops/certs/cache/public.tsa.crt
+> ```
+
+VERIFY
+  echo
   find "$ROOT/ops/receipts" -type f -name '*.receipt' | sort | while read -r f; do
     h="$(sha256sum "$f" | awk '{print $1}')"
     echo "- $(basename "$f"): \`$h\`"
