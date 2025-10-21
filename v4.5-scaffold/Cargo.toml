@@ -25,7 +25,7 @@ miette = { version = "7", features = ["fancy"] }
 rusqlite = { version = "0.31", features = ["bundled"] }
 redb = "1"
 sequoia-openpgp = { version = "1", default-features = true }
-x509-tsp = "0.3"
+x509-tsp = "0.1.0"
 const-oid = "0.9"
 reqwest = { version = "0.12", default-features = false }
 rustls = "0.23"

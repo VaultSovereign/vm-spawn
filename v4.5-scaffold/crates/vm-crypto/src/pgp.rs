@@ -54,9 +54,7 @@ pub fn sign_detached(cert: &Cert, password: Option<&str>, data: &[u8]) -> Result
             .build()
             .map_err(|e| CryptoError::Pgp(format!("Signer creation failed: {}", e)))?;
 
-        signer
-            .write_all(data)
-            .map_err(|e| CryptoError::Io(e))?;
+        signer.write_all(data).map_err(|e| CryptoError::Io(e))?;
         signer
             .finalize()
             .map_err(|e| CryptoError::Pgp(format!("Finalization failed: {}", e)))?;
@@ -67,9 +65,7 @@ pub fn sign_detached(cert: &Cert, password: Option<&str>, data: &[u8]) -> Result
     {
         let mut writer = armor::Writer::new(&mut armored, armor::Kind::Signature)
             .map_err(|e| CryptoError::Serialization(format!("Armoring failed: {}", e)))?;
-        writer
-            .write_all(&sig_buf)
-            .map_err(|e| CryptoError::Io(e))?;
+        writer.write_all(&sig_buf).map_err(|e| CryptoError::Io(e))?;
         writer
             .finalize()
             .map_err(|e| CryptoError::Serialization(format!("Finalization failed: {}", e)))?;

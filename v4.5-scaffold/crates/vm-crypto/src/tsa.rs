@@ -89,9 +89,18 @@ pub fn verify_timestamp(tsr_der: &[u8], expected_hash: &[u8; 32]) -> Result<bool
     // Check status
     match tsr.status.status {
         0 => {} // granted
-        1 => return Err(CryptoError::Timestamp("TSA status: granted with mods".into())),
+        1 => {
+            return Err(CryptoError::Timestamp(
+                "TSA status: granted with mods".into(),
+            ))
+        }
         2 => return Err(CryptoError::Timestamp("TSA status: rejection".into())),
-        _ => return Err(CryptoError::Timestamp(format!("TSA unknown status: {}", tsr.status.status))),
+        _ => {
+            return Err(CryptoError::Timestamp(format!(
+                "TSA unknown status: {}",
+                tsr.status.status
+            )))
+        }
     }
 
     // Extract and verify TSTInfo
@@ -99,9 +108,9 @@ pub fn verify_timestamp(tsr_der: &[u8], expected_hash: &[u8; 32]) -> Result<bool
         .time_stamp_token
         .ok_or_else(|| CryptoError::Timestamp("No timestamp token in response".into()))?;
 
-    let tst_info = token.tst_info().map_err(|e| {
-        CryptoError::Timestamp(format!("TSTInfo extraction failed: {}", e))
-    })?;
+    let tst_info = token
+        .tst_info()
+        .map_err(|e| CryptoError::Timestamp(format!("TSTInfo extraction failed: {}", e)))?;
 
     // Verify message imprint matches
     let imprint_hash = tst_info.message_imprint.hashed_message.as_bytes();
