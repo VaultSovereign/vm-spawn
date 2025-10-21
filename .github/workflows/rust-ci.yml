@@ -161,9 +161,13 @@ jobs:
 
   # Release: Build artifacts (on tags)
   release:
-    name: Release Build
+    name: Release Build (${{ matrix.target }})
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      id-token: write  # For SLSA attestations
+      attestations: write
     strategy:
       matrix:
         include:
@@ -195,8 +199,49 @@ jobs:
         working-directory: v4.5-scaffold
         run: cargo build --release --target ${{ matrix.target }} -p vm-cli
 
+      - name: Prepare artifact
+        id: prep
+        shell: bash
+        run: |
+          BINARY_PATH="v4.5-scaffold/target/${{ matrix.target }}/release/vm-cli${{ matrix.os == 'windows-latest' && '.exe' || '' }}"
+          echo "binary_path=${BINARY_PATH}" >> "$GITHUB_OUTPUT"
+          # Compute SHA256 for attestation
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            sha256sum "${BINARY_PATH}" | awk '{print $1}' > "${BINARY_PATH}.sha256"
+          else
+            shasum -a 256 "${BINARY_PATH}" | awk '{print $1}' > "${BINARY_PATH}.sha256"
+          fi
+          echo "sha256=$(cat ${BINARY_PATH}.sha256)" >> "$GITHUB_OUTPUT"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact }}
-          path: v4.5-scaffold/target/${{ matrix.target }}/release/vm-cli${{ matrix.os == 'windows-latest' && '.exe' || '' }}
+          path: |
+            ${{ steps.prep.outputs.binary_path }}
+            ${{ steps.prep.outputs.binary_path }}.sha256
+
+      - name: Attest build provenance (SLSA)
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: ${{ steps.prep.outputs.binary_path }}
+
+      - name: Install cosign (optional keyless signing)
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign binary with cosign (keyless)
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          COSIGN_YES: "true"
+        run: |
+          cosign sign-blob --yes \
+            --bundle ${{ steps.prep.outputs.binary_path }}.cosign-bundle \
+            ${{ steps.prep.outputs.binary_path }}
+
+      - name: Upload cosign bundle
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}-cosign-bundle
+          path: ${{ steps.prep.outputs.binary_path }}.cosign-bundle
