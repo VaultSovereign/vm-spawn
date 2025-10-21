@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# VaultMesh — Engrave the current Merkle root into docs (idempotent)
+ROOT="$(git rev-parse --show-toplevel)"
+cd "$ROOT"
+
+say(){ printf "[engrave-merkle] %s\n" "$*"; }
+
+# Obtain current Merkle root from remembrancer
+OUT="$(./ops/bin/remembrancer verify-audit 2>&1 || true)"
+ROOT_HEX="$(printf '%s\n' "$OUT" | awk '/(root=|Merkle [Rr]oot:|Computed Merkle Root:)/{gsub(/.*(root=|Merkle [Rr]oot: |Computed Merkle Root: )/,""); print $1; exit}')"
+[ -n "${ROOT_HEX:-}" ] || { say "Could not determine Merkle root from verify-audit"; exit 1; }
+if ! printf '%s' "$ROOT_HEX" | grep -Eq '^[0-9a-f]{64}$'; then
+  say "Parsed Merkle root is not a 64-hex digest: $ROOT_HEX"
+  exit 1
+fi
+say "Current Merkle root: $ROOT_HEX"
+
+update_md_line () { # file, anchor text
+  local file="$1"; local anchor="$2"
+  [ -f "$file" ] || return 0
+  sed -i.bak -E "s|^(${anchor}):\s*\`?[0-9a-f]{64}\`?|\\1: \`$ROOT_HEX\`|g" "$file"
+  rm -f "$file.bak"
+  say "Updated $anchor in $file"
+}
+
+update_md_line "AGENTS.md" "Current Root"
+update_md_line "DAO_GOVERNANCE_PACK/README.md" "Merkle Root"
+update_md_line "DAO_GOVERNANCE_PACK/operator-runbook.md" "\*\*Merkle Root\*\*"
+update_md_line "DAO_GOVERNANCE_PACK/snapshot-proposal.md" "\*\*Merkle Root\*\*"
+
+# safe-note.json: update JSON field "merkle_root"
+if [ -f "DAO_GOVERNANCE_PACK/safe-note.json" ]; then
+  python3 - "$ROOT_HEX" <<'PY' || true
+import json,sys,io
+hex=sys.argv[1]
+path="DAO_GOVERNANCE_PACK/safe-note.json"
+with open(path,"r+",encoding="utf-8") as f:
+    data=json.load(f)
+    try:
+        data["note"]["metadata"]["genesis"]["merkle_root"]=hex
+    except Exception:
+        pass
+    f.seek(0); json.dump(data,f,indent=2,ensure_ascii=False); f.truncate()
+print(f"Updated merkle_root in {path}")
+PY
+fi
+
+say "✅ Engraving complete"

@@ -17,6 +17,9 @@ jobs:
       - name: Prepare
         run: |
           chmod +x ops/bin/* || true
+      - name: Docs Guardian
+        run: |
+          if [ -x ops/bin/docs-guardian ]; then ./ops/bin/docs-guardian; else echo "docs-guardian not present"; fi
       - name: Health
         run: ./ops/bin/health-check
       - name: Assert Machine Truth

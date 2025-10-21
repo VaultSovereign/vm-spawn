@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+set -euo pipefail
+# VaultMesh — Docs Guardian: keep AGENTS.md machine-true and deterministic
+ROOT="$(git rev-parse --show-toplevel)"
+F="$ROOT/AGENTS.md"
+fail=0
+
+say() { printf "[docs-guardian] %s\n" "$*"; }
+die() { say "❌ $*"; exit 1; }
+
+[ -f "$F" ] || die "AGENTS.md not found at repo root"
+
+# 1) No hard-coded test counts
+if grep -E -n '26/26|26 tests' "$F" >/dev/null; then
+  say "Found hard-coded test counts in AGENTS.md"
+  grep -E -n '26/26|26 tests' "$F" || true
+  fail=1
+fi
+
+# 2) Must reference machine truth badge.json
+grep -q 'ops/status/badge.json' "$F" || { say "Missing machine-truth reference (ops/status/badge.json)"; fail=1; }
+
+# 3) Federation flags must be the Phase I form (may span multiple lines)
+if ! grep -Pzo '(?s)fed-merge[^\n]*--left[^\n]*\n[^\n]*--right[^\n]*\n[^\n]*--out' "$F" >/dev/null 2>&1; then
+  # Fallback for systems without -P flag
+  grep -q -- '--left' "$F" && grep -q -- '--right' "$F" && grep -q -- '--out' "$F" || { say "Federation command must use --left/--right/--out"; fail=1; }
+fi
+
+# 4) Genesis snippet must show current schema fields
+need_fields=( 'repo:' 'tag:' 'commit:' 'tree_hash_method:' 'source_date_epoch:' 'tsas:' 'operator_key_id:' 'verification:' )
+for k in "${need_fields[@]}"; do
+  grep -q "$k" "$F" || { say "GENESIS.yaml snippet missing '$k'"; fail=1; }
+done
+
+# 5) Dual-TSA semantics text (any-pass + dual-verify)
+grep -q 'ANY configured TSA' "$F" || { say "Missing dual-TSA any-pass semantics line"; fail=1; }
+
+# 6) Navigation must mention publish-release
+grep -q 'publish-release' "$F" || { say "Navigation table missing publish-release"; fail=1; }
+
+# 7) Current Root line must contain a 64-hex digest
+if ! grep -Eq '^Current Root:\s*[0-9a-f]{64}\b' "$F"; then
+  say "Current Root line missing or malformed 64-hex digest"
+  fail=1
+fi
+
+if [ "$fail" -ne 0 ]; then
+  die "Docs guardian checks FAILED"
+fi
+say "✅ AGENTS.md passes machine-truth and semantics checks"
