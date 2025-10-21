@@ -1,0 +1,19 @@
+[package]
+name = "vm-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata] cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+vm-core = { path = "../crates/vm-core" }
+serde_json = "1"
+
+[[bin]]
+name = "receipt_parse"
+path = "fuzz_targets/receipt_parse.rs"
+test = false
+doc = false
+bench = false

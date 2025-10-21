@@ -1,0 +1,29 @@
+[package]
+name = "vm-cli"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[features]
+default = ["sqlite"]
+sqlite = ["vm-remembrancer/sqlite"]
+redb   = ["vm-remembrancer/redb"]
+pgp    = ["vm-crypto/pgp"]
+tsa    = ["vm-crypto/tsa"]
+tls-rustls = ["vm-crypto/tls-rustls"]
+openssl    = ["vm-crypto/openssl"]
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { workspace = true, features = ["derive"] }
+clap_complete = { workspace = true }
+clap_mangen = { workspace = true }
+miette = { workspace = true, features = ["fancy"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+chrono = { workspace = true }
+vm-core = { path = "../vm-core" }
+vm-crypto = { path = "../vm-crypto" }
+vm-remembrancer = { path = "../vm-remembrancer" }
