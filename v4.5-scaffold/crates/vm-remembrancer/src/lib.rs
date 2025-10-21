@@ -42,26 +42,32 @@ pub mod sqlite_store {
             let mut st = self
                 .conn
                 .prepare("SELECT jcs FROM receipts WHERE component=?1 ORDER BY id DESC")?;
-            let rows = st.query_map(params![c], |row| {
-                let j: Vec<u8> = row.get(0)?;
-                Ok(serde_json::from_slice::<Receipt>(&j).unwrap())
-            })?;
-            Ok(rows.filter_map(Result::ok).collect())
+            let rows = st.query_map(params![c], |row| row.get::<_, Vec<u8>>(0))?;
+            let mut out = Vec::new();
+            for row in rows {
+                let raw = row?;
+                let receipt = serde_json::from_slice::<Receipt>(&raw)?;
+                out.push(receipt);
+            }
+            Ok(out)
         }
         fn all(&self) -> Result<Vec<Receipt>> {
             let mut st = self.conn.prepare("SELECT jcs FROM receipts ORDER BY id DESC")?;
-            let rows = st.query_map([], |row| {
-                let j: Vec<u8> = row.get(0)?;
-                Ok(serde_json::from_slice::<Receipt>(&j).unwrap())
-            })?;
-            Ok(rows.filter_map(Result::ok).collect())
+            let rows = st.query_map([], |row| row.get::<_, Vec<u8>>(0))?;
+            let mut out = Vec::new();
+            for row in rows {
+                let raw = row?;
+                let receipt = serde_json::from_slice::<Receipt>(&raw)?;
+                out.push(receipt);
+            }
+            Ok(out)
         }
     }
 }
 #[cfg(feature = "redb")]
 pub mod redb_store {
     use super::*;
-    use redb::{Database, TableDefinition};
+    use redb::{Database, ReadableTable, TableDefinition};
     const T: TableDefinition<&str, Vec<u8>> = TableDefinition::new("receipts");
     pub struct RedbStore {
         db: Database,
@@ -86,7 +92,8 @@ pub mod redb_store {
             let tx = self.db.begin_read()?;
             let t = tx.open_table(T)?;
             if let Some(v) = t.get(id)? {
-                return Ok(Some(serde_json::from_slice(v.value())?));
+                let bytes = v.value();
+                return Ok(Some(serde_json::from_slice(&bytes)?));
             }
             Ok(None)
         }
@@ -96,7 +103,8 @@ pub mod redb_store {
             let mut out = Vec::new();
             for r in t.iter()? {
                 let (_k, v) = r?;
-                let rec: Receipt = serde_json::from_slice(v.value())?;
+                let bytes = v.value();
+                let rec: Receipt = serde_json::from_slice(&bytes)?;
                 if rec.component == c {
                     out.push(rec);
                 }
@@ -106,12 +114,14 @@ pub mod redb_store {
         fn all(&self) -> Result<Vec<Receipt>> {
             let tx = self.db.begin_read()?;
             let t = tx.open_table(T)?;
-            let mut out = Vec::new();
-            for r in t.iter()? {
-                let (_k, v) = r?;
-                out.push(serde_json::from_slice(v.value())?);
-            }
-            Ok(out)
+            t.iter()?
+                .map(|r| {
+                    let (_k, v) = r?;
+                    let bytes = v.value();
+                    let rec = serde_json::from_slice(&bytes)?;
+                    Ok(rec)
+                })
+                .collect()
         }
     }
 }

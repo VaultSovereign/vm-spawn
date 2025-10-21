@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, anyhow};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use miette::{IntoDiagnostic, miette};
 use std::{fs, path::PathBuf};
@@ -27,6 +27,14 @@ enum Commands {
         artifact: PathBuf,
         #[arg(long, default_value = "./vaultmesh.db")]
         store: String,
+        #[arg(long)]
+        pgp_key: Option<PathBuf>,
+        #[arg(long)]
+        pgp_password: Option<String>,
+        #[arg(long)]
+        pgp_cert: Option<PathBuf>,
+        #[arg(long)]
+        tsa_url: Option<String>,
     },
     Query {
         #[arg(long)]
@@ -39,6 +47,8 @@ enum Commands {
         id: String,
         #[arg(long, default_value = "./vaultmesh.db")]
         store: String,
+        #[arg(long)]
+        pgp_cert: Option<PathBuf>,
     },
     Completions {
         #[arg(value_enum)]
@@ -48,6 +58,7 @@ enum Commands {
 }
 
 #[derive(Copy, Clone, ValueEnum)]
+#[allow(clippy::enum_variant_names)]
 enum Shell {
     Bash,
     Zsh,
@@ -77,9 +88,27 @@ fn main() -> miette::Result<()> {
 fn real_main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Record { component, version, artifact, store } => {
+        Commands::Record {
+            component,
+            version,
+            artifact,
+            store,
+            pgp_key,
+            pgp_password,
+            pgp_cert,
+            tsa_url,
+        } => {
+            #[cfg(not(feature = "pgp"))]
+            {
+                let _ = (&pgp_key, &pgp_password, &pgp_cert);
+            }
+            #[cfg(not(feature = "tsa"))]
+            {
+                let _ = &tsa_url;
+            }
             let bytes = fs::read(&artifact).with_context(|| format!("read {:?}", artifact))?;
             let sha = sha256_of(&bytes);
+            #[allow(unused_mut)]
             let mut rec = Receipt {
                 id: Receipt::make_id(&component, &version, &sha),
                 component,
@@ -93,14 +122,50 @@ fn real_main() -> Result<()> {
                 timestamp_utc: now(),
                 context: serde_json::json!({"path": artifact}),
             };
+            #[cfg(feature = "pgp")]
             let jcs = to_jcs_bytes(&rec)?;
-            let sig = vm_crypto::pgp::sign_detached(&jcs)?;
-            if !sig.is_empty() {
-                rec.artifact.gpg_signature = Some(sig);
-            }
-            let tsr = vm_crypto::tsa::timestamp_request(&rec.artifact.sha256)?;
-            if !tsr.is_empty() {
-                rec.artifact.rfc3161_token = Some(tsr);
+            #[cfg(any(feature = "pgp", feature = "tsa"))]
+            if let serde_json::Value::Object(ref mut ctx) = rec.context {
+                #[cfg(feature = "pgp")]
+                {
+                    use vm_crypto::pgp;
+                    if let Some(key_path) = pgp_key.as_ref() {
+                        let key_bytes = fs::read(key_path)
+                            .with_context(|| format!("load pgp key {key_path:?}"))?;
+                        let cert = pgp::import_cert(&key_bytes)
+                            .context("parse operator PGP certificate")?;
+                        let sig = pgp::sign_detached(&cert, pgp_password.as_deref(), &jcs)?;
+                        if !sig.is_empty() {
+                            rec.artifact.gpg_signature = Some(sig);
+                            let public_bytes = if let Some(cert_path) = pgp_cert.as_ref() {
+                                fs::read(cert_path)
+                                    .with_context(|| format!("load pgp cert {cert_path:?}"))?
+                            } else {
+                                pgp::export_cert(&cert)?
+                            };
+                            let public_str = String::from_utf8(public_bytes)
+                                .context("PGP certificate is not valid UTF-8")?;
+                            ctx.insert(
+                                "pgp_cert".to_string(),
+                                serde_json::Value::String(public_str),
+                            );
+                        }
+                    }
+                }
+
+                #[cfg(feature = "tsa")]
+                {
+                    use vm_crypto::tsa;
+                    let url = tsa_url.as_deref().unwrap_or(tsa::FREETSA_URL);
+                    let tsr = tsa::timestamp_request(url, &rec.artifact.sha256)?;
+                    if !tsr.is_empty() {
+                        rec.artifact.rfc3161_token = Some(tsr);
+                        ctx.insert(
+                            "tsa_url".to_string(),
+                            serde_json::Value::String(url.to_string()),
+                        );
+                    }
+                }
             }
             #[cfg(feature = "sqlite")]
             {
@@ -134,7 +199,11 @@ fn real_main() -> Result<()> {
                 }
             }
         }
-        Commands::Verify { id, store } => {
+        Commands::Verify { id, store, pgp_cert } => {
+            #[cfg(not(feature = "pgp"))]
+            {
+                let _ = &pgp_cert;
+            }
             #[cfg(feature = "sqlite")]
             {
                 use vm_remembrancer::sqlite_store::SqliteStore;
@@ -145,15 +214,44 @@ fn real_main() -> Result<()> {
                     if a != b {
                         eprintln!("JCS not stable");
                     }
+                    #[cfg(feature = "pgp")]
                     if let Some(sig) = r.artifact.gpg_signature.as_ref() {
-                        if !vm_crypto::pgp::verify_detached(&a, sig)? {
-                            eprintln!("PGP verify: FAIL");
+                        use vm_crypto::pgp;
+                        let cert_bytes = if let Some(cert_path) = pgp_cert.as_ref() {
+                            Some(
+                                fs::read(cert_path)
+                                    .with_context(|| format!("load pgp cert {:?}", cert_path))?,
+                            )
+                        } else if let Some(serde_json::Value::String(armor)) =
+                            r.context.get("pgp_cert")
+                        {
+                            Some(armor.as_bytes().to_vec())
+                        } else {
+                            None
+                        };
+                        if let Some(cert_data) = cert_bytes {
+                            let cert =
+                                pgp::import_cert(&cert_data).context("parse stored PGP cert")?;
+                            if !pgp::verify_detached(&cert, sig, &a)? {
+                                eprintln!("PGP verify: FAIL");
+                            }
+                        } else {
+                            eprintln!("PGP verify: SKIPPED (no certificate)");
                         }
                     }
+                    #[cfg(not(feature = "pgp"))]
+                    if r.artifact.gpg_signature.is_some() {
+                        eprintln!("PGP verify: SKIPPED (feature disabled)");
+                    }
+                    #[cfg(feature = "tsa")]
                     if let Some(tsr) = r.artifact.rfc3161_token.as_ref() {
-                        if !vm_crypto::tsa::verify_timestamp(&r.artifact.sha256, tsr)? {
+                        if !vm_crypto::tsa::verify_timestamp(tsr, &r.artifact.sha256)? {
                             eprintln!("TSA verify: FAIL");
                         }
+                    }
+                    #[cfg(not(feature = "tsa"))]
+                    if r.artifact.rfc3161_token.is_some() {
+                        eprintln!("TSA verify: SKIPPED (feature disabled)");
                     }
                     println!("OK");
                 } else {
@@ -190,7 +288,9 @@ fn real_main() -> Result<()> {
             use clap_mangen::Man;
             let cmd = Cli::command();
             let man = Man::new(cmd);
-            man.render(&mut std::io::stdout().lock()).into_diagnostic()?;
+            man.render(&mut std::io::stdout().lock())
+                .into_diagnostic()
+                .map_err(|e| anyhow!(e.to_string()))?;
         }
     }
     Ok(())

@@ -5,9 +5,15 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct ProofStep {
+    pub sibling: [u8; 32],
+    pub sibling_on_right: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MerkleProof {
     pub leaf_hash: [u8; 32],
-    pub path: Vec<[u8; 32]>,
+    pub path: Vec<ProofStep>,
 }
 
 /// Compute leaf hash (prefix 0x00 to distinguish from internal nodes)
@@ -67,7 +73,8 @@ pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> Option<MerklePr
         } else {
             current_leaves[current_index]
         };
-        path.push(sibling);
+        let sibling_on_right = current_index % 2 == 0 || sibling_index >= current_leaves.len();
+        path.push(ProofStep { sibling, sibling_on_right });
 
         // Move to next level
         let mut next_level = Vec::with_capacity((current_leaves.len() + 1) / 2);
@@ -88,8 +95,12 @@ pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> Option<MerklePr
 /// Verify Merkle proof against root
 pub fn verify_proof(proof: &MerkleProof, root: &[u8; 32]) -> bool {
     let mut current = proof.leaf_hash;
-    for sibling in &proof.path {
-        current = node_hash(&current, sibling);
+    for step in &proof.path {
+        current = if step.sibling_on_right {
+            node_hash(&current, &step.sibling)
+        } else {
+            node_hash(&step.sibling, &current)
+        };
     }
     &current == root
 }

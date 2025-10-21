@@ -31,6 +31,11 @@ jobs:
           toolchain: "1.85.0"
           components: clippy, rustfmt
 
+      - name: Install deps (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+
       - name: Check formatting
         working-directory: v4.5-scaffold
         run: cargo fmt --all -- --check
@@ -46,7 +51,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            features: "--all-features"
+          - os: macos-latest
+            features: "--all-features"
+          - os: windows-latest
+            features: "--no-default-features --features vm-cli/sqlite,vm-cli/tls-rustls"
     steps:
       - uses: actions/checkout@v4
 
@@ -56,6 +67,18 @@ jobs:
           toolchain: "1.85.0"
           components: clippy, rustfmt
 
+      - name: Install deps (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+
+      - name: Install deps (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install pkg-config sqlite nettle gmp
+
       - name: Install nextest
         uses: taiki-e/install-action@v2
         with:
@@ -63,15 +86,15 @@ jobs:
 
       - name: Build workspace
         working-directory: v4.5-scaffold
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace ${{ matrix.features }}
 
       - name: Run tests (nextest)
         working-directory: v4.5-scaffold
-        run: cargo nextest run --workspace --all-features --no-fail-fast
+        run: cargo nextest run --workspace ${{ matrix.features }} --no-fail-fast
 
       - name: Run doctests
         working-directory: v4.5-scaffold
-        run: cargo test --doc --workspace --all-features
+        run: cargo test --doc --workspace ${{ matrix.features }}
 
   # Gate: Property & Fuzz Tests
   extended-tests:
@@ -85,6 +108,11 @@ jobs:
         with:
           toolchain: "1.85.0"
 
+      - name: Install deps (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev
+
       - name: Install cargo-fuzz
         uses: taiki-e/install-action@v2
         with:
@@ -92,7 +120,7 @@ jobs:
 
       - name: Run property tests
         working-directory: v4.5-scaffold
-        run: cargo test --release --all-features -- --include-ignored proptest
+        run: cargo test --workspace --all-features --release -- --ignored proptest
 
       - name: Fuzz receipt parser (60s smoke)
         working-directory: v4.5-scaffold/fuzz
@@ -144,6 +172,11 @@ jobs:
         with:
           toolchain: "1.85.0"
 
+      - name: Install deps (Ubuntu)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev
+
       - name: Install tarpaulin
         uses: taiki-e/install-action@v2
         with:
@@ -194,6 +227,12 @@ jobs:
         with:
           toolchain: "1.85.0"
           target: ${{ matrix.target }}
+
+      - name: Install deps
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
 
       - name: Build release binary
         working-directory: v4.5-scaffold

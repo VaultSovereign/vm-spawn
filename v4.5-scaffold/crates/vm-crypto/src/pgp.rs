@@ -9,15 +9,24 @@ use openpgp::{
     Cert, KeyHandle, armor,
     cert::CertBuilder,
     crypto::Password,
-    packet::signature,
     parse::{Parse, stream::*},
     policy::StandardPolicy,
-    serialize::stream::*,
-    types::SignatureType,
+    serialize::{Marshal, stream::*},
+    types::HashAlgorithm,
 };
 
-use crate::error::{CryptoError, Result};
-use std::io::{Cursor, Write};
+#[cfg(feature = "pgp")]
+use crate::error::CryptoError;
+use crate::error::Result;
+#[cfg(feature = "pgp")]
+use anyhow::anyhow;
+#[cfg(feature = "pgp")]
+use std::io::{Read, Write};
+#[cfg(feature = "pgp")]
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 
 /// Sign data with detached signature (armored)
 #[cfg(feature = "pgp")]
@@ -25,35 +34,43 @@ pub fn sign_detached(cert: &Cert, password: Option<&str>, data: &[u8]) -> Result
     let policy = StandardPolicy::new();
 
     // Find signing-capable key
-    let keypair = cert
+    let key = cert
         .keys()
+        .secret()
         .with_policy(&policy, None)
+        .supported()
         .alive()
         .revoked(false)
         .for_signing()
-        .nth(0)
+        .next()
         .ok_or_else(|| CryptoError::KeyNotFound("No signing key found".into()))?
         .key()
         .clone();
 
-    // Decrypt secret key if password provided
-    let mut keypair = match password {
-        Some(pwd) => keypair
+    let key = match password {
+        Some(pwd) => key
             .decrypt_secret(&Password::from(pwd))
             .map_err(|e| CryptoError::Pgp(format!("Key decryption failed: {}", e)))?,
-        None => keypair,
+        None => key,
     };
+
+    let keypair = key
+        .into_keypair()
+        .map_err(|e| CryptoError::Pgp(format!("Keypair creation failed: {}", e)))?;
 
     // Create detached signature
     let mut sig_buf = Vec::new();
     {
         let message = Message::new(&mut sig_buf);
-        let mut signer = Signer::new(message, keypair.parts_as_unspecified())
-            .detached()
+        let builder = Signer::new(message, keypair).detached();
+        let builder = builder
+            .hash_algo(HashAlgorithm::SHA256)
+            .map_err(|e| CryptoError::Pgp(format!("Hash selection failed: {}", e)))?;
+        let mut signer = builder
             .build()
             .map_err(|e| CryptoError::Pgp(format!("Signer creation failed: {}", e)))?;
 
-        signer.write_all(data).map_err(|e| CryptoError::Io(e))?;
+        signer.write_all(data).map_err(CryptoError::Io)?;
         signer.finalize().map_err(|e| CryptoError::Pgp(format!("Finalization failed: {}", e)))?;
     }
 
@@ -62,7 +79,7 @@ pub fn sign_detached(cert: &Cert, password: Option<&str>, data: &[u8]) -> Result
     {
         let mut writer = armor::Writer::new(&mut armored, armor::Kind::Signature)
             .map_err(|e| CryptoError::Serialization(format!("Armoring failed: {}", e)))?;
-        writer.write_all(&sig_buf).map_err(|e| CryptoError::Io(e))?;
+        writer.write_all(&sig_buf).map_err(CryptoError::Io)?;
         writer
             .finalize()
             .map_err(|e| CryptoError::Serialization(format!("Finalization failed: {}", e)))?;
@@ -76,55 +93,54 @@ pub fn sign_detached(cert: &Cert, password: Option<&str>, data: &[u8]) -> Result
 pub fn verify_detached(cert: &Cert, signature: &[u8], data: &[u8]) -> Result<bool> {
     let policy = StandardPolicy::new();
 
-    // Parse signature (handle both armored and binary)
-    let sig_reader: Box<dyn std::io::Read + Send + Sync> =
-        if signature.starts_with(b"-----BEGIN PGP SIGNATURE-----") {
-            Box::new(Cursor::new(signature))
-        } else {
-            Box::new(Cursor::new(signature))
-        };
+    // Normalize signature bytes (handle both armored and binary)
+    let sig_bytes = if signature.starts_with(b"-----BEGIN PGP SIGNATURE-----") {
+        let mut reader = armor::Reader::from_bytes(signature, None::<armor::ReaderMode>);
+        let mut buf = Vec::new();
+        reader.read_to_end(&mut buf).map_err(CryptoError::Io)?;
+        buf
+    } else {
+        signature.to_vec()
+    };
 
     // Verify using DetachedVerifier
     struct Helper<'a> {
         cert: &'a Cert,
-        valid: bool,
+        valid: Arc<AtomicBool>,
     }
 
-    impl<'a> VerificationHelper for Helper<'a> {
+    impl VerificationHelper for Helper<'_> {
         fn get_certs(&mut self, _ids: &[KeyHandle]) -> openpgp::Result<Vec<Cert>> {
             Ok(vec![self.cert.clone()])
         }
 
         fn check(&mut self, structure: MessageStructure) -> openpgp::Result<()> {
-            for layer in structure.into_iter() {
-                match layer {
-                    MessageLayer::SignatureGroup { results } => {
-                        for result in results {
-                            match result {
-                                Ok(_) => self.valid = true,
-                                Err(e) => return Err(e),
-                            }
-                        }
+            for layer in structure {
+                if let MessageLayer::SignatureGroup { results } = layer {
+                    if results.iter().any(|r| r.is_ok()) {
+                        self.valid.store(true, Ordering::Relaxed);
+                    } else {
+                        return Err(anyhow!("No valid signatures found"));
                     }
-                    _ => {}
                 }
             }
             Ok(())
         }
     }
 
-    let mut helper = Helper { cert, valid: false };
+    let valid = Arc::new(AtomicBool::new(false));
+    let helper = Helper { cert, valid: valid.clone() };
 
-    let mut verifier = DetachedVerifierBuilder::from_reader(sig_reader)
+    let mut verifier = DetachedVerifierBuilder::from_bytes(&sig_bytes)
         .map_err(|e| CryptoError::Pgp(format!("Verifier creation failed: {}", e)))?
-        .with_policy(&policy, None, &mut helper)
+        .with_policy(&policy, None, helper)
         .map_err(|e| CryptoError::Pgp(format!("Policy application failed: {}", e)))?;
 
-    std::io::copy(&mut Cursor::new(data), &mut verifier).map_err(|e| CryptoError::Io(e))?;
+    verifier
+        .verify_bytes(data)
+        .map_err(|e| CryptoError::Pgp(format!("Verification failed: {}", e)))?;
 
-    verifier.finalize().map_err(|e| CryptoError::Pgp(format!("Verification failed: {}", e)))?;
-
-    Ok(helper.valid)
+    Ok(valid.load(Ordering::Relaxed))
 }
 
 /// Generate a new test key pair (for testing only)

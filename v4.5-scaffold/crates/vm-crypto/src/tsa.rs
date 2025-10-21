@@ -4,7 +4,20 @@
 use crate::error::{CryptoError, Result};
 
 #[cfg(feature = "tsa")]
+use cmpv2::status::PkiStatus;
+#[cfg(feature = "tsa")]
+use cms::cert::x509::spki::AlgorithmIdentifier;
+#[cfg(feature = "tsa")]
+use cms::signed_data::SignedData;
+#[cfg(feature = "tsa")]
+use der::{
+    Decode, Encode,
+    asn1::{Int, OctetString},
+};
+#[cfg(feature = "tsa")]
 use sha2::{Digest, Sha256};
+#[cfg(feature = "tsa")]
+use x509_tsp::{MessageImprint, TimeStampReq, TimeStampResp, TspVersion, TstInfo};
 
 /// Public TSA endpoints (for dual-TSA verification)
 pub const FREETSA_URL: &str = "https://freetsa.org/tsr";
@@ -13,22 +26,26 @@ pub const DIGICERT_TSA_URL: &str = "http://timestamp.digicert.com";
 /// Request timestamp token from TSA
 #[cfg(feature = "tsa")]
 pub fn timestamp_request(tsa_url: &str, data_hash: &[u8; 32]) -> Result<Vec<u8>> {
-    use x509_tsp::*;
+    let hashed_message = OctetString::new(data_hash.to_vec())
+        .map_err(|e| CryptoError::Serialization(format!("Invalid hash encoding: {}", e)))?;
 
-    // Build TSR request
+    let nonce_bytes = rand_nonce();
+    let nonce = Int::new(&nonce_bytes)
+        .map_err(|e| CryptoError::Serialization(format!("Nonce encoding failed: {}", e)))?;
+
     let req = TimeStampReq {
-        version: 1,
+        version: TspVersion::V1,
         message_imprint: MessageImprint {
             hash_algorithm: AlgorithmIdentifier {
                 oid: const_oid::db::rfc5912::ID_SHA_256,
                 parameters: None,
             },
-            hashed_message: data_hash.to_vec().into(),
+            hashed_message,
         },
         req_policy: None,
-        nonce: Some(rand_nonce().into()),
+        nonce: Some(nonce),
         cert_req: true,
-        extensions: vec![],
+        extensions: None,
     };
 
     let req_der = req
@@ -78,22 +95,17 @@ pub fn timestamp_request(tsa_url: &str, data_hash: &[u8; 32]) -> Result<Vec<u8>>
 /// Verify timestamp token
 #[cfg(feature = "tsa")]
 pub fn verify_timestamp(tsr_der: &[u8], expected_hash: &[u8; 32]) -> Result<bool> {
-    use x509_tsp::*;
-
     let tsr = TimeStampResp::from_der(tsr_der)
         .map_err(|e| CryptoError::Serialization(format!("TSR parse failed: {}", e)))?;
 
     // Check status
     match tsr.status.status {
-        0 => {} // granted
-        1 => return Err(CryptoError::Timestamp("TSA status: granted with mods".into())),
-        2 => return Err(CryptoError::Timestamp("TSA status: rejection".into())),
-        _ => {
-            return Err(CryptoError::Timestamp(format!(
-                "TSA unknown status: {}",
-                tsr.status.status
-            )));
+        PkiStatus::Accepted => {}
+        PkiStatus::GrantedWithMods => {
+            return Err(CryptoError::Timestamp("TSA status: granted with modifications".into()));
         }
+        PkiStatus::Rejection => return Err(CryptoError::Timestamp("TSA status: rejection".into())),
+        other => return Err(CryptoError::Timestamp(format!("TSA unknown status: {:?}", other))),
     }
 
     // Extract and verify TSTInfo
@@ -101,9 +113,21 @@ pub fn verify_timestamp(tsr_der: &[u8], expected_hash: &[u8; 32]) -> Result<bool
         .time_stamp_token
         .ok_or_else(|| CryptoError::Timestamp("No timestamp token in response".into()))?;
 
-    let tst_info = token
-        .tst_info()
-        .map_err(|e| CryptoError::Timestamp(format!("TSTInfo extraction failed: {}", e)))?;
+    let content_der = token
+        .content
+        .to_der()
+        .map_err(|e| CryptoError::Serialization(format!("Token encoding failed: {}", e)))?;
+
+    let signed_data = SignedData::from_der(&content_der)
+        .map_err(|e| CryptoError::Serialization(format!("SignedData parse failed: {}", e)))?;
+
+    let encap = signed_data
+        .encap_content_info
+        .econtent
+        .ok_or_else(|| CryptoError::Timestamp("No encapsulated content".into()))?;
+
+    let tst_info = TstInfo::from_der(encap.value())
+        .map_err(|e| CryptoError::Timestamp(format!("TSTInfo parse failed: {}", e)))?;
 
     // Verify message imprint matches
     let imprint_hash = tst_info.message_imprint.hashed_message.as_bytes();
