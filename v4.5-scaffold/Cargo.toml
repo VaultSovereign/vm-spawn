@@ -1,0 +1,45 @@
+# VaultMesh v4.5 (Hybrid Phase) — Rust Core + Bash CLI Bridge
+# Purpose: Prove Rust core while maintaining v4.1 compatibility
+
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.package]
+version = "4.5.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+rust-version = "1.80"
+authors = ["VaultMesh Contributors"]
+
+[workspace.dependencies]
+# Core
+anyhow = "1"
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
+clap_mangen = "0.2"
+miette = { version = "7", features = ["fancy"] }
+
+# Crypto
+sequoia-openpgp = "1.21"
+x509-tsp = "0.3"
+rustls = "0.23"
+aws-lc-rs = "1"
+sha2 = "0.10"
+serde_jcs = "0.1"
+zeroize = "1"
+
+# Storage
+rusqlite = { version = "0.30", features = ["bundled"] }
+redb = "1"
+
+# HTTP
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+
+# Testing
+proptest = "1"
