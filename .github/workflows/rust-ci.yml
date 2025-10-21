@@ -222,7 +222,7 @@ jobs:
             ${{ steps.prep.outputs.binary_path }}.sha256
 
       - name: Attest build provenance (SLSA)
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         with:
           subject-path: ${{ steps.prep.outputs.binary_path }}
 
