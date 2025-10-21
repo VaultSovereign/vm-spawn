@@ -5,12 +5,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Configure Git (for spawn tests)
+        run: |
+          git config --global user.name "VaultMesh CI"
+          git config --global user.email "ci@vaultmesh.local"
+
       - name: Shellcheck
         run: |
           sudo apt-get update && sudo apt-get install -y shellcheck
           shellcheck -S warning spawn.sh generators/*.sh
-      
+
       - name: Spawn smoke (no flags - baseline)
         run: |
           bash -euxo pipefail -c './spawn.sh demo-basic service; test -d services/demo-basic'
