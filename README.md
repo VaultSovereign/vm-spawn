@@ -3,7 +3,7 @@
 **Version:** v4.0.1-LITERALLY-PERFECT | **Status:** ✅ LITERALLY PERFECT
 **Rating:** 10.0/10 | **Tests:** 26/26 (100%) | **Updated:** 2025-10-19
 
-[![Codex v1.0.0 — Proof-Sealed](https://img.shields.io/badge/Codex-v1.0.0-%F0%9F%9C%82)](https://github.com/VaultSovereign/vm-spawn/releases/tag/codex-v1.0.0)
+[![Codex v1.0.0 — Proof-Sealed](https://img.shields.io/badge/Codex-v1.0.0-gold)](https://github.com/VaultSovereign/vm-spawn/releases/tag/codex-v1.0.0)
 [![Tests](https://img.shields.io/badge/tests-26%2F26-brightgreen)](./SMOKE_TEST.sh)
 [![Rating](https://img.shields.io/badge/rating-10.0%2F10-gold)](./PATH_TO_26_26.md)
 
@@ -19,15 +19,21 @@ A self-verifying system that spawns **production-ready microservices** from a si
 ### 2. **The Remembrancer** — Covenant Memory System
 A cryptographic memory layer that ensures **nothing is forgotten**, **everything is provable**, and **time is respected**.
 
+```mermaid
+flowchart TD
+  A[Spawn Elite creates services]
+  --> B[The Remembrancer records with cryptographic proof]
+  B --> C[Knowledge compounds. Entropy is defeated.]
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Spawn Elite creates services                               │
-│      ↓                                                       │
-│  The Remembrancer records them with cryptographic proof     │
-│      ↓                                                       │
-│  Knowledge compounds. Entropy is defeated.                  │
-└─────────────────────────────────────────────────────────────┘
-```
+
+<details>
+<summary>Text fallback</summary>
+
+- Spawn Elite creates services
+- The Remembrancer records them with cryptographic proof
+- Knowledge compounds. Entropy is defeated.
+
+</details>
 
 ---
 
@@ -117,17 +123,18 @@ Total: Complete production stack, ready to deploy
 
 ## 📊 System Status
 
-```
-╔════════════════════════════════════════════════════════════╗
-║  Spawn Elite:             10.0/10 (v2.4 modular)          ║
-║  The Remembrancer v4.0:   ✅ FEDERATION FOUNDATION        ║
-║  Cryptographic Proof:     GPG + RFC3161 + Merkle          ║
-║  MCP Server:              ✅ OPERATIONAL (FastMCP)        ║
-║  Federation:              ✅ FOUNDATIONS LAID             ║
-║  Tests:                   22/24 PASSED (91%, 9.5/10)      ║
-║  Technical Debt:          Zero                             ║
-╚════════════════════════════════════════════════════════════╝
-```
+<details open>
+<summary>📊 System Status</summary>
+
+- **Spawn Elite:** 10.0/10 (v2.4 modular)
+- **The Remembrancer v4.0:** ✅ FEDERATION FOUNDATION
+- **Cryptographic Proof:** GPG + RFC3161 + Merkle
+- **MCP Server:** ✅ OPERATIONAL (FastMCP)
+- **Federation:** ✅ FOUNDATIONS LAID
+- **Tests:** 22/24 PASSED (91%, 9.5/10)
+- **Technical Debt:** Zero
+
+</details>
 
 ### Journey
 ```
@@ -860,25 +867,22 @@ Truth is the only sovereign — signed, Sovereign.
 
 ## 🎖️ Status
 
-```
-╔════════════════════════════════════════════════════════════╗
-║                                                            ║
-║  🜂 The Remembrancer v3.0 is PRODUCTION VERIFIED          ║
-║  ⚔️ The covenant is cryptographically enforced            ║
-║  📜 Knowledge compounds with provable truth               ║
-║                                                            ║
-║  Status: ✅ PRODUCTION VERIFIED                            ║
-║  Tests: 38/38 passed (100%)                               ║
-║  Version: v3.0-COVENANT-FOUNDATION                        ║
-║  Verified: 2025-10-19 20:18 UTC                           ║
-║                                                            ║
-║  GPG Signatures:    ✅ Operational                         ║
-║  RFC3161 Timestamps: ✅ Operational                        ║
-║  Merkle Audit:      ✅ Operational                         ║
-║  Merkle Root:       0136f28019d21d8c... (published)      ║
-║                                                            ║
-╚════════════════════════════════════════════════════════════╝
-```
+**Highlights**
+
+- 🜂 **The Remembrancer v3.0:** PRODUCTION VERIFIED
+- ⚔️ The covenant is cryptographically enforced
+- 📜 Knowledge compounds with provable truth
+
+**Build Facts**
+
+- **Status:** ✅ PRODUCTION VERIFIED
+- **Tests:** 38/38 passed (100%)
+- **Version:** v3.0-COVENANT-FOUNDATION
+- **Verified:** 2025-10-19 20:18 UTC
+- **GPG Signatures:** ✅ Operational
+- **RFC3161 Timestamps:** ✅ Operational
+- **Merkle Audit:** ✅ Operational
+- **Merkle Root:** `0136f28019d21d8c...` (published)
 
 ---
 
