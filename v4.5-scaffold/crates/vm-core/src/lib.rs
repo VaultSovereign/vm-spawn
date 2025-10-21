@@ -1,1 +1,3 @@
-pub mod types; pub mod canonical; pub mod merkle;
+pub mod canonical;
+pub mod merkle;
+pub mod types;

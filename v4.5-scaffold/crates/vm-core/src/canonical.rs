@@ -100,16 +100,8 @@ mod proptests {
 
     // Generate arbitrary PropReceipt for property testing
     fn arb_receipt() -> impl Strategy<Value = PropReceipt> {
-        (
-            "[a-z]{3,10}",
-            "[0-9]{1,3}\\.[0-9]{1,3}",
-            0u32..1000u32,
-        )
-            .prop_map(|(c, v, n)| PropReceipt {
-                component: c,
-                version: v,
-                count: n,
-            })
+        ("[a-z]{3,10}", "[0-9]{1,3}\\.[0-9]{1,3}", 0u32..1000u32)
+            .prop_map(|(c, v, n)| PropReceipt { component: c, version: v, count: n })
     }
 
     proptest! {

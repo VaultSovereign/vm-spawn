@@ -58,11 +58,8 @@ pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> Option<MerklePr
 
     while current_leaves.len() > 1 {
         // Find sibling index
-        let sibling_index = if current_index % 2 == 0 {
-            current_index + 1
-        } else {
-            current_index - 1
-        };
+        let sibling_index =
+            if current_index % 2 == 0 { current_index + 1 } else { current_index - 1 };
 
         // Add sibling to proof path (or duplicate if no sibling)
         let sibling = if sibling_index < current_leaves.len() {
@@ -85,10 +82,7 @@ pub fn generate_proof(leaves: &[[u8; 32]], leaf_index: usize) -> Option<MerklePr
         current_index /= 2;
     }
 
-    Some(MerkleProof {
-        leaf_hash: leaves[leaf_index],
-        path,
-    })
+    Some(MerkleProof { leaf_hash: leaves[leaf_index], path })
 }
 
 /// Verify Merkle proof against root

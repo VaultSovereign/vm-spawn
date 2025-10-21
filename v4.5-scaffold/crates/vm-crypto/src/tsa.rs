@@ -64,10 +64,7 @@ pub fn timestamp_request(tsa_url: &str, data_hash: &[u8; 32]) -> Result<Vec<u8>>
         .map_err(|e| CryptoError::Network(format!("TSA request failed: {}", e)))?;
 
     if !resp.status().is_success() {
-        return Err(CryptoError::Timestamp(format!(
-            "TSA HTTP error: {}",
-            resp.status()
-        )));
+        return Err(CryptoError::Timestamp(format!("TSA HTTP error: {}", resp.status())));
     }
 
     let tsr_der = resp
@@ -89,17 +86,13 @@ pub fn verify_timestamp(tsr_der: &[u8], expected_hash: &[u8; 32]) -> Result<bool
     // Check status
     match tsr.status.status {
         0 => {} // granted
-        1 => {
-            return Err(CryptoError::Timestamp(
-                "TSA status: granted with mods".into(),
-            ))
-        }
+        1 => return Err(CryptoError::Timestamp("TSA status: granted with mods".into())),
         2 => return Err(CryptoError::Timestamp("TSA status: rejection".into())),
         _ => {
             return Err(CryptoError::Timestamp(format!(
                 "TSA unknown status: {}",
                 tsr.status.status
-            )))
+            )));
         }
     }
 
@@ -120,9 +113,7 @@ pub fn verify_timestamp(tsr_der: &[u8], expected_hash: &[u8; 32]) -> Result<bool
 
     // Verify hash algorithm is SHA-256
     if tst_info.message_imprint.hash_algorithm.oid != const_oid::db::rfc5912::ID_SHA_256 {
-        return Err(CryptoError::Timestamp(
-            "Unsupported hash algorithm in TST".into(),
-        ));
+        return Err(CryptoError::Timestamp("Unsupported hash algorithm in TST".into()));
     }
 
     Ok(true)
@@ -140,10 +131,7 @@ pub fn hash_for_tsa(data: &[u8]) -> [u8; 32] {
 #[cfg(feature = "tsa")]
 fn rand_nonce() -> [u8; 8] {
     use std::time::{SystemTime, UNIX_EPOCH};
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos() as u64;
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos() as u64;
     nanos.to_be_bytes()
 }
 

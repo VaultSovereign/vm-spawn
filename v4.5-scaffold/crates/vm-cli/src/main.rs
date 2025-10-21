@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
-use miette::{miette, IntoDiagnostic};
+use miette::{IntoDiagnostic, miette};
 use std::{fs, path::PathBuf};
 use vm_core::{
     canonical::to_jcs_bytes,
@@ -77,12 +77,7 @@ fn main() -> miette::Result<()> {
 fn real_main() -> Result<()> {
     let cli = Cli::parse();
     match cli.command {
-        Commands::Record {
-            component,
-            version,
-            artifact,
-            store,
-        } => {
+        Commands::Record { component, version, artifact, store } => {
             let bytes = fs::read(&artifact).with_context(|| format!("read {:?}", artifact))?;
             let sha = sha256_of(&bytes);
             let mut rec = Receipt {
@@ -185,7 +180,9 @@ fn real_main() -> Result<()> {
                 Shell::Bash => generate(shells::Bash, &mut cmd, name, &mut io::stdout()),
                 Shell::Zsh => generate(shells::Zsh, &mut cmd, name, &mut io::stdout()),
                 Shell::Fish => generate(shells::Fish, &mut cmd, name, &mut io::stdout()),
-                Shell::PowerShell => generate(shells::PowerShell, &mut cmd, name, &mut io::stdout()),
+                Shell::PowerShell => {
+                    generate(shells::PowerShell, &mut cmd, name, &mut io::stdout())
+                }
                 Shell::Elvish => generate(shells::Elvish, &mut cmd, name, &mut io::stdout()),
             }
         }
@@ -193,8 +190,7 @@ fn real_main() -> Result<()> {
             use clap_mangen::Man;
             let cmd = Cli::command();
             let man = Man::new(cmd);
-            man.render(&mut std::io::stdout().lock())
-                .into_diagnostic()?;
+            man.render(&mut std::io::stdout().lock()).into_diagnostic()?;
         }
     }
     Ok(())

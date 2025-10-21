@@ -6,15 +6,14 @@ use sequoia_openpgp as openpgp;
 
 #[cfg(feature = "pgp")]
 use openpgp::{
-    armor,
+    Cert, KeyHandle, armor,
     cert::CertBuilder,
     crypto::Password,
     packet::signature,
-    parse::{stream::*, Parse},
+    parse::{Parse, stream::*},
     policy::StandardPolicy,
     serialize::stream::*,
     types::SignatureType,
-    Cert, KeyHandle,
 };
 
 use crate::error::{CryptoError, Result};
@@ -55,9 +54,7 @@ pub fn sign_detached(cert: &Cert, password: Option<&str>, data: &[u8]) -> Result
             .map_err(|e| CryptoError::Pgp(format!("Signer creation failed: {}", e)))?;
 
         signer.write_all(data).map_err(|e| CryptoError::Io(e))?;
-        signer
-            .finalize()
-            .map_err(|e| CryptoError::Pgp(format!("Finalization failed: {}", e)))?;
+        signer.finalize().map_err(|e| CryptoError::Pgp(format!("Finalization failed: {}", e)))?;
     }
 
     // Armor the signature
@@ -116,22 +113,16 @@ pub fn verify_detached(cert: &Cert, signature: &[u8], data: &[u8]) -> Result<boo
         }
     }
 
-    let mut helper = Helper {
-        cert,
-        valid: false,
-    };
+    let mut helper = Helper { cert, valid: false };
 
     let mut verifier = DetachedVerifierBuilder::from_reader(sig_reader)
         .map_err(|e| CryptoError::Pgp(format!("Verifier creation failed: {}", e)))?
         .with_policy(&policy, None, &mut helper)
         .map_err(|e| CryptoError::Pgp(format!("Policy application failed: {}", e)))?;
 
-    std::io::copy(&mut Cursor::new(data), &mut verifier)
-        .map_err(|e| CryptoError::Io(e))?;
+    std::io::copy(&mut Cursor::new(data), &mut verifier).map_err(|e| CryptoError::Io(e))?;
 
-    verifier
-        .finalize()
-        .map_err(|e| CryptoError::Pgp(format!("Verification failed: {}", e)))?;
+    verifier.finalize().map_err(|e| CryptoError::Pgp(format!("Verification failed: {}", e)))?;
 
     Ok(helper.valid)
 }

@@ -5,7 +5,7 @@ edition = "2024"
 license = "MIT OR Apache-2.0"
 
 [features]
-default = ["tls-rustls"]
+default = ["tsa", "tls-rustls"]  # Exclude pgp (requires nettle system libs)
 pgp = ["dep:sequoia-openpgp"]
 tsa = ["dep:x509-tsp", "dep:const-oid", "dep:reqwest"]
 tls-rustls = ["dep:rustls", "dep:aws-lc-rs", "reqwest?/rustls-tls"]
