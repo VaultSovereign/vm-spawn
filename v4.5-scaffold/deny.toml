@@ -1,0 +1,33 @@
+# VaultMesh cargo-deny configuration
+# Supply-chain security: advisories, licenses, sources
+
+[advisories]
+version = 2
+ignore = []
+# Yanked crates are errors
+yanked = "deny"
+
+[licenses]
+version = 2
+# Allow MIT, Apache-2.0, and compatible licenses
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+]
+confidence-threshold = 0.8
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+# Deny known problematic crates
+deny = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

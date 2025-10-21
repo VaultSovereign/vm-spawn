@@ -7,17 +7,31 @@ license = "MIT OR Apache-2.0"
 [features]
 default = ["tls-rustls"]
 pgp = ["dep:sequoia-openpgp"]
-tsa = ["dep:x509-tsp"]
-tls-rustls = ["dep:rustls","dep:aws-lc-rs"]
-openssl = ["dep:openssl"]
+tsa = ["dep:x509-tsp", "dep:const-oid", "dep:reqwest"]
+tls-rustls = ["dep:rustls", "dep:aws-lc-rs", "reqwest?/rustls-tls"]
+openssl = ["dep:openssl", "reqwest?/native-tls"]
 
 [dependencies]
 anyhow = { workspace = true }
+thiserror = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 serde_jcs = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+# OpenPGP via Sequoia
 sequoia-openpgp = { workspace = true, optional = true }
+
+# RFC3161 TSA
 x509-tsp = { workspace = true, optional = true }
-rustls = { workspace = true, optional = true }
+const-oid = { version = "0.9", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
+
+# TLS backends
+rustls = { workspace = true, features = ["ring"], optional = true }
 aws-lc-rs = { workspace = true, optional = true }
 openssl = { workspace = true, optional = true }
+
+[dev-dependencies]
+hex = { workspace = true }

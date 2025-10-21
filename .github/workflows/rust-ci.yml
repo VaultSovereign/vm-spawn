@@ -1,0 +1,202 @@
+name: Rust CI (v5.0 Scaffold)
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "v4.5-scaffold/**"
+      - "rust-toolchain.toml"
+      - ".github/workflows/rust-ci.yml"
+  pull_request:
+    paths:
+      - "v4.5-scaffold/**"
+      - "rust-toolchain.toml"
+      - ".github/workflows/rust-ci.yml"
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # Gate: Format & Lint
+  check:
+    name: Format & Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.85.0"
+          components: clippy, rustfmt
+
+      - name: Check formatting
+        working-directory: v4.5-scaffold
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (all features)
+        working-directory: v4.5-scaffold
+        run: cargo clippy --workspace --all-features --all-targets -- -D warnings
+
+  # Gate: Build & Test
+  test:
+    name: Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.85.0"
+          components: clippy, rustfmt
+
+      - name: Install nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
+      - name: Build workspace
+        working-directory: v4.5-scaffold
+        run: cargo build --workspace --all-features
+
+      - name: Run tests (nextest)
+        working-directory: v4.5-scaffold
+        run: cargo nextest run --workspace --all-features --no-fail-fast
+
+      - name: Run doctests
+        working-directory: v4.5-scaffold
+        run: cargo test --doc --workspace --all-features
+
+  # Gate: Property & Fuzz Tests
+  extended-tests:
+    name: Property & Fuzz Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.85.0"
+
+      - name: Install cargo-fuzz
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-fuzz
+
+      - name: Run property tests
+        working-directory: v4.5-scaffold
+        run: cargo test --release --all-features -- --include-ignored proptest
+
+      - name: Fuzz receipt parser (60s smoke)
+        working-directory: v4.5-scaffold/fuzz
+        run: |
+          cargo fuzz build receipt_parse
+          timeout 60 cargo fuzz run receipt_parse -- -max_total_time=60 || true
+
+  # Gate: Security & Supply Chain
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.85.0"
+
+      - name: Run cargo-deny (advisories, licenses, sources)
+        uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+          arguments: --workspace --all-features
+          manifest-path: v4.5-scaffold/Cargo.toml
+
+      - name: Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: 'v4.5-scaffold'
+          format: 'table'
+          exit-code: '0'  # Permissive for now; tighten in v5.1
+          ignore-unfixed: true
+          severity: 'CRITICAL,HIGH'
+
+  # Gate: Coverage
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.85.0"
+
+      - name: Install tarpaulin
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-tarpaulin
+
+      - name: Generate coverage
+        working-directory: v4.5-scaffold
+        run: cargo tarpaulin --workspace --all-features --out Lcov --output-dir ../coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage/lcov.info
+          fail_ci_if_error: false
+
+  # Release: Build artifacts (on tags)
+  release:
+    name: Release Build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            artifact: vm-cli-linux-amd64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            artifact: vm-cli-linux-arm64
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: vm-cli-macos-amd64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: vm-cli-macos-arm64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: vm-cli-windows-amd64.exe
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: "1.85.0"
+          target: ${{ matrix.target }}
+
+      - name: Build release binary
+        working-directory: v4.5-scaffold
+        run: cargo build --release --target ${{ matrix.target }} -p vm-cli
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: v4.5-scaffold/target/${{ matrix.target }}/release/vm-cli${{ matrix.os == 'windows-latest' && '.exe' || '' }}
