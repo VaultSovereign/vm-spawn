@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # cicd.sh - Generate GitHub Actions CI/CD pipeline
-# Usage: cicd.sh <repo-name>
+# Usage: cicd.sh
 
 set -euo pipefail
-
-REPO_NAME="${1:-myapp}"
 
 mkdir -p .github/workflows
 cat > .github/workflows/ci.yml << 'CI'

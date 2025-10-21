@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # monitoring.sh - Generate monitoring stack (Prometheus + Grafana + Docker Compose)
-# Usage: monitoring.sh <repo-name>
+# Usage: monitoring.sh
 
 set -euo pipefail
-
-REPO_NAME="${1:-myapp}"
 
 # ==================================================================
 # Docker Compose - Full stack

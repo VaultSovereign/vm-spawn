@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # makefile.sh - Generate Makefile
-# Usage: makefile.sh <repo-name>
+# Usage: makefile.sh
 
 set -euo pipefail
-
-REPO_NAME="${1:-myapp}"
 
 cat > Makefile <<'MAKEFILE'
 .PHONY: help test ci dev clean lint format

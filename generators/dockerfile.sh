@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # dockerfile.sh - Generate production Dockerfile
-# Usage: dockerfile.sh <repo-name>
+# Usage: dockerfile.sh
 
 set -euo pipefail
-
-REPO_NAME="${1:-myapp}"
 
 cat > Dockerfile.elite << 'DOCKER'
 # Multi-stage production Dockerfile

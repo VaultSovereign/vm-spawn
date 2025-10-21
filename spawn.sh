@@ -39,7 +39,8 @@ preflight_check() {
   # Check Python 3
   CHECKS_TOTAL=$((CHECKS_TOTAL + 1))
   if command -v python3 &> /dev/null; then
-    local PY_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+    local PY_VERSION
+    PY_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
     echo -e "  ${GREEN}✅${NC} Python 3: $PY_VERSION"
     CHECKS_PASSED=$((CHECKS_PASSED + 1))
   else

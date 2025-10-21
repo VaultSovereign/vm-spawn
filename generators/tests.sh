@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 # tests.sh - Generate test suite
-# Usage: tests.sh <repo-name>
+# Usage: tests.sh
 
 set -euo pipefail
-
-REPO_NAME="${1:-myapp}"
 
 # Create tests directory
 mkdir -p tests
