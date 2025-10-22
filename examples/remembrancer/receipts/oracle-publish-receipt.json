@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:c87d06d029ae7eb189e18ecbd68e99ee67c0401752d49d218ca3dcf5a3a62c16",
+  "batchRoot": "sha256:c87d06d029ae7eb189e18ecbd68e99ee67c0401752d49d218ca3dcf5a3a62c16",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:10",
+    "contract": "0x4f374f679e7c0d4c6e028f4dac12e33ff4a6b23e",
+    "tx": "0x49c9bc8ef4177332f0cd6d3898cffd6b896f0a217872c1e8c0809f2d7dcd2f5d",
+    "block": 13450123,
+    "ts": 1730100588,
+    "sig": "MEUCIGjP+NbrwEw2jBnRwVZXB0sv9QHmoDg4mn7aX+USfSZOAiEAgF9S0uKYDcAXhw8WjuIE/8uJpFyti7Bz2VpBLHEdULw="
+  },
+  "verifier": "did:vm:arbiter:prod-data-oracle",
+  "integrity": "vmr1-1v6j3xkf485kf45x4u3mk2n9x2nz9h6p9g3wyvc6hcwsds2a24g0"
+}

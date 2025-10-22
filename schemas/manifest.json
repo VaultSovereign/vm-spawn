@@ -1,0 +1,10 @@
+{
+  "registry.set@1.0.0": "file://schemas/registry-set.schema.json",
+  "ledger.append@1.0.0": "file://schemas/ledger-append.schema.json",
+  "workflow.transition@1.0.0": "file://schemas/workflow-transition.schema.json",
+  "oracle.publish@1.0.0": "file://schemas/oracle-publish.schema.json",
+  "indexer.checkpoint@1.0.0": "file://schemas/indexer-checkpoint.schema.json",
+  "sequencer.commit@1.0.0": "file://schemas/sequencer-commit.schema.json",
+  "vote.cast@1.0.0": "file://schemas/vote-cast.schema.json",
+  "asset.issue@1.0.0": "file://schemas/asset-issue.schema.json"
+}

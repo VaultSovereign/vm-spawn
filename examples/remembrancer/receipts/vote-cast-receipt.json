@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:82a63ef57c67e71ecf425f6b63dcf7c6cf48da3b3a05dae094d5e83ef54b93a6",
+  "batchRoot": "sha256:82a63ef57c67e71ecf425f6b63dcf7c6cf48da3b3a05dae094d5e83ef54b93a6",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:1",
+    "contract": "0x914e5b676f4de813ea4bf234e3bf74319aee8e3f",
+    "tx": "0x1f7663307660c11d66e7d86a46bb8bf8ef78b582d4ae20a92dd05ecaa785baa2",
+    "block": 19877711,
+    "ts": 1730100976,
+    "sig": "MEYCIQCYXRH7t4m+FUa6tEE1JyxyNpmjP0xtE6PSYp+z2V3XZwIhAL36uB9TOFww1HvyZXYZnQxXXLVH2nUB2a7dtwqjO2N3"
+  },
+  "verifier": "did:vm:arbiter:prod-dao-suite",
+  "integrity": "vmr1-1y6m72krj4mty2f3up5dx3ph4rvtjrpjfk0d8d28pkw045t0uyjm"
+}

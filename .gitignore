@@ -19,6 +19,7 @@ dist/
 policy/wasm/*.wasm
 target/
 *.wasm
+out/
 # Logs
 logs/
 *.log

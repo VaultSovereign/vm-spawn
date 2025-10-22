@@ -4,7 +4,7 @@
 # VaultMesh Covenants
 include ops/make.d/covenants.mk
 
-.PHONY: help codex-seal codex-verify test health
+.PHONY: help codex-seal codex-verify test health codegen verify-receipts seal verify-finalized
 
 # Default GPG key (override with: make codex-seal KEY=YOUR_KEY_ID)
 KEY ?= 6E4082C6A410F340
@@ -60,6 +60,31 @@ health: ## Run system health check
 
 test: ## Run smoke tests
 	@./SMOKE_TEST.sh
+
+codegen: ## Regenerate Remembrancer SDK clients and type definitions
+	openapi-generator-cli generate -i docs/api/remembrancer-openapi.yaml -g typescript-axios -o sdks/typescript
+	npx openapi-typescript docs/api/remembrancer-openapi.yaml -o sdks/typescript/src/remembrancer.types.ts
+	oapi-codegen -generate types,client -package remembrancer docs/api/remembrancer-openapi.yaml > sdks/go/remembrancer.gen.go
+	openapi-generator-cli generate -i docs/api/remembrancer-openapi.yaml -g rust -o sdks/rust
+
+verify-receipts: ## Verify portable Remembrancer receipts offline
+	@for f in examples/remembrancer/receipts/*-receipt.json; do \
+		echo "🔍 Verifying $$f"; \
+		npx ts-node tools/verify-receipt.ts "$$f"; \
+	done
+
+seal: ## Batch pending events into finalized receipts (Phase II sealer)
+	@cd services/sealer && npm install >/dev/null 2>&1 && npm run seal
+
+verify-finalized: ## Verify finalized receipts emitted by the sealer
+	@if ls out/receipts/*.json >/dev/null 2>&1; then \
+		for f in out/receipts/*.json; do \
+			echo "🔍 Final receipt $$f"; \
+			npx ts-node tools/verify-receipt.ts "$$f"; \
+		done; \
+	else \
+		echo "No finalized receipts found."; \
+	fi
 
 .PHONY: treaty-verify policy-build order-send metrics-run k8s-apply
 

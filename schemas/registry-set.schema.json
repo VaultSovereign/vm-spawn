@@ -1,0 +1,35 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "registry.set@1.0.0",
+  "description": "Payload for setting or updating a verifiable registry entry.",
+  "type": "object",
+  "required": ["namespace", "key", "value"],
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical partition that scopes the registry entry."
+    },
+    "key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Key for the registry entry; unique within the namespace."
+    },
+    "value": {
+      "description": "Canonical JSON value captured for this registry entry.",
+      "anyOf": [
+        { "type": "object" },
+        { "type": "array" },
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional unstructured metadata about the registry value."
+    }
+  },
+  "additionalProperties": false
+}

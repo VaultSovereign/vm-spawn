@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:6f9c4eb50acc0747cb3fbc78d2c203a7482d5d8494c3a70eab77e077428f05dd",
+  "batchRoot": "sha256:6f9c4eb50acc0747cb3fbc78d2c203a7482d5d8494c3a70eab77e077428f05dd",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:1",
+    "contract": "0x1a2b43a35ff2b8f5548f8db0a4f57236465f6c8d",
+    "tx": "0x8b6d62136fda2c6ff0c04d988f6e79a65d0bd3d7e8aff9d419f9c0a8c7edd891",
+    "block": 19877654,
+    "ts": 1730100433,
+    "sig": "MEQCIGh0iJ5xZ/ob3x1M6Xwe/V0gYfWs26+yS9ya0l2bFlaVAiAR6c6NuvFftY/H3lzT3KQdJQx1K3q3a7Ovk/F1KHByAw=="
+  },
+  "verifier": "did:vm:arbiter:prod-gov-us",
+  "integrity": "vmr1-10m49pswuzknerh7n4jsdxqh728fy0fcrq8slc9wm7thn96tzejs"
+}

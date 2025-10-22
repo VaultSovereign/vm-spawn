@@ -1,0 +1,367 @@
+openapi: 3.0.3
+info:
+  title: VaultMesh Remembrancer API
+  description: >
+    Canonical interface for submitting events, retrieving proofs, and fetching anchor
+    attestations from the Remembrancer. All payloads use JCS canonicalization prior
+    to signing and transport.
+  version: 1.0.0
+servers:
+  - url: https://api.vaultmesh.org/v1
+    description: Production Remembrancer endpoint
+  - url: https://sandbox.vaultmesh.org/v1
+    description: Sandbox environment for integration testing
+paths:
+  /events:
+    post:
+      summary: Submit a canonical event envelope
+      operationId: submitEvent
+      tags: [Events]
+      description: >
+        Accepts a signed evidence envelope. The Harbinger performs schema validation, JCS
+        canonicalization, signature verification, and forwards the event to the Scribe.
+        A provisional receipt is returned while the event awaits batching and anchoring.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventEnvelope'
+      responses:
+        '202':
+          description: Event accepted for processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProvisionalReceipt'
+        '400':
+          description: Schema validation failed or canonicalization error
+        '401':
+          description: Authentication or signature verification failure
+        '409':
+          description: Duplicate event identifier or replay detected
+  /events/{id}:
+    get:
+      summary: Retrieve an event envelope
+      operationId: getEvent
+      tags: [Events]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Event identifier (UUIDv7) or portable integrity reference
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Canonical event envelope
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventEnvelope'
+        '404':
+          description: Event not found
+  /receipts/{id}:
+    get:
+      summary: Fetch a finalized receipt
+      operationId: getReceipt
+      tags: [Receipts]
+      description: >
+        Returns the portable, anchored receipt for a given event or event hash.
+        Receipts contain Merkle inclusion proofs, anchor attestations, and verifier metadata.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Event identifier, event hash, or vmr integrity reference
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Portable receipt with full proof chain
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalReceipt'
+        '404':
+          description: Receipt not found or not yet anchored
+  /proofs/inclusion:
+    get:
+      summary: Retrieve a Merkle inclusion proof
+      operationId: getInclusionProof
+      tags: [Proofs]
+      parameters:
+        - name: leaf
+          in: query
+          required: true
+          description: SHA-256 hash of the event envelope
+          schema:
+            type: string
+            pattern: '^sha256:[0-9a-f]{64}$'
+        - name: batch
+          in: query
+          required: true
+          description: Merkle root of the batch containing the event
+          schema:
+            type: string
+            pattern: '^sha256:[0-9a-f]{64}$'
+      responses:
+        '200':
+          description: Inclusion proof suitable for offline verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InclusionProof'
+        '404':
+          description: Batch or leaf hash not found
+  /anchors/{height}:
+    get:
+      summary: Inspect an anchor commitment
+      operationId: getAnchor
+      tags: [Anchors]
+      parameters:
+        - name: height
+          in: path
+          required: true
+          description: Anchor sequence number or external chain block height
+          schema:
+            type: integer
+            minimum: 0
+        - name: chain
+          in: query
+          required: false
+          description: Optional chain filter (e.g. eip155:1, btc:mainnet)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Anchor metadata and attestation payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Anchor'
+        '404':
+          description: Anchor not found
+components:
+  schemas:
+    EventEnvelope:
+      type: object
+      required:
+        - "vm:version"
+        - "event:id"
+        - "event:type"
+        - subject
+        - actor
+        - "payload:cid"
+        - timestamp
+        - signatures
+        - witness
+      properties:
+        "vm:version":
+          type: string
+          description: Semantic version of the envelope format.
+          example: "1.0"
+        "event:id":
+          type: string
+          description: Deterministic or UUIDv7 identifier for the event.
+          example: "018f2e4e-9c1f-7c9d-b8d6-2b5f0fa174ae"
+        "event:type":
+          type: string
+          description: Archetype-qualified event verb (e.g. registry.set, vote.cast).
+        subject:
+          type: string
+          description: DID or URN referencing the subject of the event.
+        actor:
+          type: string
+          description: DID of the actor emitting the event.
+        prev:
+          type:
+            - string
+            - "null"
+          description: Hash of the previous event in the logical stream, if any.
+        "payload:cid":
+          type: string
+          description: Content address (e.g. IPFS CID, S3 URL) referencing the full payload.
+        "payload:hash":
+          type: string
+          description: Digest of the payload (sha256:<hex> or blake3:<hex>).
+        schema:
+          type: string
+          description: Canonical schema URI that validates the payload.
+          example: https://schemas.vaultmesh.org/registry.set@1.0.0
+        timestamp:
+          type: integer
+          minimum: 0
+          description: Unix epoch seconds when the event was produced.
+        nonce:
+          type: string
+          description: Anti-replay nonce or challenge value.
+        witness:
+          type: array
+          minItems: 1
+          items:
+            type: string
+          description: Set of witnesses that observed or co-signed the event.
+        signatures:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Signature'
+        tags:
+          type: array
+          description: Free-form tags (e.g. chain identifiers, compliance flags).
+          items:
+            type: string
+      additionalProperties: false
+    Signature:
+      type: object
+      required: [alg, kid, sig]
+      properties:
+        alg:
+          type: string
+          description: Signature algorithm (Ed25519, secp256k1, BLS, etc.).
+        kid:
+          type: string
+          description: Key identifier referencing the signer.
+        sig:
+          type: string
+          description: Base64url-encoded signature value.
+        scope:
+          type: string
+          description: Optional role or capability scope for the signer.
+      additionalProperties: false
+    ProvisionalReceipt:
+      type: object
+      description: Receipt issued prior to anchoring, useful for optimistic workflows.
+      required:
+        - eventHash
+        - eventId
+        - status
+        - receivedAt
+      properties:
+        eventHash:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+          description: Hash of the canonical envelope.
+        eventId:
+          type: string
+          description: Mirrors event:id from the envelope.
+        status:
+          type: string
+          enum: [pending, batched, anchored]
+          description: Processing state within the Remembrancer pipeline.
+        receivedAt:
+          type: integer
+          minimum: 0
+          description: Unix timestamp when the event was accepted.
+        batchRoot:
+          type: string
+          description: Merkle root once the event has been batched.
+        anchorEstimate:
+          type: integer
+          description: Estimated timestamp for the next anchor window.
+      additionalProperties: false
+    FinalReceipt:
+      type: object
+      description: Fully portable receipt containing the entire proof chain.
+      required:
+        - eventHash
+        - batchRoot
+        - path
+        - anchor
+        - verifier
+        - integrity
+      properties:
+        eventHash:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+          description: Hash of the canonical event envelope.
+        batchRoot:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+          description: Merkle root for the batch that includes the event.
+        path:
+          type: array
+          description: Ordered list of sibling hashes for Merkle inclusion verification.
+          items:
+            type: string
+            pattern: '^sha256:[0-9a-f]{64}$'
+        anchor:
+          $ref: '#/components/schemas/Anchor'
+        verifier:
+          type: string
+          description: DID of the Arbiter that generated the receipt.
+        integrity:
+          type: string
+          description: Stable receipt identifier (vmr1-...).
+        issuedAt:
+          type: integer
+          description: Unix timestamp when the receipt was finalized.
+        metadata:
+          type: object
+          description: Optional implementation specific metadata.
+      additionalProperties: false
+    InclusionProof:
+      type: object
+      description: Proof payload returned by the /proofs APIs.
+      required:
+        - leaf
+        - batchRoot
+        - path
+      properties:
+        leaf:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+        batchRoot:
+          type: string
+          pattern: '^sha256:[0-9a-f]{64}$'
+        path:
+          type: array
+          items:
+            type: string
+            pattern: '^sha256:[0-9a-f]{64}$'
+        anchor:
+          $ref: '#/components/schemas/Anchor'
+      additionalProperties: false
+    Anchor:
+      type: object
+      description: Anchor metadata linking batch roots to external trust domains.
+      required:
+        - chain
+        - tx
+        - block
+        - ts
+      properties:
+        chain:
+          type: string
+          description: Chain identifier (e.g. eip155:1, btc:mainnet, rfc3161:freetsa).
+        contract:
+          type: string
+          description: Contract or address used for the anchor (if applicable).
+        tx:
+          type: string
+          description: Transaction hash or RFC 3161 TSA request identifier.
+        block:
+          type: integer
+          minimum: 0
+          description: Block height or sequence number of the anchor.
+        ts:
+          type: integer
+          minimum: 0
+          description: Unix timestamp when the anchor was confirmed.
+        sig:
+          type: string
+          description: Optional operator signature or TSA response signature.
+        memo:
+          type: string
+          description: Additional anchor metadata, such as the TSA policy OID.
+      additionalProperties: false
+  securitySchemes:
+    AuthorizationSignature:
+      type: http
+      scheme: bearer
+      bearerFormat: DID-Signature
+      description: >
+        Bearer token conveying an application signature or delegated credential.
+security:
+  - AuthorizationSignature: []

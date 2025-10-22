@@ -1,0 +1,39 @@
+harbinger:
+  namespace: "vaultmesh:remembrancer"
+  jcs: true
+  reject_unknown_schemas: true
+  reject_future_timestamps: true
+  max_drift_seconds: 300
+
+  resolvers:
+    - type: "file-manifest"
+      path: "schemas/manifest.json"
+    - type: "http"
+      base: "https://schemas.vaultmesh.org/"
+    - type: "ipfs"
+      gateway: "https://ipfs.io/ipfs/"
+
+  schemas:
+    "registry.set": "registry.set@1.0.0"
+    "ledger.append": "ledger.append@1.0.0"
+    "workflow.transition": "workflow.transition@1.0.0"
+    "oracle.publish": "oracle.publish@1.0.0"
+    "indexer.checkpoint": "indexer.checkpoint@1.0.0"
+    "sequencer.commit": "sequencer.commit@1.0.0"
+    "vote.cast": "vote.cast@1.0.0"
+    "asset.issue": "asset.issue@1.0.0"
+
+  policy:
+    path: "policy/admission.rego"
+
+  witnesses:
+    min_required: 1
+    allowlist:
+      - "did:vm:arbiter:prod-us-east-1"
+      - "did:vm:arbiter:prod-eu-west-1"
+      - "did:vm:arbiter:prod-indexer-a"
+      - "did:vm:arbiter:prod-dao-suite"
+      - "did:vm:arbiter:prod-data-oracle"
+      - "did:vm:arbiter:prod-l2-sequencer"
+      - "did:vm:arbiter:prod-asset-forge"
+      - "did:vm:arbiter:prod-gov-us"

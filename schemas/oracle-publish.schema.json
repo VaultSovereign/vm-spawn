@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "oracle.publish@1.0.0",
+  "description": "Payload for publishing a verified external fact through an oracle service.",
+  "type": "object",
+  "required": ["feed", "value", "observedAt"],
+  "properties": {
+    "feed": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier for the oracle feed (e.g. 'co2.ppm')."
+    },
+    "value": {
+      "description": "Observed value for the feed. Supports structured data.",
+      "anyOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "object" },
+        { "type": "array" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "observedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix timestamp (seconds) when the feed was observed."
+    },
+    "sourceProofs": {
+      "type": "array",
+      "description": "External evidence URIs or hashes supporting the observation.",
+      "items": {
+        "type": "string",
+        "format": "uri"
+      }
+    },
+    "unit": {
+      "type": "string",
+      "description": "Unit of measure for the value if applicable."
+    }
+  },
+  "additionalProperties": false
+}
