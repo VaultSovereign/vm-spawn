@@ -16,8 +16,8 @@ async fn main() -> Result<()> {
         key_map: Arc::new(km),
         nonces: Some(nonce_store),
         opts: VerifyOptions {
-            max_skew_secs: 0,
-            require_nonce: false,
+            max_skew_secs: 120,
+            require_nonce: true,
         },
     };
 
