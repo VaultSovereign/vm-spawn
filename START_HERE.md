@@ -13,11 +13,9 @@
    - Explains what each version achieved
    - Shows v2.4 → v3.0 evolution (Covenant Foundation)
 
-### 2. **V3.0_COVENANT_FOUNDATION.md** ⭐ CURRENT STATE
-   - Current architecture (cryptographic verification)
-   - GPG signing + RFC3161 timestamps + Merkle audit
-   - Production verification results
-   - What makes v3.0 cryptographically proven
+### 2. Completion records (archived)
+   - Detailed milestone documents have been moved to `archive/completion-records/`
+   - See `VERSION_TIMELINE.md` for the authoritative history and pointers
 
 ### 3. **README.md**
    - Main landing page
@@ -108,15 +106,14 @@ ops/bin/POST_MIGRATION_HARDEN.sh 🛡️ Harden + encrypt
 
 ## 🗂️ Documentation Hierarchy
 
-### Current (v2.4)
-1. **VERSION_TIMELINE.md** - Complete history
-2. **V2.4_MODULAR_PERFECTION.md** - Current architecture
-3. **README.md** - Main guide
-4. **SMOKE_TEST.sh** - Verification tool
+### Current
+1. **VERSION_TIMELINE.md** - Complete history (canonical)
+2. **README.md** - Main guide
+3. **SMOKE_TEST.sh** - Verification tool
 
 ### Historical (For Context)
-1. **V2.2_PRODUCTION_SUMMARY.md** - The proven baseline
-2. **V2.3_NUCLEAR_RELEASE.md** - The ambitious attempt (superseded)
+1. See `archive/completion-records/` for milestone completion records
+2. Selected earlier summaries remain (e.g., `V2.2_PRODUCTION_SUMMARY.md`)
 
 ### The Remembrancer
 1. **docs/REMEMBRANCER.md** - Covenant memory
@@ -160,4 +157,3 @@ The journey:
 ---
 
 **Welcome to v2.4-MODULAR. The forge is perfect. The test proves it.** 🜞⚔️
-

@@ -37,6 +37,10 @@ flowchart TD
 
 ---
 
+Note on history and records
+- The detailed milestone completion documents have been archived to `archive/completion-records/`.
+- See `VERSION_TIMELINE.md` for the canonical version history and pointers to archived details.
+
 ## 🚀 Quick Start (2 minutes)
 
 ### 1. Clone & Verify
@@ -52,7 +56,7 @@ cd vm-spawn
 ### 2. Spawn Your First Service
 ```bash
 # Create a production-ready microservice
-./spawn-elite-complete.sh my-service service
+./spawn.sh my-service service
 
 # Test it
 cd ~/repos/my-service
@@ -87,7 +91,7 @@ curl http://localhost:8000/         # {"status":"ok","service":"my-service"}
 
 ## 🎯 What You Get
 
-When you run `./spawn-elite-complete.sh my-service service`, you get **~30 production-ready files**:
+When you run `./spawn.sh my-service service`, you get **~30 production-ready files**:
 
 ```
 ~/repos/my-service/
@@ -587,7 +591,7 @@ remembrancer export-proof my-app.tar.gz
 - **ADR-007**: Why GPG over X.509 certificates? → Sovereign key custody
 - **ADR-008**: Why RFC3161 over blockchain? → Legal recognition + mature tooling
 
-**Complete Guide**: [V3.0_COVENANT_FOUNDATION.md](V3.0_COVENANT_FOUNDATION.md)
+Guide: See `VERSION_TIMELINE.md` (canonical). The v3.0 completion record is archived at `archive/completion-records/V3.0_COVENANT_FOUNDATION.md`.
 
 ---
 
@@ -596,9 +600,9 @@ remembrancer export-proof my-app.tar.gz
 ### For Solo Developers
 ```bash
 # Spawn services rapidly without setup overhead
-./spawn-elite-complete.sh auth-service service
-./spawn-elite-complete.sh payment-api service
-./spawn-elite-complete.sh notification-worker worker
+./spawn.sh auth-service service
+./spawn.sh payment-api service
+./spawn.sh notification-worker worker
 
 # Each one: production-ready, tested, documented
 ```
