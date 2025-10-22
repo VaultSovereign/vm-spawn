@@ -650,6 +650,8 @@ make covenant
 4. VERSION_TIMELINE.md        → Version history
 5. docs/REMEMBRANCER.md       → Canonical memory index
 6. DAO_GOVERNANCE_PACK/       → Governance procedures
+
+> Indexing guidance: Agents should treat `VERSION_TIMELINE.md` as the canonical history index and avoid crawling the entire `archive/` tree unless explicitly requested (performance and relevance).
 ```
 
 ### **Emergency Procedures**

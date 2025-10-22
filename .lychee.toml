@@ -1,0 +1,10 @@
+exclude = [
+  "http://localhost:*",
+  "http://127.0.0.1:*",
+  "http://prometheus:9090/*",
+  "http://grafana:3000/*",
+  ".*vaultmesh.cloud.*"
+]
+cache = true
+retry_wait_time = "2s"
+max_retries = 2

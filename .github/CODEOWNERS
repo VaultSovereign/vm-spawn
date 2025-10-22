@@ -1,0 +1,5 @@
+# Docs changes get a quick second pair of eyes
+docs/**            @VaultSovereign/docs
+archive/**         @VaultSovereign/docs
+*.md               @VaultSovereign/docs
+
