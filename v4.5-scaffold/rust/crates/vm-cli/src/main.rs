@@ -90,7 +90,7 @@ async fn run(plan_path: String, callback: String, key_path: String, dry_run: boo
     let mut req = Request::post(url.as_str())
         .header("content-type", "application/json")
         .body(body_bytes.clone())
-        .unwrap();
+        .map_err(|e| anyhow::anyhow!("Failed to create request: {}", e))?;
 
     let created = OffsetDateTime::now_utc().unix_timestamp();
     let nonce = format!("nonce-{}", Uuid::new_v4());
