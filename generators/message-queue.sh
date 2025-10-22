@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Find script directory to locate templates
+GENERATOR_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$GENERATOR_DIR/.." && pwd)"
+
 usage() {
   cat <<'USAGE'
 message-queue.sh — add MQ client skeleton (RabbitMQ or NATS) to a service.
