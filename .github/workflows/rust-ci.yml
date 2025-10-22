@@ -125,10 +125,10 @@ jobs:
         run: cargo test --workspace --all-features --release -- --ignored proptest
 
       - name: Fuzz receipt parser (60s smoke)
-        working-directory: v4.5-scaffold/fuzz
+        working-directory: v4.5-scaffold
         run: |
-          cargo fuzz build receipt_parse
-          timeout 60 cargo fuzz run receipt_parse -- -max_total_time=60 || true
+          cargo fuzz build receipt_parse --fuzz-dir fuzz
+          timeout 60 cargo fuzz run receipt_parse --fuzz-dir fuzz -- -max_total_time=60 || true
 
   # Gate: Security & Supply Chain
   security:
