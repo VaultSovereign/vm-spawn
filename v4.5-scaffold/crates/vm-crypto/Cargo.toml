@@ -1,0 +1,40 @@
+[package]
+name = "vm-crypto"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[features]
+default = ["tsa", "tls-rustls"]  # Exclude pgp (requires nettle system libs)
+pgp = ["dep:sequoia-openpgp"]
+tsa = ["dep:x509-tsp", "dep:const-oid", "dep:reqwest", "dep:cms", "dep:der", "dep:cmpv2"]
+tls-rustls = ["dep:rustls", "dep:aws-lc-rs", "reqwest?/rustls-tls"]
+openssl = ["dep:openssl", "reqwest?/native-tls"]
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_jcs = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+# OpenPGP via Sequoia
+sequoia-openpgp = { workspace = true, optional = true }
+
+# RFC3161 TSA
+x509-tsp = { version = "0.1", optional = true }
+const-oid = { version = "0.9", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["blocking"], optional = true }
+cms = { version = "0.2", optional = true }
+cmpv2 = { version = "0.2", optional = true }
+der = { version = "0.7", optional = true }
+
+# TLS backends
+rustls = { workspace = true, features = ["ring"], optional = true }
+aws-lc-rs = { workspace = true, optional = true }
+openssl = { workspace = true, optional = true }
+
+[dev-dependencies]
+hex = { workspace = true }

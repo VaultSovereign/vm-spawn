@@ -1,0 +1,19 @@
+[package]
+name = "vm-remembrancer"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[features]
+default = ["sqlite"]
+sqlite = ["dep:rusqlite"]
+redb   = ["dep:redb"]
+
+[dependencies]
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_jcs = { workspace = true }
+rusqlite = { workspace = true, optional = true }
+redb = { workspace = true, optional = true }
+vm-core = { path = "../vm-core" }

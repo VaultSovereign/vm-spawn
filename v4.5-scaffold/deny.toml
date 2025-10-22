@@ -1,0 +1,32 @@
+# VaultMesh cargo-deny configuration
+# Supply-chain security: advisories, licenses, sources
+
+[licenses]
+confidence-threshold = 0.93
+allow = [
+  "Apache-2.0",
+  "MIT",
+  "BSD-3-Clause",
+  "ISC",
+  "OpenSSL",
+  "Unicode-3.0",
+  "CDLA-Permissive-2.0",
+  "Zlib",
+]
+
+[licenses.private]
+ignore = true
+
+[advisories]
+ignore = []
+
+[bans]
+multiple-versions = "warn"
+wildcards = "allow"
+# Deny known problematic crates
+deny = []
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

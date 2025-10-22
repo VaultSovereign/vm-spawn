@@ -1,6 +1,26 @@
-# Changelog
+# Changelog — VaultMesh
 
-All notable changes to VaultMesh Spawn Elite will be documented in this file.
+## [v5.0.0-alpha.1] — 2025-10-22
+
+### Added
+- **Sovereign Rust core**: multi-crate workspace (`vm-core`, `vm-crypto`, `vm-remembrancer`, `vm-cli`, `vm-fed`).
+- **JCS (RFC 8785)** canonicalization and Merkle audit path.
+- **OpenPGP (Sequoia)** detached signing + policy-aware verify (feature-gated).
+- **RFC-3161 TSA** requests + verification using `x509-tsp` with ASN.1/CMS helpers (`cms`, `cmpv2`, `der`) (feature-gated).
+- **CLI**: `record | query | verify | completions | manpage` with new `--pgp-key/--pgp-password/--pgp-cert/--tsa-url`.
+- **CI**: hardened matrix (Linux/macOS all-features; Windows sqlite+rustls only), coverage, fuzz smoke, SLSA attestations.
+
+### Changed
+- **MerkleProof serialization** now records sibling direction via `ProofStep { sibling, sibling_on_right }` (prevents right-hand false negatives).
+
+### Security
+- **cargo-deny** policy tightened (license allow-list; GPL-family denied; vuln = deny).
+- **Attestations**: `actions/attest-build-provenance@v3` for release provenance.
+
+### Migration
+- Rebuild previously persisted Merkle proofs to the new `ProofStep` layout (see `MIGRATION.md`).
+
+---
 
 ## [v4.0.1-LITERALLY-PERFECT] - 2025-10-19
 

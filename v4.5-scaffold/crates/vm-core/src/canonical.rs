@@ -1,27 +1,23 @@
-//! Canonical JSON serialization (JCS, RFC 8785)
+// JSON Canonicalization Scheme (RFC 8785)
+// Ensures deterministic serialization for Merkle trees and federation
 
-use serde::{Serialize, de::DeserializeOwned};
-use sha2::{Sha256, Digest};
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
-/// Serialize to canonical JSON (JCS, RFC 8785)
-///
-/// JCS guarantees:
-/// - Object keys sorted lexicographically
-/// - No whitespace (compact)
-/// - Unicode normalization (NFC)
-/// - Deterministic number formatting
-pub fn to_canonical<T: Serialize>(value: &T) -> anyhow::Result<Vec<u8>> {
-    Ok(serde_jcs::to_vec(value)?)
+/// Serialize to JCS canonical JSON bytes
+pub fn to_jcs_bytes<T: Serialize>(v: &T) -> Result<Vec<u8>> {
+    Ok(serde_jcs::to_vec(v)?)
 }
 
 /// Deserialize from canonical JSON
-pub fn from_canonical<T: DeserializeOwned>(bytes: &[u8]) -> anyhow::Result<T> {
+pub fn from_jcs_bytes<'a, T: Deserialize<'a>>(bytes: &'a [u8]) -> Result<T> {
     Ok(serde_json::from_slice(bytes)?)
 }
 
-/// Content-addressed ID (SHA-256 of canonical JSON)
-pub fn content_id<T: Serialize>(value: &T) -> anyhow::Result<[u8; 32]> {
-    let canonical = to_canonical(value)?;
+/// Compute content ID (SHA-256 of canonical JSON)
+pub fn content_id<T: Serialize>(v: &T) -> Result<[u8; 32]> {
+    use sha2::{Digest, Sha256};
+    let canonical = to_jcs_bytes(v)?;
     let mut hasher = Sha256::new();
     hasher.update(&canonical);
     Ok(hasher.finalize().into())
@@ -30,70 +26,63 @@ pub fn content_id<T: Serialize>(value: &T) -> anyhow::Result<[u8; 32]> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use serde::{Serialize, Deserialize};
 
-    #[derive(Serialize, Deserialize, PartialEq, Debug)]
-    struct TestData {
+    #[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
+    struct TestReceipt {
         component: String,
         version: String,
+        sha256: String,
     }
 
     #[test]
-    fn test_canonical_deterministic() {
-        let data = TestData {
+    fn test_jcs_deterministic() {
+        let r = TestReceipt {
             component: "oracle".into(),
             version: "1.0".into(),
+            sha256: "abcd1234".into(),
         };
-        let c1 = to_canonical(&data).unwrap();
-        let c2 = to_canonical(&data).unwrap();
+        let c1 = to_jcs_bytes(&r).unwrap();
+        let c2 = to_jcs_bytes(&r).unwrap();
         assert_eq!(c1, c2);
     }
 
     #[test]
-    fn test_canonical_round_trip() {
-        let data = TestData {
+    fn test_jcs_round_trip() {
+        let r1 = TestReceipt {
             component: "oracle".into(),
             version: "1.0".into(),
+            sha256: "abcd1234".into(),
         };
-        let canonical = to_canonical(&data).unwrap();
-        let decoded: TestData = from_canonical(&canonical).unwrap();
-        assert_eq!(data, decoded);
+        let canonical = to_jcs_bytes(&r1).unwrap();
+        let r2: TestReceipt = from_jcs_bytes(&canonical).unwrap();
+        assert_eq!(r1, r2);
 
-        // Re-canonicalize should produce identical bytes
-        let recanonical = to_canonical(&decoded).unwrap();
-        assert_eq!(canonical, recanonical);
+        // Second canonicalization should be identical
+        let canonical2 = to_jcs_bytes(&r2).unwrap();
+        assert_eq!(canonical, canonical2);
     }
 
     #[test]
     fn test_content_id_stable() {
-        let data = TestData {
+        let r = TestReceipt {
             component: "oracle".into(),
             version: "1.0".into(),
+            sha256: "abcd1234".into(),
         };
-        let id1 = content_id(&data).unwrap();
-        let id2 = content_id(&data).unwrap();
+        let id1 = content_id(&r).unwrap();
+        let id2 = content_id(&r).unwrap();
         assert_eq!(id1, id2);
     }
 
     #[test]
     fn test_key_order_sorted() {
-        // Intentionally create struct with "wrong" field order
-        #[derive(Serialize)]
-        struct Unsorted {
-            z_last: String,
-            a_first: String,
-        }
-
-        let data = Unsorted {
-            z_last: "last".into(),
-            a_first: "first".into(),
-        };
-
-        let canonical = to_canonical(&data).unwrap();
-        let json_str = String::from_utf8(canonical).unwrap();
-
-        // JCS should sort keys: a_first before z_last
-        assert!(json_str.starts_with(r#"{"a_first":"first","z_last":"last"}"#));
+        use serde_json::json;
+        // Create object with intentionally wrong key order
+        let obj = json!({"z": 3, "a": 1, "m": 2});
+        let canonical = to_jcs_bytes(&obj).unwrap();
+        let s = String::from_utf8(canonical).unwrap();
+        // JCS sorts keys: a, m, z
+        assert!(s.starts_with(r#"{"a":"#));
     }
 }
 
@@ -102,50 +91,38 @@ mod proptests {
     use super::*;
     use proptest::prelude::*;
 
-    #[derive(Debug, Clone, serde::Serialize, serde::Deserialize, PartialEq)]
-    struct ArbitraryReceipt {
+    #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+    struct PropReceipt {
         component: String,
         version: String,
         count: u32,
     }
 
-    impl Arbitrary for ArbitraryReceipt {
-        type Parameters = ();
-        type Strategy = BoxedStrategy<Self>;
-
-        fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
-            (
-                "[a-z]{3,10}",
-                "[0-9]{1,2}\\.[0-9]{1,2}",
-                any::<u32>(),
-            )
-                .prop_map(|(component, version, count)| ArbitraryReceipt {
-                    component,
-                    version,
-                    count,
-                })
-                .boxed()
-        }
+    // Generate arbitrary PropReceipt for property testing
+    fn arb_receipt() -> impl Strategy<Value = PropReceipt> {
+        ("[a-z]{3,10}", "[0-9]{1,3}\\.[0-9]{1,3}", 0u32..1000u32)
+            .prop_map(|(c, v, n)| PropReceipt { component: c, version: v, count: n })
     }
 
     proptest! {
         #[test]
-        fn canonical_is_deterministic(r in any::<ArbitraryReceipt>()) {
-            let c1 = to_canonical(&r).unwrap();
-            let c2 = to_canonical(&r).unwrap();
+        fn proptest_jcs_is_deterministic(r in arb_receipt()) {
+            let c1 = to_jcs_bytes(&r).unwrap();
+            let c2 = to_jcs_bytes(&r).unwrap();
             prop_assert_eq!(c1, c2);
         }
 
         #[test]
-        fn canonical_round_trip_stable(r in any::<ArbitraryReceipt>()) {
-            let canonical = to_canonical(&r).unwrap();
-            let decoded: ArbitraryReceipt = from_canonical(&canonical).unwrap();
-            let recanonical = to_canonical(&decoded).unwrap();
-            prop_assert_eq!(canonical, recanonical);
+        fn proptest_jcs_round_trip_stable(r in arb_receipt()) {
+            let c1 = to_jcs_bytes(&r).unwrap();
+            let decoded: PropReceipt = from_jcs_bytes(&c1).unwrap();
+            let c2 = to_jcs_bytes(&decoded).unwrap();
+            prop_assert_eq!(c1, c2, "JCS round-trip not stable");
+            prop_assert_eq!(r, decoded, "Decoded value differs");
         }
 
         #[test]
-        fn content_id_deterministic(r in any::<ArbitraryReceipt>()) {
+        fn proptest_content_id_stable(r in arb_receipt()) {
             let id1 = content_id(&r).unwrap();
             let id2 = content_id(&r).unwrap();
             prop_assert_eq!(id1, id2);

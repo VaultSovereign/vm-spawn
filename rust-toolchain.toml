@@ -1,0 +1,8 @@
+# VaultMesh Sovereign Rust Toolchain
+# Edition 2024 stabilized in Rust 1.85.0
+# https://blog.rust-lang.org/2025/02/20/Rust-1.85.0/
+
+[toolchain]
+channel = "1.85.0"
+components = ["clippy", "rustfmt", "rust-src"]
+targets = ["x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl"]
