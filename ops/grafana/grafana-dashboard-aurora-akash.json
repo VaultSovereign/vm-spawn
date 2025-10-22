@@ -1,0 +1,70 @@
+{
+  "dashboard": {
+    "title": "Aurora Treaty \u2013 Akash KPIs",
+    "time": {
+      "from": "now-30d",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "type": "stat",
+        "title": "Fill Rate",
+        "targets": [
+          {
+            "expr": "treaty_fill_rate{treaty_id=\"AURORA-AKASH-001\"}"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Provenance Coverage",
+        "targets": [
+          {
+            "expr": "treaty_provenance_coverage{treaty_id=\"AURORA-AKASH-001\"}"
+          }
+        ]
+      },
+      {
+        "type": "gauge",
+        "title": "Law-Bridge RTT (ms)",
+        "targets": [
+          {
+            "expr": "treaty_rtt_ms{treaty_id=\"AURORA-AKASH-001\"}"
+          }
+        ],
+        "options": {
+          "min": 0,
+          "max": 500
+        }
+      },
+      {
+        "type": "timeseries",
+        "title": "GPU Hours Consumed",
+        "targets": [
+          {
+            "expr": "sum(rate(gpu_hours_total{treaty_id=\"AURORA-AKASH-001\"}[5m]))"
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Dropped Requests (Sim)",
+        "targets": [
+          {
+            "expr": "treaty_dropped_requests{treaty_id=\"AURORA-AKASH-001\"}"
+          }
+        ]
+      },
+      {
+        "type": "timeseries",
+        "title": "Provider Failover Events",
+        "targets": [
+          {
+            "expr": "increase(treaty_failover_events_total{treaty_id=\"AURORA-AKASH-001\"}[5m])"
+          }
+        ]
+      }
+    ]
+  },
+  "overwrite": true
+}

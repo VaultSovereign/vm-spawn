@@ -1,0 +1,38 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: aurora-staging
+
+resources:
+  - namespace.yaml
+  - redis.yaml
+  - aurora-bridge-deploy.yaml
+  - aurora-bridge-svc.yaml
+  - aurora-metrics-exporter.yaml
+  - networkpolicy.yaml
+  - resource-quota.yaml
+  - limit-range.yaml
+  - pdb.yaml
+
+# Turn repo files into ConfigMaps we can mount
+configMapGenerator:
+  - name: aurora-bridge-scripts
+    files:
+      # paths are relative to *this* file; '../../../../' goes from overlays/staging -> repo root
+      - ../../../../scripts/aurora-axelar-mock.py
+  - name: aurora-order-schema
+    files:
+      - ../../../../schemas/axelar-order.schema.json
+  - name: aurora-metrics-exporter-script
+    files:
+      - ../../../../scripts/aurora-metrics-exporter.py
+
+# Secrets are not checked in; create 'aurora-pubkey' separately (see below)
+generatorOptions:
+  disableNameSuffixHash: true
+
+labels:
+  - pairs:
+      environment: staging
+      treaty_id: AURORA-AKASH-001
+      managed-by: kustomize

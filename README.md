@@ -121,6 +121,18 @@ Total: Complete production stack, ready to deploy
 
 ---
 
+## 🛡️ Aurora War-Game Simulator
+
+Run the multi-provider routing simulator to model treaty-aware scheduling across Akash, io.net, Render, Flux, Aethir, Vast.ai, and Salad.
+
+```bash
+make sim-run
+```
+
+Artifacts live in `sim/multi-provider-routing-simulator/` (configs, scenarios, sample outputs, charts). Adjust events in `config/workloads.json` to rehearse outages, price spikes, or reputation shocks, then review KPIs under `out/`.
+
+---
+
 ## 📊 System Status
 
 <details open>

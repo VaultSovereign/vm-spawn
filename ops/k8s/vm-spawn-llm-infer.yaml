@@ -1,0 +1,77 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: vm-spawn-llm-infer
+  labels:
+    treaty_id: AURORA-AKASH-001
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        tenant_id: tenant-42
+        region: eu-west-1
+        treaty_id: AURORA-AKASH-001
+    spec:
+      restartPolicy: OnFailure
+      containers:
+      - name: vllm
+        image: vllm/vllm-openai:latest-cuda
+        args:
+          - "--model"
+          - "meta-llama/Llama-3.1-8B-Instruct"
+          - "--port"
+          - "8000"
+        resources:
+          requests:
+            cpu: "2"
+            memory: "6Gi"
+            nvidia.com/gpu: 1
+          limits:
+            cpu: "4"
+            memory: "12Gi"
+            nvidia.com/gpu: 1
+        env:
+        - name: VAULT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: vaultmesh-tokens
+              key: vm_httpsig_token
+        ports:
+        - containerPort: 8000
+          name: http
+        livenessProbe:
+          httpGet:
+            path: "/health"
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 15
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: "/health"
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+      nodeSelector:
+        nvidia.com/gpu.product: "NVIDIA-A100-PCIE-40GB"
+      tolerations:
+      - key: "nvidia.com/gpu"
+        operator: "Exists"
+        effect: "NoSchedule"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vm-spawn-llm-infer
+  labels:
+    treaty_id: AURORA-AKASH-001
+spec:
+  selector:
+    treaty_id: AURORA-AKASH-001
+  ports:
+  - port: 8000
+    targetPort: http
+    name: http
+  type: ClusterIP

@@ -1,0 +1,56 @@
+{
+  "treaty_id": "AURORA-AKASH-001",
+  "version": "0.1",
+  "participants": [
+    {
+      "mesh_id": "vaultmesh.main",
+      "did": "did:aurora:vaultmesh:0x123"
+    },
+    {
+      "mesh_id": "akash.supercloud",
+      "did": "did:cosmos:akash:0x456"
+    }
+  ],
+  "type": "compute",
+  "scope": {
+    "resources": [
+      "gpu_time"
+    ],
+    "quota_gpu_hours": 10000,
+    "regions": [
+      "eu-west-1",
+      "us-west-2"
+    ],
+    "duration": "P30D",
+    "jurisdiction": "sovereign-neutral"
+  },
+  "verification": {
+    "proof_of_cognition": "sha3-512",
+    "attestations": [
+      "slsa-build-v1.1",
+      "slsa-infer-v1.1"
+    ],
+    "receipts": "merkle+rfc3161",
+    "provenance_store": [
+      "ipfs+filecoin",
+      "arweave-optional"
+    ]
+  },
+  "governance": {
+    "policy_uri": "aurora://vault-law/compute/akash-001",
+    "quota_enforcement": "per-tenant:100-gpu-hrs/day, per-treaty:10000",
+    "arbitration": "vaultmesh.concord-engine",
+    "amendment_rule": "2-of-2-multisig"
+  },
+  "bridge": {
+    "protocol": "axelar",
+    "msg_signature": "vm-httpsig:ed25519",
+    "rtt_slo_ms": 350
+  },
+  "kpis": {
+    "fill_rate_target": 0.85,
+    "provenance_coverage": 0.95,
+    "latency_improvement_note": "delta vs api-edge baseline"
+  },
+  "signatures": []
+}

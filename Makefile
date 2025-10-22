@@ -61,3 +61,92 @@ health: ## Run system health check
 test: ## Run smoke tests
 	@./SMOKE_TEST.sh
 
+.PHONY: treaty-verify policy-build order-send metrics-run k8s-apply
+
+treaty-verify: ## Canonicalize the Aurora treaty JSON
+	jq -cS . templates/aurora-treaty-akash.json > /tmp/treaty.canon.json
+	@echo "Treaty canonicalized → /tmp/treaty.canon.json"
+
+policy-build: ## Build the vault-law Akash policy to WASM
+	rustup target add wasm32-unknown-unknown || true
+	( cd v4.5-scaffold && cargo build --release --target wasm32-unknown-unknown -p vault-law-akash-policy )
+	mkdir -p policy/wasm
+	cp v4.5-scaffold/target/wasm32-unknown-unknown/release/vault_law_akash_policy.wasm policy/wasm/vault-law-akash-policy.wasm
+
+order-send: ## Submit an Aurora treaty order to the configured bridge
+	@AURORA_BRIDGE_URL?=http://localhost:8080; \
+	chmod +x scripts/aurora-order-submit.sh; \
+	bash scripts/aurora-order-submit.sh tmp/order.json
+
+metrics-run: ## Run the Aurora metrics exporter on port 9109
+	python3 scripts/aurora-metrics-exporter.py
+
+k8s-apply: ## Apply the Aurora treaty GPU job manifest
+	kubectl -n aurora-akash apply -f ops/k8s/vm-spawn-llm-infer.yaml
+
+.PHONY: sim-run sim-metrics-run smoke-e2e
+
+sim-run: ## Run the multi-provider routing war-game simulator (SEED=42 STEPS=120)
+	@SEED=$${SEED:-42}; \
+	STEPS=$${STEPS:-120}; \
+	SEED=$$SEED STEPS=$$STEPS python3 sim/multi-provider-routing-simulator/sim/sim.py
+
+sim-metrics-run: ## Run the simulator metrics exporter on port 9110
+	python3 scripts/sim-metrics-exporter.py
+
+smoke-e2e: ## Run end-to-end smoke test (keys + mock + sim + metrics)
+	@bash scripts/smoke-e2e.sh
+
+.PHONY: staging-apply staging-destroy staging-status staging-portfwd-bridge staging-portfwd-metrics staging-logs staging-create-secret
+
+staging-apply: ## Deploy Aurora to staging (Kustomize overlay)
+	kubectl apply -k ops/k8s/overlays/staging
+
+staging-destroy: ## Destroy staging deployment
+	kubectl delete -k ops/k8s/overlays/staging
+
+staging-status: ## Check staging deployment status
+	@echo "=== Staging Status ==="
+	kubectl -n aurora-staging get all,netpol,pdb,quota,limitrange
+	@echo ""
+	@echo "=== Pod Status ==="
+	kubectl -n aurora-staging get pods -o wide
+
+staging-portfwd-bridge: ## Port-forward staging bridge to localhost:8080
+	kubectl -n aurora-staging port-forward svc/aurora-bridge 8080:8080
+
+staging-portfwd-metrics: ## Port-forward staging metrics to localhost:9109
+	kubectl -n aurora-staging port-forward svc/aurora-metrics-exporter 9109:9109
+
+staging-logs: ## Tail logs from staging pods
+	@echo "=== Aurora Bridge Logs ==="
+	kubectl -n aurora-staging logs -l app=aurora-bridge --tail=50 -f
+
+staging-create-secret: ## Create aurora-pubkey secret (requires secrets/vm_httpsig.pub)
+	@if [ ! -f secrets/vm_httpsig.pub ]; then \
+		echo "Error: secrets/vm_httpsig.pub not found"; \
+		echo "Run: make smoke-e2e (generates keys automatically)"; \
+		exit 1; \
+	fi
+	kubectl -n aurora-staging create secret generic aurora-pubkey \
+		--from-file=vm_httpsig.pub=secrets/vm_httpsig.pub \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "✅ Secret created"
+
+.PHONY: dist
+dist: policy-build ## Build signed Aurora GA artifact
+	@echo "[dist] Creating release bundle…"
+	mkdir -p dist
+	tar -czf dist/aurora-$(shell date +%Y%m%d).tar.gz \
+		policy/wasm/*.wasm \
+		schemas/*.json \
+		scripts/*.py \
+		scripts/*.sh \
+		ops/grafana/*.json \
+		ops/grafana/*.yaml \
+		ops/k8s/vm-spawn-llm-infer.yaml \
+		ops/k8s/overlays/staging/* \
+		docs/*.md
+	@echo "[dist] Signing artifact with covenant key"
+	GPG_TTY=$$(tty) gpg --batch --yes --pinentry-mode loopback --detach-sign --armor --local-user $(KEY) dist/aurora-$(shell date +%Y%m%d).tar.gz
+	@echo "[dist] Done → dist/aurora-$(shell date +%Y%m%d).tar.gz (.asc)"

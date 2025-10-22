@@ -1,0 +1,91 @@
+name: Aurora CI
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches:
+      - feat/**
+      - chore/**
+      - fix/**
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install jsonschema and jq
+        run: |
+          python -m pip install --upgrade pip jsonschema
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Validate Axelar order schema
+        run: |
+          jsonschema -i schemas/axelar-order.schema.json schemas/axelar-order.schema.json
+
+      - name: Canonicalize treaty and ensure required fields
+        run: |
+          jq -cS . templates/aurora-treaty-akash.json > /tmp/treaty.canon.json
+          jq -e 'has("treaty_id") and has("version") and has("participants")' /tmp/treaty.canon.json
+
+      - name: Install ShellCheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: ShellCheck Aurora scripts
+        run: shellcheck scripts/aurora-order-submit.sh scripts/aurora-receipt-verify.sh
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add wasm32 target
+        run: rustup target add wasm32-unknown-unknown
+
+      - name: Build vault-law policy to WASM
+        run: |
+          mkdir -p policy/wasm
+          if [ -f policy/Cargo.toml ]; then
+            cargo build --release --target wasm32-unknown-unknown -p vault-law-akash-policy || cargo build --release --target wasm32-unknown-unknown
+            find target/wasm32-unknown-unknown/release -maxdepth 1 -name '*.wasm' -exec cp {} policy/wasm/ \;
+          else
+            cat > policy/Cargo.toml <<'TOML'
+[package]
+name = "vault-law-akash-policy"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+chrono = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+TOML
+            mkdir -p policy/src
+            cp policy/vault-law-akash-policy.rs policy/src/lib.rs
+            cargo build --release --target wasm32-unknown-unknown
+            cp target/wasm32-unknown-unknown/release/vault_law_akash_policy.wasm policy/wasm/ || true
+          fi
+
+      - name: Assert WASM built
+        run: |
+          test -n "$(ls -1 policy/wasm/*.wasm 2>/dev/null)" || { echo "❌ No WASM built"; exit 1; }
+          echo "✅ WASM policy artifacts found"
+
+      - name: Upload Aurora artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aurora-artifacts
+          path: |
+            policy/wasm/*.wasm
+            ops/grafana/grafana-dashboard-aurora-akash.json
+            schemas/axelar-order.schema.json
+            schemas/axelar-ack.schema.json
+            templates/aurora-treaty-akash.json

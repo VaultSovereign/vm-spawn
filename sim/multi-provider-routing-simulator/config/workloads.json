@@ -1,0 +1,159 @@
+{
+  "tenants": [
+    {
+      "id": "tenant-research",
+      "name": "AI Research Lab",
+      "region": "eu-west-1",
+      "budget_usd_per_step": 500.0,
+      "weights": {
+        "price": 0.4,
+        "latency": 0.2,
+        "reputation": 0.25,
+        "availability": 0.15
+      },
+      "min_reputation": 60,
+      "max_latency_ms": 500,
+      "mix": {
+        "llm_training": 0.3,
+        "llm_inference": 0.3,
+        "3d_rendering": 0.1,
+        "general_compute": 0.3
+      },
+      "avg_requests_per_step": 10
+    },
+    {
+      "id": "tenant-gaming",
+      "name": "Gaming Studio",
+      "region": "us-west-2",
+      "budget_usd_per_step": 400.0,
+      "weights": {
+        "price": 0.2,
+        "latency": 0.4,
+        "reputation": 0.2,
+        "availability": 0.2
+      },
+      "min_reputation": 55,
+      "max_latency_ms": 300,
+      "mix": {
+        "cloud_gaming": 0.45,
+        "llm_inference": 0.35,
+        "general_compute": 0.2
+      },
+      "avg_requests_per_step": 12
+    },
+    {
+      "id": "tenant-render",
+      "name": "Rendering Pipeline",
+      "region": "us-west-2",
+      "budget_usd_per_step": 350.0,
+      "weights": {
+        "price": 0.25,
+        "latency": 0.2,
+        "reputation": 0.2,
+        "availability": 0.35
+      },
+      "min_reputation": 50,
+      "max_latency_ms": 600,
+      "mix": {
+        "3d_rendering": 0.7,
+        "general_compute": 0.3
+      },
+      "avg_requests_per_step": 8
+    },
+    {
+      "id": "tenant-dao",
+      "name": "DAO Treasury",
+      "region": "eu-west-1",
+      "budget_usd_per_step": 250.0,
+      "weights": {
+        "price": 0.5,
+        "latency": 0.1,
+        "reputation": 0.25,
+        "availability": 0.15
+      },
+      "min_reputation": 58,
+      "max_latency_ms": 600,
+      "mix": {
+        "llm_inference": 0.6,
+        "general_compute": 0.4
+      },
+      "avg_requests_per_step": 6
+    }
+  ],
+  "workload_profiles": {
+    "llm_training": {
+      "gpu_type": "H100",
+      "gpu_hours": [
+        3,
+        10
+      ]
+    },
+    "llm_inference": {
+      "gpu_type": "A100",
+      "gpu_hours": [
+        0.2,
+        1.0
+      ]
+    },
+    "3d_rendering": {
+      "gpu_type": "RTX4090",
+      "gpu_hours": [
+        1,
+        3
+      ]
+    },
+    "cloud_gaming": {
+      "gpu_type": "A100",
+      "gpu_hours": [
+        0.5,
+        1.5
+      ]
+    },
+    "general_compute": {
+      "gpu_type": "A100",
+      "gpu_hours": [
+        0.5,
+        2.0
+      ]
+    }
+  },
+  "simulation": {
+    "steps": 120,
+    "seed": 42
+  },
+  "scenarios": [
+    {
+      "step": 20,
+      "event": "price_spike",
+      "provider_id": "vast",
+      "multiplier": 1.6
+    },
+    {
+      "step": 35,
+      "event": "outage",
+      "provider_id": "akash",
+      "duration": 10
+    },
+    {
+      "step": 50,
+      "event": "latency_spike",
+      "provider_id": "render",
+      "delta_ms": 200,
+      "duration": 15
+    },
+    {
+      "step": 70,
+      "event": "capacity_surge",
+      "provider_id": "ionet",
+      "multiplier": 1.5,
+      "duration": 25
+    },
+    {
+      "step": 90,
+      "event": "reputation_drop",
+      "provider_id": "salad",
+      "delta": -10,
+      "duration": 20
+    }
+  ]
+}

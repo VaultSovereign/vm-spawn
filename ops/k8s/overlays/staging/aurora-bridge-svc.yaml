@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: aurora-bridge
+spec:
+  selector: { app: aurora-bridge }
+  ports: [{ port: 8080, targetPort: http }]

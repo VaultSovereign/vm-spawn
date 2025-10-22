@@ -1,0 +1,161 @@
+{
+  "providers": [
+    {
+      "id": "akash",
+      "name": "Akash Network",
+      "bridge": "axelar",
+      "regions": [
+        "eu-west-1",
+        "us-west-2"
+      ],
+      "gpu_types": [
+        "A100"
+      ],
+      "credits_per_hour": {
+        "A100": 1.0
+      },
+      "base_price_usd_per_hour": {
+        "A100": 1.8
+      },
+      "base_latency_ms": 300,
+      "capacity_gpu_hours_per_step": 220,
+      "reputation": 78
+    },
+    {
+      "id": "ionet",
+      "name": "io.net",
+      "bridge": "axelar",
+      "regions": [
+        "us-west-2"
+      ],
+      "gpu_types": [
+        "H100",
+        "A100"
+      ],
+      "credits_per_hour": {
+        "H100": 1.5,
+        "A100": 1.1
+      },
+      "base_price_usd_per_hour": {
+        "H100": 3.2,
+        "A100": 2.2
+      },
+      "base_latency_ms": 320,
+      "capacity_gpu_hours_per_step": 180,
+      "reputation": 74
+    },
+    {
+      "id": "render",
+      "name": "Render Network",
+      "bridge": "axelar",
+      "regions": [
+        "us-west-2",
+        "eu-west-1"
+      ],
+      "gpu_types": [
+        "RTX4090"
+      ],
+      "credits_per_hour": {
+        "RTX4090": 0.4
+      },
+      "base_price_usd_per_hour": {
+        "RTX4090": 0.9
+      },
+      "base_latency_ms": 420,
+      "capacity_gpu_hours_per_step": 150,
+      "reputation": 70
+    },
+    {
+      "id": "flux",
+      "name": "Flux",
+      "bridge": "ibc",
+      "regions": [
+        "eu-west-1"
+      ],
+      "gpu_types": [
+        "A100"
+      ],
+      "credits_per_hour": {
+        "A100": 1.0
+      },
+      "base_price_usd_per_hour": {
+        "A100": 1.7
+      },
+      "base_latency_ms": 330,
+      "capacity_gpu_hours_per_step": 140,
+      "reputation": 68
+    },
+    {
+      "id": "aethir",
+      "name": "Aethir",
+      "bridge": "rest_api",
+      "regions": [
+        "us-west-2",
+        "eu-west-1"
+      ],
+      "gpu_types": [
+        "H100",
+        "A100"
+      ],
+      "credits_per_hour": {
+        "H100": 1.6,
+        "A100": 1.2
+      },
+      "base_price_usd_per_hour": {
+        "H100": 3.5,
+        "A100": 2.5
+      },
+      "base_latency_ms": 260,
+      "capacity_gpu_hours_per_step": 200,
+      "reputation": 85
+    },
+    {
+      "id": "vast",
+      "name": "Vast.ai",
+      "bridge": "rest_api",
+      "regions": [
+        "us-west-2"
+      ],
+      "gpu_types": [
+        "A100",
+        "RTX4090"
+      ],
+      "credits_per_hour": {
+        "A100": 0.9,
+        "RTX4090": 0.35
+      },
+      "base_price_usd_per_hour": {
+        "A100": 1.4,
+        "RTX4090": 0.8
+      },
+      "base_latency_ms": 380,
+      "capacity_gpu_hours_per_step": 160,
+      "reputation": 62
+    },
+    {
+      "id": "salad",
+      "name": "Salad",
+      "bridge": "rest_api",
+      "regions": [
+        "global"
+      ],
+      "gpu_types": [
+        "RTX3080",
+        "RTX3090"
+      ],
+      "credits_per_hour": {
+        "RTX3080": 0.25,
+        "RTX3090": 0.3
+      },
+      "base_price_usd_per_hour": {
+        "RTX3080": 0.4,
+        "RTX3090": 0.55
+      },
+      "base_latency_ms": 500,
+      "capacity_gpu_hours_per_step": 240,
+      "reputation": 55
+    }
+  ],
+  "credit_currency": "CREDIT",
+  "usd_per_credit": 1.8
+}

@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurora-metrics-exporter
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: aurora-metrics-exporter } }
+  template:
+    metadata: { labels: { app: aurora-metrics-exporter } }
+    spec:
+      securityContext: { runAsNonRoot: true }
+      containers:
+      - name: exporter
+        image: python:3.11-slim
+        command: ["bash","-lc"]
+        args:
+          - >
+            python -u /app/aurora-metrics-exporter.py
+        env:
+          - { name: AURORA_OUT_DIR, value: /data/out }  # point to ledger in prod
+        ports: [{ containerPort: 9109, name: metrics }]
+        readinessProbe: { httpGet: { path: /metrics, port: metrics }, periodSeconds: 5, initialDelaySeconds: 5 }
+        livenessProbe:  { httpGet: { path: /metrics, port: metrics }, periodSeconds: 10, initialDelaySeconds: 10 }
+        resources:
+          requests: { cpu: "50m", memory: "64Mi" }
+          limits:   { cpu: "200m", memory: "128Mi" }
+        volumeMounts:
+          - { name: script, mountPath: /app/aurora-metrics-exporter.py, subPath: aurora-metrics-exporter.py, readOnly: true }
+      volumes:
+        - { name: script, configMap: { name: aurora-metrics-exporter-script } }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: aurora-metrics-exporter
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9109"
+    prometheus.io/path: "/metrics"
+spec:
+  selector: { app: aurora-metrics-exporter }
+  ports: [{ port: 9109, targetPort: metrics, name: http }]

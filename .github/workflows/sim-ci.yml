@@ -1,0 +1,49 @@
+name: Simulator CI
+
+on:
+  pull_request:
+    paths:
+      - "sim/multi-provider-routing-simulator/**"
+      - ".github/workflows/sim-ci.yml"
+  workflow_dispatch: {}
+
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install matplotlib for chart generation
+        run: |
+          python -m pip install --upgrade pip matplotlib
+
+      - name: Run multi-provider routing war-game
+        run: |
+          python3 sim/multi-provider-routing-simulator/sim/sim.py
+
+      - name: Verify outputs were generated
+        run: |
+          test -f sim/multi-provider-routing-simulator/out/step_metrics.csv
+          test -f sim/multi-provider-routing-simulator/out/routing_decisions.csv
+          test -f sim/multi-provider-routing-simulator/out/provider_metrics_over_time.csv
+          echo "✅ All simulator outputs generated successfully"
+
+      - name: Display summary metrics
+        run: |
+          echo "📊 War-Game Summary (last 5 steps):"
+          tail -6 sim/multi-provider-routing-simulator/out/step_metrics.csv
+
+      - name: Upload simulator artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: war-game-artifacts
+          path: |
+            sim/multi-provider-routing-simulator/out/*.csv
+            sim/multi-provider-routing-simulator/out/*.png
+          retention-days: 30

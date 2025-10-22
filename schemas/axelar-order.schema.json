@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AxelarOrderMessage",
+  "type": "object",
+  "required": ["treaty_id","tenant_id","region","gpu_hours","nonce","deadline_utc","callback_url","signature"],
+  "properties": {
+    "treaty_id": {
+      "type":"string",
+      "pattern":"^AURORA-[A-Z]+-[0-9]{3,}$",
+      "description": "Treaty identifier following Aurora naming convention"
+    },
+    "tenant_id": {
+      "type":"string",
+      "pattern":"^[a-z0-9-]{3,64}$",
+      "description": "Tenant identifier (lowercase alphanumeric with hyphens)"
+    },
+    "region": {
+      "type":"string",
+      "enum":["eu-west-1","us-west-2"],
+      "description": "Target region for compute allocation"
+    },
+    "gpu_hours": {
+      "type":"number",
+      "minimum":0.1,
+      "description": "Requested GPU hours (fractional allowed)"
+    },
+    "nonce": {
+      "type":"string",
+      "minLength":8,
+      "maxLength":128,
+      "description": "Unique nonce for replay protection"
+    },
+    "deadline_utc": {
+      "type":"string",
+      "format":"date-time",
+      "description": "Order expiration timestamp (ISO 8601)"
+    },
+    "callback_url": {
+      "type":"string",
+      "format":"uri",
+      "description": "Callback URL for order status updates"
+    },
+    "signature": {
+      "type":"string",
+      "contentEncoding":"base64",
+      "description": "ED25519 signature of canonical JSON (base64 encoded)"
+    }
+  },
+  "additionalProperties": false
+}

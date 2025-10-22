@@ -65,3 +65,6 @@ ops/certs/*.pem
 !ops/certs/README.md
 !ops/certs/freetsa-ca.pem.example
 
+# --- Simulator outputs (regenerated per run) ---
+sim/multi-provider-routing-simulator/out/
+

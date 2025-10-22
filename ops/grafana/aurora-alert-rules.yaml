@@ -1,0 +1,216 @@
+# Grafana Unified Alerting Rules for Aurora Treaty System
+# Import via: Grafana UI → Alerting → Alert rules → Import
+
+groups:
+- name: aurora-kpis
+  interval: 1m
+  rules:
+  - uid: "alert-fillrate-low"
+    title: "Aurora Fill Rate Low"
+    condition: A
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: 'treaty_fill_rate{treaty_id="AURORA-AKASH-001"} < 0.80'
+        instant: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    for: 5m
+    labels:
+      severity: warning
+      component: aurora-routing
+      treaty_id: AURORA-AKASH-001
+    annotations:
+      summary: "Aurora fill rate below 0.80 for 5+ minutes"
+      description: |
+        Current fill rate: {{ $values.A.Value }}
+
+        Possible causes:
+        - Provider capacity exhaustion
+        - Price spike making routes uneconomical
+        - Network partitions or bridge issues
+        - Unexpected tenant demand surge
+
+        Actions:
+        1. Check provider_capacity_gpu_hours metrics
+        2. Review recent price_spike events in simulator
+        3. Verify bridge RTT and connectivity
+        4. Consider temporary quota increase or failover
+      runbook_url: https://docs.vaultmesh.io/runbooks/aurora-low-fill-rate
+
+  - uid: "alert-rtt-breach"
+    title: "Aurora Bridge RTT Breach"
+    condition: A
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 600
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: 'treaty_rtt_ms{treaty_id="AURORA-AKASH-001"} > 350'
+        instant: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    for: 10m
+    labels:
+      severity: critical
+      component: aurora-bridge
+      treaty_id: AURORA-AKASH-001
+    annotations:
+      summary: "Aurora bridge RTT exceeds 350ms SLO for 10+ minutes"
+      description: |
+        Current RTT: {{ $values.A.Value }}ms
+        SLO threshold: 350ms
+
+        This indicates Axelar/IBC bridge slowness or network congestion.
+
+        Actions:
+        1. Check Axelar bridge health dashboard
+        2. Verify IBC relayer status
+        3. Review network topology and routing
+        4. Consider failover to backup bridge if available
+        5. Queue orders locally until RTT recovers
+      runbook_url: https://docs.vaultmesh.io/runbooks/aurora-rtt-breach
+
+  - uid: "alert-provenance-low"
+    title: "Aurora Provenance Coverage Low"
+    condition: A
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: 'treaty_provenance_coverage{treaty_id="AURORA-AKASH-001"} < 0.90'
+        instant: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    for: 15m
+    labels:
+      severity: warning
+      component: aurora-provenance
+      treaty_id: AURORA-AKASH-001
+    annotations:
+      summary: "Provenance coverage below 90% for 15+ minutes"
+      description: |
+        Current coverage: {{ $values.A.Value }}
+        Target: ≥ 0.95
+
+        Jobs are completing without proper cryptographic receipts.
+
+        Actions:
+        1. Check receipt generation script health
+        2. Verify RFC3161 TSA accessibility
+        3. Review IPFS pinning service status
+        4. Audit recent job logs for receipt failures
+        5. Halt new allocations if coverage < 0.80
+      runbook_url: https://docs.vaultmesh.io/runbooks/aurora-provenance-low
+
+  - uid: "alert-failover-spike"
+    title: "Aurora Provider Failover Spike"
+    condition: A
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: 'increase(treaty_failover_events_total{treaty_id="AURORA-AKASH-001"}[5m]) > 10'
+        instant: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    for: 0m
+    labels:
+      severity: warning
+      component: aurora-routing
+      treaty_id: AURORA-AKASH-001
+    annotations:
+      summary: "High rate of provider failovers (>10 in 5m)"
+      description: |
+        Failover events in last 5m: {{ $values.A.Value }}
+
+        Multiple provider routing failures indicate systemic issues.
+
+        Actions:
+        1. Check provider health endpoints
+        2. Review signature validation errors
+        3. Verify schema validation issues
+        4. Check for replay attack patterns (nonce cache)
+        5. Review router filter logs for rejection reasons
+      runbook_url: https://docs.vaultmesh.io/runbooks/aurora-failover-spike
+
+  - uid: "alert-dropped-requests-high"
+    title: "Aurora Dropped Requests High"
+    condition: A
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: 'treaty_dropped_requests{treaty_id="AURORA-AKASH-001"} > 50'
+        instant: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    for: 5m
+    labels:
+      severity: warning
+      component: aurora-routing
+      treaty_id: AURORA-AKASH-001
+    annotations:
+      summary: "High dropped request count (>50)"
+      description: |
+        Current dropped: {{ $values.A.Value }}
+
+        Requests are being rejected at high rate.
+
+        Actions:
+        1. Check policy enforcement logs (quota exceeded?)
+        2. Review budget exhaustion per tenant
+        3. Verify provider capacity availability
+        4. Check for price/latency/reputation filter rejections
+        5. Consider temporary quota increase
+      runbook_url: https://docs.vaultmesh.io/runbooks/aurora-dropped-requests
+
+  - uid: "alert-policy-decision-slow"
+    title: "Aurora Policy Decision Latency High"
+    condition: A
+    data:
+    - refId: A
+      relativeTimeRange:
+        from: 300
+        to: 0
+      datasourceUid: prometheus
+      model:
+        expr: 'histogram_quantile(0.95, rate(policy_decision_duration_ms_bucket{treaty_id="AURORA-AKASH-001"}[5m])) > 25'
+        instant: false
+        intervalMs: 1000
+        maxDataPoints: 43200
+    for: 10m
+    labels:
+      severity: warning
+      component: aurora-policy
+      treaty_id: AURORA-AKASH-001
+    annotations:
+      summary: "Policy decision p95 latency > 25ms SLO"
+      description: |
+        Current p95: {{ $values.A.Value }}ms
+        SLO: ≤ 25ms
+
+        WASM policy execution is slow.
+
+        Actions:
+        1. Check WASM runtime resource allocation
+        2. Review policy code for performance bottlenecks
+        3. Verify accumulator cache hit rate
+        4. Consider policy optimization or caching layer
+        5. Check host system CPU/memory pressure
+      runbook_url: https://docs.vaultmesh.io/runbooks/aurora-policy-slow

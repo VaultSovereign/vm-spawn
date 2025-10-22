@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AxelarAck",
+  "type": "object",
+  "required": ["ack_id","signature","rtt_ms"],
+  "properties": {
+    "ack_id": {
+      "type":"string",
+      "pattern":"^AKASH-JOB-[0-9]{4,}$",
+      "description": "Acknowledgment identifier from provider"
+    },
+    "signature": {
+      "type":"string",
+      "description": "Provider signature over ack_id"
+    },
+    "rtt_ms": {
+      "type":"number",
+      "minimum":0,
+      "description": "Round-trip time in milliseconds"
+    }
+  },
+  "additionalProperties": false
+}

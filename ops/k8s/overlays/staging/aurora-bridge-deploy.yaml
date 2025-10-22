@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurora-bridge
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: aurora-bridge } }
+  template:
+    metadata: { labels: { app: aurora-bridge } }
+    spec:
+      securityContext: { runAsNonRoot: true }
+      containers:
+      - name: bridge
+        image: python:3.11-slim
+        command: ["bash","-lc"]
+        args:
+          - >
+            pip install --no-cache-dir jsonschema cryptography &&
+            python -u /app/aurora-axelar-mock.py
+        env:
+          - name: AURORA_ORDER_SCHEMA
+            value: /config/axelar-order.schema.json
+          - name: AURORA_PUBKEY
+            value: /secrets/vm_httpsig.pub
+          # If you later add Redis in the mock:
+          # - name: AURORA_REDIS_URL
+          #   value: redis://aurora-redis:6379/0
+        ports: [{ containerPort: 8080, name: http }]
+        resources:
+          requests: { cpu: "100m", memory: "128Mi" }
+          limits:   { cpu: "500m", memory: "256Mi" }
+        readinessProbe: { tcpSocket: { port: http }, periodSeconds: 5, initialDelaySeconds: 10 }
+        livenessProbe:  { tcpSocket: { port: http }, periodSeconds: 10, initialDelaySeconds: 15 }
+        volumeMounts:
+          - { name: script,  mountPath: /app/aurora-axelar-mock.py, subPath: aurora-axelar-mock.py, readOnly: true }
+          - { name: schema,  mountPath: /config/axelar-order.schema.json, subPath: axelar-order.schema.json, readOnly: true }
+          - { name: pubkey,  mountPath: /secrets/vm_httpsig.pub, subPath: vm_httpsig.pub, readOnly: true }
+      volumes:
+        - { name: script, configMap: { name: aurora-bridge-scripts } }
+        - { name: schema, configMap: { name: aurora-order-schema } }
+        - { name: pubkey, secret: { secretName: aurora-pubkey } }
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: aurora-bridge-pdb
+spec:
+  minAvailable: 1
+  selector: { matchLabels: { app: aurora-bridge } }

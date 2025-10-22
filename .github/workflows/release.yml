@@ -1,0 +1,45 @@
+name: Release
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag to publish (e.g., v1.0.0-aurora)"
+        required: true
+        default: "v1.0.0-aurora"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup GPG (optional; for provenance logs only)
+        if: ${{ false }}
+        run: |
+          echo "skip"
+
+      - name: Build dist artifact
+        run: make dist
+
+      - name: List dist contents
+        run: ls -lh dist && shasum -a 256 dist/*
+
+      - name: Generate checksum manifest
+        run: shasum -a 256 dist/aurora-*.tar.gz > CHECKSUMS.txt
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          name: "Aurora GA – Sovereign Compute Federation"
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.tar.gz
+            dist/*.tar.gz.asc
+            CHECKSUMS.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
