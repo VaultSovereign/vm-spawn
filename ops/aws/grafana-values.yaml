@@ -1,0 +1,65 @@
+# Grafana Helm values for Aurora staging-eks
+# helm upgrade --install grafana grafana/grafana -f grafana-values.yaml
+
+service:
+  type: LoadBalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+
+persistence:
+  enabled: true
+  size: 10Gi
+  storageClassName: gp3
+
+adminPassword: "admin"  # Change in production!
+
+# Datasources
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.aurora-staging.svc.cluster.local
+        access: proxy
+        isDefault: true
+        editable: true
+
+# Dashboard providers
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: 'aurora'
+        orgId: 1
+        folder: 'Aurora'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/aurora
+
+# Pre-load Aurora dashboards
+dashboardsConfigMaps:
+  aurora: "aurora-dashboards"
+
+# Environment variables
+env:
+  GF_AUTH_ANONYMOUS_ENABLED: "false"
+  GF_SERVER_ROOT_URL: "http://localhost:3000"
+  GF_SECURITY_ADMIN_PASSWORD: "admin"
+
+# Resources
+resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Plugins (optional for advanced visualizations)
+plugins:
+  - grafana-piechart-panel
+  - grafana-clock-panel

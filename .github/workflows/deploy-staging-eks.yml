@@ -1,0 +1,155 @@
+name: Deploy Aurora Staging (EKS)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ops/k8s/overlays/staging-eks/**'
+      - 'scripts/aurora-*.py'
+      - 'schemas/axelar-*.json'
+      - '.github/workflows/deploy-staging-eks.yml'
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deploy even if no changes detected'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  AWS_REGION: eu-west-1
+  EKS_CLUSTER_NAME: aurora-staging
+  KUBECTL_VERSION: v1.29.0
+
+# OIDC permissions (no long-lived credentials)
+permissions:
+  id-token: write  # Required for OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging-eks
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubOIDC-Aurora
+          role-session-name: github-actions-aurora-deploy
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: ${{ env.KUBECTL_VERSION }}
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig \
+            --name ${{ env.EKS_CLUSTER_NAME }} \
+            --region ${{ env.AWS_REGION }} \
+            --alias aurora-staging
+      
+      - name: Verify cluster access
+        run: |
+          kubectl cluster-info
+          kubectl get nodes -o wide
+      
+      - name: Pre-deploy validation
+        run: |
+          # Validate Kustomize overlay
+          kubectl kustomize ops/k8s/overlays/staging-eks > /tmp/manifests.yaml
+          
+          # Check for required resources
+          echo "📊 Validating manifests..."
+          kubectl apply --dry-run=server -f /tmp/manifests.yaml
+      
+      - name: Deploy to staging-eks
+        run: |
+          echo "🚀 Deploying Aurora to EKS staging..."
+          kubectl apply -k ops/k8s/overlays/staging-eks
+          
+          # Wait for rollout
+          kubectl rollout status deployment/aurora-bridge-deploy -n aurora-staging --timeout=300s
+          kubectl rollout status deployment/aurora-metrics-exporter -n aurora-staging --timeout=300s
+      
+      - name: Verify deployment
+        run: |
+          echo "✅ Checking pod status..."
+          kubectl get pods -n aurora-staging -o wide
+          
+          echo "✅ Checking service endpoints..."
+          kubectl get svc -n aurora-staging
+          
+          # Verify metrics exporter is responding
+          EXPORTER_POD=$(kubectl get pod -n aurora-staging -l app=aurora-metrics-exporter -o jsonpath='{.items[0].metadata.name}')
+          if [ -n "$EXPORTER_POD" ]; then
+            kubectl port-forward -n aurora-staging pod/$EXPORTER_POD 9109:9109 &
+            sleep 5
+            curl -f http://localhost:9109/metrics || echo "⚠️  Metrics endpoint not ready yet"
+            pkill kubectl
+          fi
+      
+      - name: Post-deploy smoke test
+        run: |
+          # Wait for LoadBalancer to provision
+          echo "⏳ Waiting for LoadBalancer..."
+          kubectl wait --for=jsonpath='{.status.loadBalancer.ingress}' \
+            service/aurora-bridge-svc -n aurora-staging --timeout=300s || true
+          
+          # Get LoadBalancer URL
+          LB_URL=$(kubectl get svc aurora-bridge-svc -n aurora-staging \
+            -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
+          
+          if [ -n "$LB_URL" ]; then
+            echo "✅ LoadBalancer provisioned: $LB_URL"
+            # Optional: Add health check once bridge has health endpoint
+            # curl -f http://$LB_URL/health
+          else
+            echo "⚠️  LoadBalancer not ready yet (may take 2-3 minutes)"
+          fi
+      
+      - name: Update deployment status
+        if: success()
+        run: |
+          echo "✅ Deployment complete"
+          kubectl get all -n aurora-staging
+          
+          # Record deployment in Remembrancer (if binary is available)
+          if [ -f ./ops/bin/remembrancer ]; then
+            ./ops/bin/remembrancer record deploy \
+              --component aurora-staging-eks \
+              --version $(git rev-parse --short HEAD) \
+              --sha256 $(git rev-parse HEAD) \
+              --evidence "EKS deployment at $(date -u +%Y-%m-%dT%H:%M:%SZ)" || true
+          fi
+      
+      - name: Deployment summary
+        if: always()
+        run: |
+          echo "## 📊 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster:** ${{ env.EKS_CLUSTER_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region:** ${{ env.AWS_REGION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** $(git rev-parse --short HEAD)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pods" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          kubectl get pods -n aurora-staging >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  notify-success:
+    needs: deploy
+    runs-on: ubuntu-latest
+    if: success()
+    steps:
+      - name: Success notification
+        run: |
+          echo "✅ Aurora staging-eks deployed successfully"
+          # Optional: Add Slack/Discord webhook notification here

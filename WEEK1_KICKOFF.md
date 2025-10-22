@@ -66,6 +66,38 @@ docker ps | grep aurora
 
 Use the multi-provider simulator to generate synthetic metrics:
 
+### Option D: AWS EKS (Production-Grade) ⭐ RECOMMENDED
+
+**Full production deployment on Amazon EKS with GPU support.**
+
+See: **[WEEK1_EKS_GUIDE.md](WEEK1_EKS_GUIDE.md)** for complete walkthrough.
+
+Quick start:
+```bash
+# 1. Create EKS cluster (15-20 min)
+eksctl create cluster -f eks-aurora-staging.yaml
+
+# 2. Install GPU support
+kubectl apply -f https://raw.githubusercontent.com/NVIDIA/k8s-device-plugin/v0.15.0/nvidia-device-plugin.yml
+
+# 3. Deploy Aurora
+kubectl apply -k ops/k8s/overlays/staging-eks
+
+# 4. Install Prometheus + Grafana
+helm upgrade --install prometheus prometheus-community/prometheus \
+  -n aurora-staging -f ops/aws/prometheus-values.yaml
+helm upgrade --install grafana grafana/grafana \
+  -n aurora-staging -f ops/aws/grafana-values.yaml
+
+# 5. Run 72h soak, then extract metrics from Prometheus
+```
+
+**Cost:** ~$125-150 for 72 hours (can scale down after)
+
+### Option C (Simulator): Synthetic Metrics
+
+Use the multi-provider simulator to generate synthetic metrics:
+
 ```bash
 # 1. Navigate to simulator
 cd sim/multi-provider-routing-simulator

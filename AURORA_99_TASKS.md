@@ -10,9 +10,10 @@
 ### Target: Real metrics flowing
 
 - [x] **W1-1:** Deploy Aurora staging overlay to K8s cluster ⚡ IN PROGRESS
-  - Command: `kubectl apply -k ops/k8s/overlays/staging`
-  - Verify: `kubectl get pods -n aurora-staging`
-  - Fallback: Use simulator (see WEEK1_KICKOFF.md Option C)
+  - **AWS EKS:** `eksctl create cluster -f eks-aurora-staging.yaml` (see WEEK1_EKS_GUIDE.md)
+  - **Generic K8s:** `kubectl apply -k ops/k8s/overlays/staging`
+  - **EKS-specific:** `kubectl apply -k ops/k8s/overlays/staging-eks`
+  - **Fallback:** Use simulator (WEEK1_KICKOFF.md Option C)
 
 - [ ] **W1-2:** Configure Prometheus exporters for Aurora metrics
   - Files: `scripts/aurora-metrics-exporter.py`

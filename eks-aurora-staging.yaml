@@ -1,0 +1,121 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: aurora-staging
+  region: eu-west-1
+  version: "1.29"
+  tags:
+    Environment: staging
+    Project: aurora
+    TreatyID: AURORA-AKASH-001
+    ManagedBy: eksctl
+    CostCenter: depin-compute
+
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: aurora-metrics-exporter
+        namespace: aurora-staging
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+      roleName: aurora-metrics-exporter-role
+    
+    - metadata:
+        name: aurora-ledger-snapshotter
+        namespace: aurora-staging
+      attachPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - s3:PutObject
+              - s3:GetObject
+            Resource: "arn:aws:s3:::aurora-staging-ledger-*/*"
+      roleName: aurora-ledger-snapshotter-role
+
+managedNodeGroups:
+  # CPU workload pool (treaty routing, metrics, general compute)
+  - name: cpu-pool
+    instanceType: m6i.large
+    desiredCapacity: 3
+    minSize: 3
+    maxSize: 6
+    volumeSize: 80
+    volumeType: gp3
+    labels:
+      role: cpu
+      workload: general
+    tags:
+      Name: aurora-staging-cpu
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/aurora-staging: "owned"
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        cloudWatch: true
+        ebs: true
+    privateNetworking: false  # Set true for production
+    ssh:
+      allow: false  # Set true for debugging, restrict by source IP
+
+  # GPU pool for LLM inference & compute-intensive workloads
+  - name: gpu-pool
+    instanceType: g5.2xlarge  # NVIDIA A10G (24GB VRAM)
+    desiredCapacity: 2
+    minSize: 0  # Scale to zero during off-hours
+    maxSize: 4
+    volumeSize: 200
+    volumeType: gp3
+    labels:
+      role: gpu
+      nvidia.com/gpu: "true"
+      workload: inference
+      gpu-type: a10g
+    taints:
+      - key: nvidia.com/gpu
+        value: "true"
+        effect: NoSchedule
+    tags:
+      Name: aurora-staging-gpu
+      k8s.io/cluster-autoscaler/enabled: "true"
+      GPUType: a10g
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        cloudWatch: true
+        ebs: true
+    privateNetworking: false
+    ssh:
+      allow: false
+
+# VPC configuration (uses eksctl defaults with public/private subnets)
+vpc:
+  cidr: 10.42.0.0/16
+  nat:
+    gateway: Single  # Use HighlyAvailable for production (3 NAT GWs)
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+# CloudWatch logging
+cloudWatch:
+  clusterLogging:
+    enableTypes:
+      - api
+      - audit
+      - authenticator
+      - controllerManager
+      - scheduler
+
+# Addons (use latest versions)
+addons:
+  - name: vpc-cni
+    version: latest
+  - name: coredns
+    version: latest
+  - name: kube-proxy
+    version: latest
+  - name: aws-ebs-csi-driver
+    version: latest
