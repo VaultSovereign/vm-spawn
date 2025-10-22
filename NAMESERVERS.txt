@@ -1,0 +1,27 @@
+🌐 VaultMesh.Cloud AWS Route53 Name Servers
+==============================================
+
+Add these EXACT name servers to your domain registrar:
+
+Nameserver 1: ns-1509.awsdns-60.org
+Nameserver 2: ns-289.awsdns-36.com
+Nameserver 3: ns-639.awsdns-15.net
+Nameserver 4: ns-1884.awsdns-43.co.uk
+
+Zone ID: Z100505526F6RJ21G6IU4
+Account: 509399262563
+Created: 2025-10-22T12:26:25Z
+
+Instructions:
+1. Log into your domain registrar where you registered vaultmesh.cloud
+2. Find DNS Settings / Name Servers / DNS Management
+3. Change from default name servers to "Custom Name Servers"
+4. Enter the 4 name servers above (exactly as shown)
+5. Save changes
+6. Wait 15-30 minutes for DNS propagation
+
+After updating, verify with:
+./ops/aws/verify-dns.sh
+
+Or check online:
+https://dnschecker.org/#NS/vaultmesh.cloud
