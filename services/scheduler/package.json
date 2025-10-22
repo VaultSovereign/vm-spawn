@@ -1,0 +1,9 @@
+{
+  "name": "vmsh-scheduler",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "run": "ts-node-esm src/index.ts", "dev": "ts-node-esm src/index.ts" },
+  "dependencies": { "js-yaml": "^4.1.0", "glob": "^10.3.10" },
+  "devDependencies": { "ts-node": "^10.9.2", "typescript": "^5.4.5" }
+}

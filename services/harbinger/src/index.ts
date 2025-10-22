@@ -85,11 +85,45 @@ app.post("/events", (req, res) => {
       return res.status(400).json({ error: "payload schema validation failed", details: validate.errors });
     }
 
-    // Witness quorum
+    // Load namespace config for subject-specific rules
+    const nsCfg = fs.existsSync(path.join(ROOT, "vmsh/config/namespaces.yaml")) ? 
+      YAML.parse(fs.readFileSync(path.join(ROOT, "vmsh/config/namespaces.yaml"), "utf8")) as any : 
+      { namespaces: {} };
+    
+    const subjectNs = (env.subject as string).split(":").slice(0,2).join(":"); // e.g., "dao:vaultmesh"
+    const ns = nsCfg?.namespaces?.[subjectNs];
+
+    // Witness quorum (namespace overrides global)
     const witnesses = Array.isArray(env.witness) ? env.witness : [];
-    const minRequired = config.harbinger?.witnesses?.min_required || 1;
-    if (witnesses.length < minRequired) {
-      return res.status(401).json({ error: `insufficient witnesses (${witnesses.length} < ${minRequired})` });
+    const req = ns?.witnesses?.min_required ?? config.harbinger?.witnesses?.min_required ?? 1;
+    if (witnesses.length < req) { 
+      return res.status(401).json({ error: `insufficient witnesses (${witnesses.length} < ${req})` }); 
+    }
+    
+    // Check against allowlist if namespace has one
+    if (ns?.witnesses?.allowlist && Array.isArray(ns.witnesses.allowlist) && ns.witnesses.allowlist.length > 0) {
+      const allowedWitnesses = new Set(ns.witnesses.allowlist);
+      const invalidWitnesses = witnesses.filter((w: string) => !allowedWitnesses.has(w));
+      if (invalidWitnesses.length > 0) {
+        return res.status(401).json({ 
+          error: `unauthorized witnesses for namespace ${subjectNs}`, 
+          invalid: invalidWitnesses 
+        });
+      }
+    }
+    
+    // Semver gate (namespace schema policy)
+    if (ns?.schema_policy?.allow) {
+      const ok = ns.schema_policy.allow.some((pat: string) => {
+        // supports "@1.0.x" pattern
+        if (!env.schema) return false;
+        if (!pat.includes("@")) return env.schema.startsWith(pat);
+        const [name, rule] = pat.split("@");
+        if (!env.schema.startsWith(name+"@")) return false;
+        const want = rule.replace(".x","");
+        return env.schema.startsWith(`${name}@${want}`);
+      });
+      if (!ok) return res.status(400).json({ error: `schema ${env.schema} not allowed for ${subjectNs}` });
     }
 
     // NOTE: Signature verification is implementation-specific (key registry / DID resolver).

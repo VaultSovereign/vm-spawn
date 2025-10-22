@@ -11,6 +11,14 @@ allow {
   valid_sig
 }
 
+# Only authorized actors may change cadence config
+allow {
+  input.event.type == "governance.cadence.set"
+  some a
+  a := input.event.actor
+  a == data.governance.admin  # load from data or tags
+}
+
 valid_ts {
   now := time.now_ns() / 1000000000
   abs(now - input.event.timestamp) <= 300

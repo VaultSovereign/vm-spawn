@@ -1,0 +1,18 @@
+eip155:
+  default:
+    rpcUrl: ${EVM_RPC}
+    chainId: ${EVM_CHAIN_ID}
+    contract: ${EVM_CONTRACT}
+    key: ${EVM_ANCHOR_KEY}
+    persist: false
+    confirmations: 12
+btc:
+  default:
+    rpcUrl: ${BTC_RPC}
+    network: regtest
+    confirmations: 6
+rfc3161:
+  default:
+    url: ${TSA_URL}
+    policyOID: ${TSA_POLICY_OID:-""}
+    trustBundle: services/anchors/certs/tsa-bundle.pem

@@ -1,8 +1,16 @@
 # Changelog — VaultMesh
 
-## [v5.0.0-alpha.1] — 2025-10-22
+## [v5.0.0-alpha.1] — 2025-10-23
 
 ### Added
+- **Phase V Federation Design**: Peer-to-peer federation protocol for cross-Remembrancer consensus
+- **Federation Configuration**: `vmsh/config/federation/federation.yaml` with peer registry and consensus rules
+- **Federation Schemas**: Initial design for `federation.registry.set`, `federation.receipt`, and `namespace.message`
+- **PR Template**: `.github/PHASE_V_PR_TEMPLATE.md` for Phase V implementation
+- **Documentation**: `PHASE_V_FEDERATION_ARCHITECTURE.md` with complete design specifications
+- **Verification Script**: `scripts/phase4-verify-phase5-prep.sh` to validate Phase IV and prepare for Phase V
+
+### Future (v5.0.0)
 - **Sovereign Rust core**: multi-crate workspace (`vm-core`, `vm-crypto`, `vm-remembrancer`, `vm-cli`, `vm-fed`).
 - **JCS (RFC 8785)** canonicalization and Merkle audit path.
 - **OpenPGP (Sequoia)** detached signing + policy-aware verify (feature-gated).
@@ -12,6 +20,17 @@
 
 ### Changed
 - **MerkleProof serialization** now records sibling direction via `ProofStep { sibling, sibling_on_right }` (prevents right-hand false negatives).
+
+## [v4.1.0-PHASE-IV] — 2025-10-23
+
+### Added
+- **Multi-Tenant Namespaces**: Complete implementation of namespace-specific configuration
+- **Governance Schema**: `governance.cadence.set@1.0.0.json` for cadence management
+- **Scheduler Service**: Per-namespace cadence management with φ-backoff algorithm
+- **Namespace Validation**: Enhanced Harbinger service with namespace-specific admission rules
+- **Documentation**: Updated `docs/REMEMBRANCER.md` with Phase IV architecture details
+- **Implementation Guide**: `PHASE_IV_IMPLEMENTATION.md` with detailed setup instructions
+- **Test Suite**: Comprehensive tests for parser, backoff, and namespace admission
 
 ### Security
 - **cargo-deny** policy tightened (license allow-list; GPL-family denied; vuln = deny).

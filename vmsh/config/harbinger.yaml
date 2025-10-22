@@ -22,6 +22,7 @@ harbinger:
     "sequencer.commit": "sequencer.commit@1.0.0"
     "vote.cast": "vote.cast@1.0.0"
     "asset.issue": "asset.issue@1.0.0"
+    "governance.cadence.set": "governance.cadence.set@1.0.0"
 
   policy:
     path: "policy/admission.rego"

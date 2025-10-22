@@ -1,0 +1,44 @@
+# Each namespace defines its sovereign memory sub-tree, witnesses, and cadence.
+namespaces:
+  dao:vaultmesh:
+    description: "VaultMesh DAO canonical ledger"
+    # witness quorum (overrides global)
+    witnesses:
+      min_required: 2
+      allowlist:
+        - "did:vm:arbiter:prod-us-east-1"
+        - "did:vm:arbiter:prod-eu-west-1"
+        - "did:vm:arbiter:prod-dao-suite"
+    # schema gates (accept these exact semvers)
+    schema_policy:
+      allow:
+        - "registry.set@1.0.x"
+        - "ledger.append@1.0.x"
+        - "vote.cast@1.0.x"
+        - "workflow.transition@1.0.x"
+        - "governance.cadence.set@1.0.x"
+    # cadences: Fast / Strong / Cold
+    cadence:
+      fast:
+        target: "eip155:8453"     # Base (L2)
+        every: "89s"
+        confirmations: 3
+      strong:
+        target: "btc:mainnet"
+        every: "34*fast"          # every 34 fast epochs
+        confirmations: 6
+      cold:
+        target: "rfc3161:tsa"
+        every: "1d"
+        policyOID: ""
+  fin:clearing:
+    description: "Clearing house instance"
+    witnesses:
+      min_required: 3
+      allowlist: ["did:vm:arbiter:prod-clearing-a","did:vm:arbiter:prod-clearing-b","did:vm:arbiter:prod-clearing-c"]
+    schema_policy:
+      allow: ["sequencer.commit@1.0.x","indexer.checkpoint@1.0.x","ledger.append@1.0.x","governance.cadence.set@1.0.x"]
+    cadence:
+      fast:   { target: "eip155:1",     every: "120s", confirmations: 12 }  # ETH L1 here for demo
+      strong: { target: "btc:mainnet",  every: "17*fast", confirmations: 6 }
+      cold:   { target: "rfc3161:tsa",  every: "12h" }

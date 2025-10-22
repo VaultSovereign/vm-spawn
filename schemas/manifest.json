@@ -6,5 +6,6 @@
   "indexer.checkpoint@1.0.0": "file://schemas/indexer-checkpoint.schema.json",
   "sequencer.commit@1.0.0": "file://schemas/sequencer-commit.schema.json",
   "vote.cast@1.0.0": "file://schemas/vote-cast.schema.json",
-  "asset.issue@1.0.0": "file://schemas/asset-issue.schema.json"
+  "asset.issue@1.0.0": "file://schemas/asset-issue.schema.json",
+  "governance.cadence.set@1.0.0": "file://schemas/governance.cadence.set.schema.json"
 }
