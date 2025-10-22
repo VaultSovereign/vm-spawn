@@ -1,0 +1,41 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aurora-grafana
+  namespace: aurora-staging
+  annotations:
+    # AWS Load Balancer Controller annotations
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:eu-west-1:ACCOUNT_ID:certificate/bc354064-f711-4d35-a2b6-326aa3da830b
+    alb.ingress.kubernetes.io/healthcheck-path: /api/health
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: '30'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+
+    # IP allowlist for staging (optional - restrict to your IPs)
+    # alb.ingress.kubernetes.io/inbound-cidrs: 1.2.3.4/32,5.6.7.8/32
+
+    # Tags
+    alb.ingress.kubernetes.io/tags: Environment=staging,Project=aurora,Component=grafana,Domain=vaultmesh.cloud
+
+    # ExternalDNS (optional)
+    external-dns.alpha.kubernetes.io/hostname: grafana.vaultmesh.cloud
+
+  labels:
+    app: grafana
+    component: ingress
+    environment: staging
+spec:
+  rules:
+  - host: grafana.vaultmesh.cloud
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 80

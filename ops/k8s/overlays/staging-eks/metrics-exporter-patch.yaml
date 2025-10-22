@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurora-metrics-exporter
+spec:
+  template:
+    spec:
+      serviceAccountName: aurora-metrics-exporter
+      containers:
+      - name: exporter
+        env:
+          # AWS-specific environment variables
+          - name: AWS_REGION
+            valueFrom:
+              configMapKeyRef:
+                name: aws-config
+                key: AWS_REGION
+          - name: S3_LEDGER_BUCKET
+            valueFrom:
+              configMapKeyRef:
+                name: aws-config
+                key: S3_LEDGER_BUCKET
+          - name: PROMETHEUS_ENDPOINT
+            valueFrom:
+              configMapKeyRef:
+                name: aws-config
+                key: PROMETHEUS_ENDPOINT
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"

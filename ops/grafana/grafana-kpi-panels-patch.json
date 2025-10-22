@@ -1,0 +1,214 @@
+{
+  "title": "Aurora Treaty KPI Dashboard",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Fill Rate (p95)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, treaty_fill_rate_bucket{treaty_id=\"AURORA-AKASH-001\"})",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.80, "color": "yellow" },
+              { "value": 0.85, "color": "green" }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "RTT (p95)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, treaty_rtt_ms_bucket{treaty_id=\"AURORA-AKASH-001\"})",
+          "legendFormat": "p95"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 300, "color": "yellow" },
+              { "value": 350, "color": "red" }
+            ]
+          },
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Provenance Coverage",
+      "targets": [
+        {
+          "expr": "treaty_provenance_coverage{treaty_id=\"AURORA-AKASH-001\"}",
+          "legendFormat": "coverage"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "red" },
+              { "value": 0.90, "color": "yellow" },
+              { "value": 0.95, "color": "green" }
+            ]
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Policy Decision Latency (p99)",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.99, policy_decision_ms_bucket{treaty_id=\"AURORA-AKASH-001\"})",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "value": 0, "color": "green" },
+              { "value": 20, "color": "yellow" },
+              { "value": 25, "color": "red" }
+            ]
+          },
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Fill Rate Over Time",
+      "targets": [
+        {
+          "expr": "treaty_fill_rate{treaty_id=\"AURORA-AKASH-001\"}",
+          "legendFormat": "fill_rate"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "smooth",
+            "fillOpacity": 10
+          },
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "RTT Distribution",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.50, treaty_rtt_ms_bucket{treaty_id=\"AURORA-AKASH-001\"})",
+          "legendFormat": "p50"
+        },
+        {
+          "expr": "histogram_quantile(0.95, treaty_rtt_ms_bucket{treaty_id=\"AURORA-AKASH-001\"})",
+          "legendFormat": "p95"
+        },
+        {
+          "expr": "histogram_quantile(0.99, treaty_rtt_ms_bucket{treaty_id=\"AURORA-AKASH-001\"})",
+          "legendFormat": "p99"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "GPU Hours Consumed",
+      "targets": [
+        {
+          "expr": "rate(gpu_hours_total{treaty_id=\"AURORA-AKASH-001\"}[5m])",
+          "legendFormat": "gpu_hours/sec"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Provider Reputation",
+      "targets": [
+        {
+          "expr": "provider_reputation{treaty_id=\"AURORA-AKASH-001\"}",
+          "legendFormat": "{{provider_id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "max": 100
+        }
+      }
+    }
+  ],
+  "annotations": {
+    "list": [
+      {
+        "name": "Deployments",
+        "datasource": "Prometheus",
+        "expr": "changes(treaty_deployment_timestamp{treaty_id=\"AURORA-AKASH-001\"}[1m]) > 0",
+        "tagKeys": "version",
+        "textFormat": "Deployment: {{version}}"
+      }
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "treaty_id",
+        "type": "query",
+        "query": "label_values(treaty_fill_rate, treaty_id)",
+        "current": {
+          "value": "AURORA-AKASH-001"
+        }
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "30s"
+}

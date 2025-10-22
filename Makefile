@@ -133,6 +133,47 @@ staging-create-secret: ## Create aurora-pubkey secret (requires secrets/vm_https
 		--dry-run=client -o yaml | kubectl apply -f -
 	@echo "✅ Secret created"
 
+.PHONY: oracle treaty-gen treaty-gen-akash slo-report demo-onboard-akash
+
+oracle: ## Fetch live provider pricing/latency (writes ops/oracle/providers.json)
+	@ORACLE_OUT=ops/oracle/providers.json python3 scripts/oracle-fetch.py
+
+treaty-gen: ## Generate a provider treaty from template (env-driven)
+	@if [ -z "$(PROVIDER_ID)" ]; then \
+		echo "Usage: make treaty-gen PROVIDER_ID=<id> PROVIDER_NAME=\"<name>\" ENDPOINT=\"<url>\""; \
+		echo "Example: make treaty-gen PROVIDER_ID=akash PROVIDER_NAME=\"Akash Network\" ENDPOINT=\"https://api.akash.network\""; \
+		exit 1; \
+	fi
+	@PROVIDER_ID=$(PROVIDER_ID) PROVIDER_NAME="$(PROVIDER_NAME)" ENDPOINT="$(ENDPOINT)" ./scripts/treaty-generate.sh
+
+treaty-gen-akash: ## One-shot Akash treaty generation
+	@PROVIDER_ID=akash PROVIDER_NAME="Akash Network" ENDPOINT="https://api.akash.network" ./scripts/treaty-generate.sh
+
+slo-report: ## Produce signed SLO JSON from Prometheus
+	@bash scripts/slo-signer.sh http://localhost:9090 reports/slo-$(shell date +%Y%m%d).json
+
+demo-onboard-akash: ## Complete Akash onboarding demo (treaty + oracle + SLO)
+	@echo "🜂 Aurora Demo: Onboarding Akash Network"
+	@echo "========================================"
+	@echo ""
+	@echo "1/4 Generating Akash treaty..."
+	@make treaty-gen-akash
+	@echo ""
+	@echo "2/4 Fetching live provider data..."
+	@make oracle
+	@echo ""
+	@echo "3/4 Running simulator..."
+	@make sim-run STEPS=60
+	@echo ""
+	@echo "4/4 Generating SLO report..."
+	@make slo-report || echo "⚠️  SLO report requires Prometheus (run: make smoke-e2e first)"
+	@echo ""
+	@echo "✅ Demo complete. Check:"
+	@echo "   Treaty: treaties/aurora-akash.yaml"
+	@echo "   Oracle: ops/oracle/providers.json"
+	@echo "   Simulator: sim/multi-provider-routing-simulator/out/"
+	@echo "   SLO: reports/slo-*.json"
+
 .PHONY: dist
 dist: policy-build ## Build signed Aurora GA artifact
 	@echo "[dist] Creating release bundle…"

@@ -1,0 +1,61 @@
+# Prometheus Helm values for Aurora staging-eks
+# helm upgrade --install prometheus prometheus-community/prometheus -f prometheus-values.yaml
+
+server:
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+      service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"
+  
+  persistentVolume:
+    enabled: true
+    size: 50Gi
+    storageClass: gp3
+  
+  retention: "7d"
+  
+  global:
+    scrape_interval: 30s
+    evaluation_interval: 30s
+  
+  # Aurora-specific scrape configs
+  extraScrapeConfigs: |
+    - job_name: 'aurora-metrics'
+      static_configs:
+        - targets: ['aurora-metrics-exporter.aurora-staging.svc.cluster.local:9109']
+          labels:
+            environment: staging
+            treaty_id: AURORA-AKASH-001
+    
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+        - role: pod
+          namespaces:
+            names:
+              - aurora-staging
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+          action: keep
+          regex: true
+        - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+          action: replace
+          target_label: __metrics_path__
+          regex: (.+)
+        - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+          action: replace
+          regex: ([^:]+)(?::\d+)?;(\d+)
+          replacement: $1:$2
+          target_label: __address__
+
+alertmanager:
+  enabled: false  # Enable later for Week 2
+
+pushgateway:
+  enabled: false
+
+nodeExporter:
+  enabled: true
+
+kubeStateMetrics:
+  enabled: true

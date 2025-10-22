@@ -1,0 +1,20 @@
+{
+  "report_type": "canary_slo",
+  "treaty_id": "AURORA-AKASH-001",
+  "timestamp": "2025-10-22T10:27:21.319006Z",
+  "window": "72h",
+  "metrics": {
+    "fill_rate_p95": null,
+    "rtt_p95_ms": null,
+    "provenance_coverage": null,
+    "policy_latency_p99_ms": null
+  },
+  "slo_compliance": {
+    "fill_rate": null,
+    "rtt": null,
+    "provenance": null,
+    "policy_latency": null
+  },
+  "overall_compliance": null,
+  "compliance_rate": null
+}

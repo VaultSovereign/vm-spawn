@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aurora-prometheus
+  namespace: aurora-staging
+  annotations:
+    # AWS Load Balancer Controller annotations
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internal  # INTERNAL ONLY - not exposed to internet
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP":80}]'
+    alb.ingress.kubernetes.io/healthcheck-path: /-/healthy
+
+    # Tags
+    alb.ingress.kubernetes.io/tags: Environment=staging,Project=aurora,Component=prometheus,Internal=true
+
+    # Note: No TLS for internal-only ALB
+    # Note: No external-dns annotation - this is VPC-only
+
+  labels:
+    app: prometheus
+    component: ingress
+    environment: staging
+    visibility: internal
+spec:
+  rules:
+  - host: prometheus.aurora-staging.internal
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-server
+            port:
+              number: 80

@@ -1,0 +1,49 @@
+# Aurora Treaty Template
+# Generate provider-specific treaties with: make treaty-gen PROVIDER_ID=<id> PROVIDER_NAME="<name>" ENDPOINT="<url>"
+
+apiVersion: aurora.vaultmesh.io/v1
+kind: Treaty
+metadata:
+  name: aurora-${PROVIDER_ID}
+  labels:
+    provider: ${PROVIDER_ID}
+    treaty-type: compute-routing
+spec:
+  provider:
+    id: ${PROVIDER_ID}
+    name: ${PROVIDER_NAME}
+    endpoint: ${ENDPOINT}
+    bridge: axelar
+  
+  slo:
+    fill_rate_p95: 0.80
+    rtt_p95_ms: 350
+    provenance_coverage: 0.95
+    policy_latency_p99_ms: 25
+  
+  routing:
+    weights:
+      price: 0.30
+      latency: 0.25
+      reputation: 0.25
+      availability: 0.20
+    
+    constraints:
+      max_latency_ms: 500
+      min_reputation: 60
+      required_regions: []
+  
+  policy:
+    wasm_path: policy/wasm/vault-law-${PROVIDER_ID}-policy.wasm
+    enforcement: strict
+    
+  provenance:
+    merkle_enabled: true
+    rfc3161_tsa: https://freetsa.org/tsr
+    ipfs_pin: true
+  
+  governance:
+    slo_report_interval: 72h
+    ledger_snapshot_interval: 24h
+    signature_required: true
+    gpg_key: 6E4082C6A410F340

@@ -1,0 +1,40 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Base staging overlay (reuse existing manifests)
+bases:
+  - ../staging
+
+namespace: aurora-staging
+
+# AWS-specific resources
+resources:
+  - ingress-api.yaml
+  - ingress-grafana.yaml
+  - ingress-prometheus.yaml
+
+# AWS-specific patches
+patchesStrategicMerge:
+  - service-patch.yaml
+  - metrics-exporter-patch.yaml
+
+# AWS-specific ConfigMaps
+configMapGenerator:
+  - name: aws-config
+    literals:
+      - AWS_REGION=eu-west-1
+      - S3_LEDGER_BUCKET=aurora-staging-ledger
+      - PROMETHEUS_ENDPOINT=http://prometheus-server.aurora-staging.svc.cluster.local
+
+# AWS-specific annotations for all resources
+commonAnnotations:
+  cloud.provider: aws
+  aws.region: eu-west-1
+  terraform.managed: "false"
+  eksctl.managed: "true"
+
+labels:
+  - pairs:
+      environment: staging-eks
+      cloud: aws
+      treaty_id: AURORA-AKASH-001
