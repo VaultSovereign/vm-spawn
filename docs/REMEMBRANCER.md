@@ -176,6 +176,13 @@ Total: ~30 production-ready files
 - **Trade-offs:** Creates `.bak` files (cosmetic), but ensures Linux compatibility
 - **Status:** Tested on both macOS and Linux
 
+**ADR-004: Repository Streamlining and Artifact Archival**
+- **Decision:** Archive obsolete scripts and verbose completion records into `archive/`; update docs to point to `VERSION_TIMELINE.md` as canonical history.
+- **Rationale:** Reduce repository clutter to improve operator clarity while preserving sovereign history and auditability. No receipts or state were deleted.
+- **Trade-offs:** Some paths change; potential for broken links mitigated by updating pointers and keeping all artifacts intact under `archive/`.
+- **Status:** Accepted
+- **Date:** 2025-10-22T19:31:52Z
+
 #### Migration Path
 ```bash
 # On Ubuntu (bare metal or VM)
