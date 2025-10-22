@@ -1,0 +1,48 @@
+name: Rust CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain: ['1.77.2', 'stable']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust ${{ matrix.toolchain }}
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          components: clippy, rustfmt
+
+      - name: Cache cargo directories
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            v4.5-scaffold/rust -> target
+
+      - name: Format
+        working-directory: v4.5-scaffold/rust
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        working-directory: v4.5-scaffold/rust
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: Build
+        working-directory: v4.5-scaffold/rust
+        run: cargo build --all
+
+      - name: Test
+        working-directory: v4.5-scaffold/rust
+        run: cargo test --all -- --nocapture

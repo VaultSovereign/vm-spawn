@@ -127,7 +127,8 @@ ops/bin/POST_MIGRATION_HARDEN.sh 🛡️ Harden + encrypt
 1. **PLAN_FORWARD.md** - Strategic decisions
 2. **PROJECT_STATUS.md** - Technical assessment
 3. **CURRENT_STATUS_FINAL.md** - Honest evaluation
-4. **CONTRIBUTING.md** - Contribution guide
+4. **v4.5-scaffold/rust/README.md** - Rust v4.5 scaffold quickstart (new track)
+5. **CONTRIBUTING.md** - Contribution guide
 
 ---
 
