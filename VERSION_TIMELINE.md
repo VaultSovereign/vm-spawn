@@ -1,5 +1,8 @@
 # 📜 VaultMesh Version Timeline
 
+> Note: Detailed completion records for each milestone now live under `archive/completion-records/`.
+> This file is the single source of truth for version history and pointers to archived details.
+
 **Current Version:** v3.0-COVENANT-FOUNDATION  
 **Rating:** 10.0/10 (PRODUCTION VERIFIED)  
 **Tests:** 38/38 PASSED (100%)
@@ -246,4 +249,3 @@ v2.4 > v2.3 because: tested, proven, perfect.
 ---
 
 **The timeline is clear. The truth is documented. The proof is cryptographic. The covenant stands.** 🜞⚔️
-

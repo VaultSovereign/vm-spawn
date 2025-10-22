@@ -159,7 +159,7 @@ Format: `eip155:<chainId>/tx:0x<txhash>`
 
 **Documentation:**
 - Four Covenants Plan: `../four-covenants-hardening.plan.md`
-- Deployment Complete: `../FOUR_COVENANTS_DEPLOYED.md`
+- Deployment Complete: `../archive/completion-records/FOUR_COVENANTS_DEPLOYED.md`
 - Genesis Complete: `../V4.1_GENESIS_COMPLETE.md`
 - Federation Semantics: `../docs/FEDERATION_SEMANTICS.md`
 
@@ -221,4 +221,3 @@ Rubedo (Completion)       → Genesis ceremony prepared  ✅
 **Merkle Root:** `d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea`  
 **Generated:** 2025-10-20  
 **Status:** ✅ Ready for DAO vote
-
