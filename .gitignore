@@ -20,6 +20,7 @@ policy/wasm/*.wasm
 target/
 *.wasm
 out/
+
 # Logs
 logs/
 *.log
@@ -28,8 +29,10 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+
 # Node
 node_modules/
+
 # IDE
 .vscode/
 .idea/
@@ -40,6 +43,7 @@ node_modules/
 # OS
 .DS_Store
 Thumbs.db
+
 # Temporary
 tmp/
 *.tmp
