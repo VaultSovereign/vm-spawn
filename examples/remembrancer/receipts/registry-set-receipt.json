@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:50f2f0ce0e3df44159afdd9688b5d27b2123c8f9b14eec4c5e6d4d780cdd012e",
+  "batchRoot": "sha256:50f2f0ce0e3df44159afdd9688b5d27b2123c8f9b14eec4c5e6d4d780cdd012e",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:8453",
+    "contract": "0x8b67bf5f76f40a4b682f7dd83a551a6d41a42b5e",
+    "tx": "0xab2018929dc63755396599b5d0cf10ae21b92c6fadf3b5e2f4b0ca3f63e4c842",
+    "block": 18012345,
+    "ts": 1730100089,
+    "sig": "MEYCIQCW8Y1jX0AscvbHfLSPYgX7gYxM4W1F8g8QrE5iKZBkpwIhAOha9y8mODYlUtBcltS5lQt3zpgVdM5vE3I554h7zymT"
+  },
+  "verifier": "did:vm:arbiter:prod-us-east-1",
+  "integrity": "vmr1-1x8mge64056q6j3q2g6e6mevj3yngl5z3mhqpgf8qsdz7yv8q52"
+}

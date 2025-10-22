@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "indexer.checkpoint@1.0.0",
+  "description": "Payload proving a materialized view is synchronized to a given height.",
+  "type": "object",
+  "required": ["viewId", "sourceChain", "blockHeight", "coveredStateRoot"],
+  "properties": {
+    "viewId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the materialized view or index."
+    },
+    "sourceChain": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Chain or source system identifier (e.g. 'eip155:1')."
+    },
+    "blockHeight": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Inclusive block height up to which the view is complete."
+    },
+    "blockHash": {
+      "type": "string",
+      "description": "Optional canonical hash of the reference block."
+    },
+    "coveredStateRoot": {
+      "type": "string",
+      "description": "Merkle or accumulator root representing indexed coverage."
+    },
+    "coveragePercent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "description": "Optional explicit coverage percentage when partial."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Implementation specific metadata for the checkpoint."
+    }
+  },
+  "additionalProperties": false
+}

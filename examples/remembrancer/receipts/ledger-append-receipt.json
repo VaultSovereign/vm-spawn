@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:e58054547e9bd000b0d2bd4c4bef3e634a99d3b02ecf33d13d22d4436ccd1c48",
+  "batchRoot": "sha256:e58054547e9bd000b0d2bd4c4bef3e634a99d3b02ecf33d13d22d4436ccd1c48",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:42161",
+    "contract": "0x5f5d5b3a6462cb38aa63477db3d7d7fcdb8f0c45",
+    "tx": "0x5f6d5256d0a507de415eb502b6bb7305fd563a617e0eeeb28b3d5e3d896f0f5b",
+    "block": 14220311,
+    "ts": 1730100196,
+    "sig": "MEUCIQC7mDk6zpsfS8hiYjH1aubJt2W6Y8R8QovJjqbWvIPIkAIgJCiVtSpb8vB6wgpiHZFTfWdKMruXW3lYBTga2hjPgkM"
+  },
+  "verifier": "did:vm:arbiter:prod-eu-west-1",
+  "integrity": "vmr1-078n8v2pkq6pr2clynnfg6vyv3zh9sk3n4rxn8wvs6c9nntp432y"
+}

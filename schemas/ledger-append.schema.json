@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ledger.append@1.0.0",
+  "description": "Payload for appending a verifiable event to an ordered ledger stream.",
+  "type": "object",
+  "required": ["stream", "data"],
+  "properties": {
+    "stream": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Logical ledger stream identifier."
+    },
+    "data": {
+      "description": "Canonical JSON payload captured for this ledger event.",
+      "anyOf": [
+        { "type": "object" },
+        { "type": "array" },
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" },
+        { "type": "null" }
+      ]
+    },
+    "observedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix timestamp when the event was observed."
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Optional caller-provided sequence number for idempotency."
+    }
+  },
+  "additionalProperties": false
+}

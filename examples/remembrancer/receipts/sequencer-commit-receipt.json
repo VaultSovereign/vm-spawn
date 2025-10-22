@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:3c4255e31db3153d9a7d94b55a8ddd0b0b5fa3ffaa83a4fc94660351cf51edaa",
+  "batchRoot": "sha256:3c4255e31db3153d9a7d94b55a8ddd0b0b5fa3ffaa83a4fc94660351cf51edaa",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:59144",
+    "contract": "0x3dc4cd3ad65b2f74f6cb48774c63df37b7f54784",
+    "tx": "0x7112854c1a3da0facd963f70e8c1fee39f54a3cf0300b17b31ad06c938c1c297",
+    "block": 9011456,
+    "ts": 1730100842,
+    "sig": "MEUCIQDGeUcQP1JYLl7MBuX7GN/eeQoHfHDRB2/4KUL9lwY0KAIgfal/C9knKzV+XdNjaGLPhI0ew1QYPUyhL9Mr9tqKo3s="
+  },
+  "verifier": "did:vm:arbiter:prod-l2-sequencer",
+  "integrity": "vmr1-1ewyfl2kdqa5a28sfq8ukeylet8u7spp08qwh3ephwxkhkppt0jh"
+}

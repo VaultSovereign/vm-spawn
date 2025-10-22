@@ -1,0 +1,15 @@
+{
+  "eventHash": "sha256:1e8bf0fbdc147fdf78c793ca7c2de237dde37ea6d0c736524c671de09379dd67",
+  "batchRoot": "sha256:1e8bf0fbdc147fdf78c793ca7c2de237dde37ea6d0c736524c671de09379dd67",
+  "path": [],
+  "anchor": {
+    "chain": "eip155:8453",
+    "contract": "0x3f9bcb8c9a5f700d58a1f10bb3ad5f8df5e9292d",
+    "tx": "0xc884ff0d3e2dfdf4a42589f4f984bacd9f51c0eb8cf48ab91ad848704ef6e2d0",
+    "block": 18012412,
+    "ts": 1730101099,
+    "sig": "MEYCIQDuX0FNM6GPWlI+6yXuhQFn85DpDgyvRoBfI+qDszzdiQIhAI384TDJslhIv3wKMnV2ktLB3CJ4dRxrqCYXvlG3hQac"
+  },
+  "verifier": "did:vm:arbiter:prod-asset-forge",
+  "integrity": "vmr1-02f8d46r0hgx5909wqw95gkspl5n7yap96t8lnf5zwlf9h5p0ysd"
+}

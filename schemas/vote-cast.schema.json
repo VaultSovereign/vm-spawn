@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "vote.cast@1.0.0",
+  "description": "Payload for casting a vote with optional weighting metadata.",
+  "type": "object",
+  "required": ["proposalId", "choice"],
+  "properties": {
+    "proposalId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier for the proposal or ballot."
+    },
+    "choice": {
+      "description": "Voter choice. Supports enums, ranked ballots, or numeric weights.",
+      "anyOf": [
+        { "type": "string" },
+        { "type": "integer" },
+        { "type": "number" },
+        { "type": "array" },
+        { "type": "object" },
+        { "type": "boolean" }
+      ]
+    },
+    "weight": {
+      "type": "string",
+      "description": "Vote weight encoded as a string to preserve large values."
+    },
+    "ballotId": {
+      "type": "string",
+      "description": "Optional unique identifier of this ballot submission."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional vote metadata (e.g., delegation chain, quorum proofs)."
+    }
+  },
+  "additionalProperties": false
+}

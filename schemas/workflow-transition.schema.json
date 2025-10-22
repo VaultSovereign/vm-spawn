@@ -1,0 +1,53 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "workflow.transition@1.0.0",
+  "description": "Payload that records a state-machine transition requiring approvals or sign-off.",
+  "type": "object",
+  "required": ["instanceId", "fromState", "toState"],
+  "properties": {
+    "instanceId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Workflow instance identifier."
+    },
+    "fromState": {
+      "type": "string",
+      "minLength": 1,
+      "description": "State prior to the transition."
+    },
+    "toState": {
+      "type": "string",
+      "minLength": 1,
+      "description": "State after the transition."
+    },
+    "context": {
+      "type": "object",
+      "description": "Structured data associated with the transition."
+    },
+    "approvals": {
+      "type": "array",
+      "description": "List of approval artifacts, signatures, or actors.",
+      "items": {
+        "type": "object",
+        "required": ["actor"],
+        "properties": {
+          "actor": {
+            "type": "string",
+            "description": "DID or identifier of the approver."
+          },
+          "role": {
+            "type": "string",
+            "description": "Role of the approver within the workflow."
+          },
+          "signedAt": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Unix timestamp of approval."
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

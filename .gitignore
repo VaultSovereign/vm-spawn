@@ -5,29 +5,25 @@ secrets/
 *.key
 *.pem
 !ops/certs/*.pem
-
 # Oracle data (regenerated)
 ops/oracle/providers.json
-
 # Reports (signed artifacts tracked separately)
 reports/*.json
 !reports/.gitkeep
-
 # Backups
 ops/backups/*.db
 ops/backups/*.db.gz
-
 # Build artifacts
 dist/
 !dist/VERIFICATION.md
 policy/wasm/*.wasm
 target/
 *.wasm
+out/
 
 # Logs
 logs/
 *.log
-
 # Python
 __pycache__/
 *.pyc
@@ -44,7 +40,6 @@ node_modules/
 *.swo
 *~
 .obsidian/
-
 # OS
 .DS_Store
 Thumbs.db

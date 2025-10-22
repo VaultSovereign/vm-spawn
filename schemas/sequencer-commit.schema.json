@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "sequencer.commit@1.0.0",
+  "description": "Payload representing a sequencer batch commitment to a canonical log.",
+  "type": "object",
+  "required": ["batchCid", "transactionCount"],
+  "properties": {
+    "batchCid": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Content identifier (CID) of the ordered transaction batch."
+    },
+    "transactionCount": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of transactions included in the batch."
+    },
+    "parentBatchRoot": {
+      "type": "string",
+      "description": "Merkle root of the previous committed batch, if any."
+    },
+    "sealedAt": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Unix timestamp when the batch commitment was sealed."
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Implementation specific metadata for the commitment."
+    }
+  },
+  "additionalProperties": false
+}
