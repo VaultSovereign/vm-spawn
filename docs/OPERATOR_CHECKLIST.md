@@ -1,5 +1,36 @@
 # VaultMesh Operator Checklist
 
+## 📦 System Dependencies
+
+### Linux (Ubuntu/Debian)
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  pkg-config \
+  libsqlite3-dev \
+  nettle-dev \
+  libhogweed-dev \
+  libgmp-dev \
+  clang \
+  llvm-dev
+```
+
+### macOS
+```bash
+brew update
+brew install pkg-config sqlite nettle gmp
+```
+
+### Windows
+**Note:** Windows builds use `--no-default-features --features vm-cli/sqlite,vm-cli/tls-rustls` to skip `pgp/tsa` features (nettle/gmp not required).
+
+```powershell
+# No additional system dependencies needed for Windows basic build
+# For full features, consider WSL2 with Linux dependencies
+```
+
+---
+
 ## 🜄 Daily Rites — Local Development
 
 ### Build & Verify
