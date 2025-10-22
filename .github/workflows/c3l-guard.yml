@@ -18,15 +18,15 @@ jobs:
 
       - name: Spawn smoke (no flags - baseline)
         run: |
-          bash -euxo pipefail -c './spawn.sh demo-basic service; test -d services/demo-basic'
+          bash -euxo pipefail -c './spawn.sh demo-basic service; test -d ~/repos/demo-basic'
       
       - name: Spawn smoke (MCP)
         run: |
-          bash -euxo pipefail -c './spawn.sh demo-mcp service --with-mcp; test -f services/demo-mcp/mcp/server.py'
+          bash -euxo pipefail -c './spawn.sh demo-mcp service --with-mcp; test -f ~/repos/demo-mcp/mcp/server.py'
       
       - name: Spawn smoke (MQ rabbitmq)
         run: |
-          bash -euxo pipefail -c './spawn.sh demo-mq service --with-mq rabbitmq; test -f services/demo-mq/mq/mq.py'
+          bash -euxo pipefail -c './spawn.sh demo-mq service --with-mq rabbitmq; test -f ~/repos/demo-mq/mq/mq.py'
       
       - name: Validate proposal length (851-852 acceptable)
         run: |
