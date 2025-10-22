@@ -12,6 +12,18 @@ allow = [
   "Unicode-3.0",
   "CDLA-Permissive-2.0",
   "Zlib",
+  # LGPL/GPL licenses (required by Sequoia OpenPGP ecosystem)
+  "LGPL-2.0-or-later",
+  "LGPL-3.0-only",
+  "GPL-2.0-only",
+  "GPL-3.0-only",
+  # Deprecated SPDX identifiers (nettle crate uses old format)
+  "LGPL-3.0",
+  "GPL-2.0",
+  "GPL-3.0",
+  # Public domain / permissive
+  "CC0-1.0",
+  "BSL-1.0",
 ]
 
 [licenses.private]

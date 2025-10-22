@@ -30,11 +30,12 @@ jobs:
         with:
           toolchain: "1.85.0"
           components: clippy, rustfmt
+          cache: false
 
       - name: Install deps (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev clang llvm-dev
 
       - name: Check formatting
         working-directory: v4.5-scaffold
@@ -66,12 +67,13 @@ jobs:
         with:
           toolchain: "1.85.0"
           components: clippy, rustfmt
+          cache: false
 
       - name: Install deps (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev clang llvm-dev
 
       - name: Install deps (macOS)
         if: matrix.os == 'macos-latest'
@@ -96,9 +98,9 @@ jobs:
         working-directory: v4.5-scaffold
         run: cargo test --doc --workspace ${{ matrix.features }}
 
-  # Gate: Property & Fuzz Tests
+  # Gate: Property Tests (Fuzz requires nightly, disabled for stable CI)
   extended-tests:
-    name: Property & Fuzz Tests
+    name: Property Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,22 +113,26 @@ jobs:
       - name: Install deps (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev
 
-      - name: Install cargo-fuzz
-        uses: taiki-e/install-action@v2
-        with:
-          tool: cargo-fuzz
+      # cargo-fuzz requires nightly; disabled for stable toolchain CI
+      # - name: Install cargo-fuzz
+      #   uses: taiki-e/install-action@v2
+      #   with:
+      #     tool: cargo-fuzz
 
       - name: Run property tests
         working-directory: v4.5-scaffold
         run: cargo test --workspace --all-features --release -- --ignored proptest
 
-      - name: Fuzz receipt parser (60s smoke)
-        working-directory: v4.5-scaffold/fuzz
-        run: |
-          cargo fuzz build receipt_parse
-          timeout 60 cargo fuzz run receipt_parse -- -max_total_time=60 || true
+      # Note: Fuzzing requires nightly Rust for -Zsanitizer flag
+      # Disabled in CI to maintain stable toolchain (1.85.0)
+      # For local fuzzing: rustup default nightly && cargo fuzz run receipt_parse --fuzz-dir fuzz
+      # - name: Fuzz receipt parser (60s smoke)
+      #   working-directory: v4.5-scaffold
+      #   run: |
+      #     cargo fuzz build receipt_parse --fuzz-dir fuzz
+      #     timeout 60 cargo fuzz run receipt_parse --fuzz-dir fuzz -- -max_total_time=60 || true
 
   # Gate: Security & Supply Chain
   security:
@@ -175,7 +181,7 @@ jobs:
       - name: Install deps (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev
 
       - name: Install tarpaulin
         uses: taiki-e/install-action@v2
@@ -232,7 +238,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev clang llvm-dev
 
       - name: Build release binary
         working-directory: v4.5-scaffold
