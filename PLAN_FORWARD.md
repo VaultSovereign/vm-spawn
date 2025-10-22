@@ -288,3 +288,30 @@ C) Other approach?
 **Let me know and I'll execute immediately.** 🧠⚔️
 
 
+
+---
+
+## 🌱 Rust v4.5 Track (new)
+
+**Owner:** Spawn Elite Team — Rust Strike Force
+
+**Scope:** Stand up the new `v4.5-scaffold/rust/` workspace. Goal is an end-to-end path from CLI → engine → Merkle receipt → HTTP-signed callback with observability and CI baked in.
+
+**Workspace layout:**
+
+```
+v4.5-scaffold/rust/
+├── Cargo.toml (workspace members: vm-core, vm-receipt, vm-httpsig, vm-adapter-axum, vm-cli)
+├── rust-toolchain.toml (MSRV locked to 1.77.2)
+├── rustfmt.toml, .gitignore, README.md
+└── crates/
+    ├── vm-core/          ← job model + deterministic execution
+    ├── vm-receipt/       ← BLAKE3 hashing + Merkle receipts
+    ├── vm-httpsig/       ← RFC 9421-style signing helpers
+    ├── vm-adapter-axum/  ← Axum verify/signed client demo server
+    └── vm-cli/           ← CLI runner (plan → receipt → signed callback)
+```
+
+**Day-1 deliverable:** The scaffold compiles (`cargo build`), runs a demo server (`cargo run -p vm-adapter-axum`), executes a sample plan (`cargo run -p vm-cli -- run`), emits a receipt, and performs an HTTP-signed callback.
+
+**Next steps:** Layer in deterministic job semantics, Merkle golden tests, HTTP signature edge cases, and CI hardening per milestone notes.
