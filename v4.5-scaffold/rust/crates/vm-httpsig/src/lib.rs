@@ -231,7 +231,6 @@ pub fn verify_request_with<B>(
     vk.verify_strict(base.as_bytes(), &sig)
         .map_err(|_| VerifyError::Signature)?;
     Ok(())
-    Ok(())
 }
 
 fn get_str<'a>(headers: &'a HeaderMap, name: &str) -> Result<&'a str> {
