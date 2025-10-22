@@ -30,6 +30,7 @@ jobs:
         with:
           toolchain: "1.85.0"
           components: clippy, rustfmt
+          cache: false
 
       - name: Install deps (Ubuntu)
         run: |
@@ -66,6 +67,7 @@ jobs:
         with:
           toolchain: "1.85.0"
           components: clippy, rustfmt
+          cache: false
 
       - name: Install deps (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
