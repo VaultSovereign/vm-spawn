@@ -35,7 +35,7 @@ jobs:
       - name: Install deps (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev clang llvm-dev
 
       - name: Check formatting
         working-directory: v4.5-scaffold
@@ -73,7 +73,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev clang llvm-dev
 
       - name: Install deps (macOS)
         if: matrix.os == 'macos-latest'
@@ -113,7 +113,7 @@ jobs:
       - name: Install deps (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev
 
       - name: Install cargo-fuzz
         uses: taiki-e/install-action@v2
@@ -177,7 +177,7 @@ jobs:
       - name: Install deps (Ubuntu)
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev
 
       - name: Install tarpaulin
         uses: taiki-e/install-action@v2
@@ -234,7 +234,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libhogweed-dev libgmp-dev clang llvm-dev
+          sudo apt-get install -y pkg-config libsqlite3-dev nettle-dev libgmp-dev clang llvm-dev
 
       - name: Build release binary
         working-directory: v4.5-scaffold
