@@ -9,9 +9,10 @@
 
 ### Target: Real metrics flowing
 
-- [ ] **W1-1:** Deploy Aurora staging overlay to K8s cluster
+- [x] **W1-1:** Deploy Aurora staging overlay to K8s cluster ⚡ IN PROGRESS
   - Command: `kubectl apply -k ops/k8s/overlays/staging`
   - Verify: `kubectl get pods -n aurora-staging`
+  - Fallback: Use simulator (see WEEK1_KICKOFF.md Option C)
 
 - [ ] **W1-2:** Configure Prometheus exporters for Aurora metrics
   - Files: `scripts/aurora-metrics-exporter.py`
@@ -170,10 +171,10 @@
 ## 📊 Progress Tracking
 
 ### Week 1: Operational Excellence
-- [ ] 0/6 tasks complete
+- [ ] 1/6 tasks in progress (W1-1)
 - [ ] Metrics flowing: NO
 - [ ] 72h uptime: NO
-- [ ] Status: NOT STARTED
+- [ ] Status: 🟢 IN PROGRESS (Started: 2025-10-22)
 
 ### Week 2: Automation Hardening
 - [ ] 0/6 tasks complete
