@@ -228,9 +228,9 @@ pub fn verify_request_with<B>(
         .decode(b64)
         .map_err(|_| VerifyError::BadFormat("Signature b64"))?;
     let sig = Signature::from_slice(&sig_bytes).map_err(|_| VerifyError::BadFormat("Signature bytes"))?;
-
     vk.verify_strict(base.as_bytes(), &sig)
         .map_err(|_| VerifyError::Signature)?;
+    Ok(())
     Ok(())
 }
 
