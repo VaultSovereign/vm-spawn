@@ -1,0 +1,23 @@
+{
+  "name": "vmsh-anchors",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "anchor:evm": "ts-node-esm scripts/anchor-evm.ts",
+    "anchor:btc": "ts-node-esm scripts/anchor-btc.ts",
+    "anchor:tsa": "ts-node-esm scripts/anchor-tsa.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ethers": "^6.13.2",
+    "glob": "^10.3.10",
+    "js-yaml": "^4.1.0",
+    "node-fetch": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

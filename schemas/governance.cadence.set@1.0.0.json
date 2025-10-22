@@ -1,0 +1,97 @@
+{
+  "$id": "https://vaultmesh.io/schemas/governance.cadence.set@1.0.0.json",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Governance Cadence Set",
+  "description": "Schema for setting namespace-specific cadence configurations through governance",
+  "type": "object",
+  "required": ["namespace", "cadence"],
+  "properties": {
+    "namespace": {
+      "type": "string",
+      "description": "The target namespace for cadence configuration",
+      "pattern": "^[a-z0-9]+:[a-z0-9]+$"
+    },
+    "cadence": {
+      "type": "object",
+      "description": "Cadence configuration with at least one level specified",
+      "minProperties": 1,
+      "properties": {
+        "fast": {
+          "type": "object",
+          "description": "Fast cadence configuration (high frequency, lower finality)",
+          "required": ["target"],
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "Target chain identifier (e.g., eip155:1, eip155:8453)",
+              "pattern": "^eip155:[0-9]+$"
+            },
+            "every": {
+              "type": "string",
+              "description": "Time period (e.g., 89s, 2m, 1h) or relative expression (34*fast)",
+              "pattern": "^([0-9]+[smhd]|[0-9]+\\*[a-z]+)$"
+            },
+            "confirmations": {
+              "type": "integer",
+              "description": "Required block confirmations before considering anchor valid",
+              "minimum": 1
+            }
+          }
+        },
+        "strong": {
+          "type": "object",
+          "description": "Strong cadence configuration (medium frequency, high finality)",
+          "required": ["target"],
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "Target chain identifier (e.g., btc:mainnet, btc:testnet)",
+              "pattern": "^btc:(mainnet|testnet|regtest)$"
+            },
+            "every": {
+              "type": "string",
+              "description": "Time period (e.g., 1h, 1d) or relative expression (34*fast)",
+              "pattern": "^([0-9]+[smhd]|[0-9]+\\*[a-z]+)$"
+            },
+            "confirmations": {
+              "type": "integer",
+              "description": "Required block confirmations before considering anchor valid",
+              "minimum": 1
+            }
+          }
+        },
+        "cold": {
+          "type": "object",
+          "description": "Cold cadence configuration (low frequency, archival finality)",
+          "required": ["target"],
+          "properties": {
+            "target": {
+              "type": "string",
+              "description": "Target notary identifier (e.g., rfc3161:tsa)",
+              "enum": ["rfc3161:tsa"]
+            },
+            "every": {
+              "type": "string",
+              "description": "Time period (e.g., 1d, 7d) or relative expression (7*strong)",
+              "pattern": "^([0-9]+[smhd]|[0-9]+\\*[a-z]+)$"
+            },
+            "policyOID": {
+              "type": "string",
+              "description": "Optional TSA policy OID to require"
+            }
+          }
+        }
+      }
+    },
+    "memo": {
+      "type": "string",
+      "description": "Optional memo describing the reason for the cadence change",
+      "maxLength": 280
+    },
+    "effective_after": {
+      "type": "string",
+      "description": "Optional ISO timestamp after which this change becomes effective",
+      "format": "date-time"
+    }
+  }
+}

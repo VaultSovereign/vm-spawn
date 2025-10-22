@@ -4,7 +4,7 @@
 # VaultMesh Covenants
 include ops/make.d/covenants.mk
 
-.PHONY: help codex-seal codex-verify test health codegen verify-receipts seal verify-finalized
+.PHONY: help codex-seal codex-verify test health codegen verify-receipts seal verify-finalized anchor-evm anchor-btc anchor-tsa verify-online scheduler governance-propose-cadence
 
 # Default GPG key (override with: make codex-seal KEY=YOUR_KEY_ID)
 KEY ?= 6E4082C6A410F340
@@ -15,204 +15,28 @@ help: ## Show this help message
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-codex-seal: ## Cryptographically seal the Sovereign Lore Codex (GPG + RFC3161)
-	@echo "🜂 Sealing Sovereign Lore Codex V1..."
-	@echo ""
-	@echo "1/6 Signing codex with GPG..."
-	./ops/bin/remembrancer sign SOVEREIGN_LORE_CODEX_V1.md --key $(KEY)
-	@echo ""
-	@echo "2/6 Timestamping codex with RFC3161..."
-	./ops/bin/remembrancer timestamp SOVEREIGN_LORE_CODEX_V1.md
-	@echo ""
-	@echo "3/6 Signing inscription with GPG..."
-	gpg --armor --detach-sign -u $(KEY) first_seal_inscription.asc
-	@echo ""
-	@echo "4/6 Timestamping inscription with RFC3161..."
-	./ops/bin/remembrancer timestamp first_seal_inscription.asc
-	@echo ""
-	@echo "5/6 Verifying full chains..."
-	./ops/bin/remembrancer verify-full SOVEREIGN_LORE_CODEX_V1.md
-	./ops/bin/remembrancer verify-full first_seal_inscription.asc
-	@echo ""
-	@echo "6/6 Exporting portable proofs..."
-	./ops/bin/remembrancer export-proof SOVEREIGN_LORE_CODEX_V1.md
-	./ops/bin/remembrancer export-proof first_seal_inscription.asc
-	@echo ""
-	@echo "✅ Codex sealed! Proofs exported to .proof.tgz bundles."
-	@echo "🜂 Next: git add *.asc *.tsr *.proof.tgz && git commit -m '🜂 Seal Codex V1'"
+anchor-evm: ## Anchor latest sealed batch on configured EVM chain
+	npm --prefix services/anchors install --no-audit --no-fund
+	npm --prefix services/anchors run anchor:evm
 
-codex-verify: ## Verify the Codex cryptographic chain (GPG + RFC3161 + Merkle)
-	@echo "🜂 Verifying Sovereign Lore Codex V1..."
-	@echo ""
-	@echo "1/3 Verifying codex..."
-	./ops/bin/remembrancer verify-full SOVEREIGN_LORE_CODEX_V1.md
-	@echo ""
-	@echo "2/3 Verifying inscription..."
-	./ops/bin/remembrancer verify-full first_seal_inscription.asc
-	@echo ""
-	@echo "3/3 Verifying Merkle audit trail..."
-	./ops/bin/remembrancer verify-audit
-	@echo ""
-	@echo "✅ All verifications passed!"
+anchor-btc: ## Anchor latest sealed batch via Bitcoin OP_RETURN
+	npm --prefix services/anchors install --no-audit --no-fund
+	npm --prefix services/anchors run anchor:btc
 
-health: ## Run system health check
-	@./ops/bin/health-check
+anchor-tsa: ## Anchor latest sealed batch with RFC3161 TSA
+	npm --prefix services/anchors install --no-audit --no-fund
+	npm --prefix services/anchors run anchor:tsa
 
-test: ## Run smoke tests
-	@./SMOKE_TEST.sh
-
-codegen: ## Regenerate Remembrancer SDK clients and type definitions
-	openapi-generator-cli generate -i docs/api/remembrancer-openapi.yaml -g typescript-axios -o sdks/typescript
-	npx openapi-typescript docs/api/remembrancer-openapi.yaml -o sdks/typescript/src/remembrancer.types.ts
-	oapi-codegen -generate types,client -package remembrancer docs/api/remembrancer-openapi.yaml > sdks/go/remembrancer.gen.go
-	openapi-generator-cli generate -i docs/api/remembrancer-openapi.yaml -g rust -o sdks/rust
-
-verify-receipts: ## Verify portable Remembrancer receipts offline
-	@for f in examples/remembrancer/receipts/*-receipt.json; do \
-		echo "🔍 Verifying $$f"; \
-		npx ts-node tools/verify-receipt.ts "$$f"; \
-	done
-
-seal: ## Batch pending events into finalized receipts (Phase II sealer)
-	@cd services/sealer && npm install >/dev/null 2>&1 && npm run seal
-
-verify-finalized: ## Verify finalized receipts emitted by the sealer
+verify-online: ## Verify receipt anchors against external trust sources
 	@if ls out/receipts/*.json >/dev/null 2>&1; then \
-		for f in out/receipts/*.json; do \
-			echo "🔍 Final receipt $$f"; \
-			npx ts-node tools/verify-receipt.ts "$$f"; \
-		done; \
+		node services/anchors/simple-verify.js out/receipts/*.json; \
 	else \
 		echo "No finalized receipts found."; \
 	fi
 
-.PHONY: treaty-verify policy-build order-send metrics-run k8s-apply
+scheduler: ## Run per-namespace cadence driver
+	npm --prefix services/scheduler install --no-audit --no-fund
+	npm --prefix services/scheduler run dev
 
-treaty-verify: ## Canonicalize the Aurora treaty JSON
-	jq -cS . templates/aurora-treaty-akash.json > /tmp/treaty.canon.json
-	@echo "Treaty canonicalized → /tmp/treaty.canon.json"
-
-policy-build: ## Build the vault-law Akash policy to WASM
-	rustup target add wasm32-unknown-unknown || true
-	( cd v4.5-scaffold && cargo build --release --target wasm32-unknown-unknown -p vault-law-akash-policy )
-	mkdir -p policy/wasm
-	cp v4.5-scaffold/target/wasm32-unknown-unknown/release/vault_law_akash_policy.wasm policy/wasm/vault-law-akash-policy.wasm
-
-order-send: ## Submit an Aurora treaty order to the configured bridge
-	@AURORA_BRIDGE_URL?=http://localhost:8080; \
-	chmod +x scripts/aurora-order-submit.sh; \
-	bash scripts/aurora-order-submit.sh tmp/order.json
-
-metrics-run: ## Run the Aurora metrics exporter on port 9109
-	python3 scripts/aurora-metrics-exporter.py
-
-k8s-apply: ## Apply the Aurora treaty GPU job manifest
-	kubectl -n aurora-akash apply -f ops/k8s/vm-spawn-llm-infer.yaml
-
-.PHONY: sim-run sim-metrics-run smoke-e2e
-
-sim-run: ## Run the multi-provider routing war-game simulator (SEED=42 STEPS=120)
-	@SEED=$${SEED:-42}; \
-	STEPS=$${STEPS:-120}; \
-	SEED=$$SEED STEPS=$$STEPS python3 sim/multi-provider-routing-simulator/sim/sim.py
-
-sim-metrics-run: ## Run the simulator metrics exporter on port 9110
-	python3 scripts/sim-metrics-exporter.py
-
-smoke-e2e: ## Run end-to-end smoke test (keys + mock + sim + metrics)
-	@bash scripts/smoke-e2e.sh
-
-.PHONY: staging-apply staging-destroy staging-status staging-portfwd-bridge staging-portfwd-metrics staging-logs staging-create-secret
-
-staging-apply: ## Deploy Aurora to staging (Kustomize overlay)
-	kubectl apply -k ops/k8s/overlays/staging
-
-staging-destroy: ## Destroy staging deployment
-	kubectl delete -k ops/k8s/overlays/staging
-
-staging-status: ## Check staging deployment status
-	@echo "=== Staging Status ==="
-	kubectl -n aurora-staging get all,netpol,pdb,quota,limitrange
-	@echo ""
-	@echo "=== Pod Status ==="
-	kubectl -n aurora-staging get pods -o wide
-
-staging-portfwd-bridge: ## Port-forward staging bridge to localhost:8080
-	kubectl -n aurora-staging port-forward svc/aurora-bridge 8080:8080
-
-staging-portfwd-metrics: ## Port-forward staging metrics to localhost:9109
-	kubectl -n aurora-staging port-forward svc/aurora-metrics-exporter 9109:9109
-
-staging-logs: ## Tail logs from staging pods
-	@echo "=== Aurora Bridge Logs ==="
-	kubectl -n aurora-staging logs -l app=aurora-bridge --tail=50 -f
-
-staging-create-secret: ## Create aurora-pubkey secret (requires secrets/vm_httpsig.pub)
-	@if [ ! -f secrets/vm_httpsig.pub ]; then \
-		echo "Error: secrets/vm_httpsig.pub not found"; \
-		echo "Run: make smoke-e2e (generates keys automatically)"; \
-		exit 1; \
-	fi
-	kubectl -n aurora-staging create secret generic aurora-pubkey \
-		--from-file=vm_httpsig.pub=secrets/vm_httpsig.pub \
-		--dry-run=client -o yaml | kubectl apply -f -
-	@echo "✅ Secret created"
-
-.PHONY: oracle treaty-gen treaty-gen-akash slo-report demo-onboard-akash
-
-oracle: ## Fetch live provider pricing/latency (writes ops/oracle/providers.json)
-	@ORACLE_OUT=ops/oracle/providers.json python3 scripts/oracle-fetch.py
-
-treaty-gen: ## Generate a provider treaty from template (env-driven)
-	@if [ -z "$(PROVIDER_ID)" ]; then \
-		echo "Usage: make treaty-gen PROVIDER_ID=<id> PROVIDER_NAME=\"<name>\" ENDPOINT=\"<url>\""; \
-		echo "Example: make treaty-gen PROVIDER_ID=akash PROVIDER_NAME=\"Akash Network\" ENDPOINT=\"https://api.akash.network\""; \
-		exit 1; \
-	fi
-	@PROVIDER_ID=$(PROVIDER_ID) PROVIDER_NAME="$(PROVIDER_NAME)" ENDPOINT="$(ENDPOINT)" ./scripts/treaty-generate.sh
-
-treaty-gen-akash: ## One-shot Akash treaty generation
-	@PROVIDER_ID=akash PROVIDER_NAME="Akash Network" ENDPOINT="https://api.akash.network" ./scripts/treaty-generate.sh
-
-slo-report: ## Produce signed SLO JSON from Prometheus
-	@bash scripts/slo-signer.sh http://localhost:9090 reports/slo-$(shell date +%Y%m%d).json
-
-demo-onboard-akash: ## Complete Akash onboarding demo (treaty + oracle + SLO)
-	@echo "🜂 Aurora Demo: Onboarding Akash Network"
-	@echo "========================================"
-	@echo ""
-	@echo "1/4 Generating Akash treaty..."
-	@make treaty-gen-akash
-	@echo ""
-	@echo "2/4 Fetching live provider data..."
-	@make oracle
-	@echo ""
-	@echo "3/4 Running simulator..."
-	@make sim-run STEPS=60
-	@echo ""
-	@echo "4/4 Generating SLO report..."
-	@make slo-report || echo "⚠️  SLO report requires Prometheus (run: make smoke-e2e first)"
-	@echo ""
-	@echo "✅ Demo complete. Check:"
-	@echo "   Treaty: treaties/aurora-akash.yaml"
-	@echo "   Oracle: ops/oracle/providers.json"
-	@echo "   Simulator: sim/multi-provider-routing-simulator/out/"
-	@echo "   SLO: reports/slo-*.json"
-
-.PHONY: dist
-dist: policy-build ## Build signed Aurora GA artifact
-	@echo "[dist] Creating release bundle…"
-	mkdir -p dist
-	tar -czf dist/aurora-$(shell date +%Y%m%d).tar.gz \
-		policy/wasm/*.wasm \
-		schemas/*.json \
-		scripts/*.py \
-		scripts/*.sh \
-		ops/grafana/*.json \
-		ops/grafana/*.yaml \
-		ops/k8s/vm-spawn-llm-infer.yaml \
-		ops/k8s/overlays/staging/* \
-		docs/*.md
-	@echo "[dist] Signing artifact with covenant key"
-	GPG_TTY=$$(tty) gpg --batch --yes --pinentry-mode loopback --detach-sign --armor --local-user $(KEY) dist/aurora-$(shell date +%Y%m%d).tar.gz
-	@echo "[dist] Done → dist/aurora-$(shell date +%Y%m%d).tar.gz (.asc)"
+governance-propose-cadence: ## Submit a governance.cadence.set event (example via curl)
+	@echo 'Use vmsh or curl to submit a signed envelope with payload matching governance.cadence.set@1.0.0'

@@ -1,0 +1,28 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"governance.cadence.set@1.0.0",
+  "description":"Propose/update cadence for a namespace.",
+  "type":"object",
+  "required":["namespace","cadence"],
+  "properties":{
+    "namespace":{"type":"string","minLength":1},
+    "cadence":{
+      "type":"object",
+      "required":["fast"],
+      "properties":{
+        "fast":{"type":"object","required":["target","every"],"properties":{
+          "target":{"type":"string"}, "every":{"type":"string"}, "confirmations":{"type":"integer","minimum":0}
+        }, "additionalProperties":false},
+        "strong":{"type":"object","required":["target","every"],"properties":{
+          "target":{"type":"string"}, "every":{"type":"string"}, "confirmations":{"type":"integer","minimum":0}
+        }, "additionalProperties":false},
+        "cold":{"type":"object","required":["target","every"],"properties":{
+          "target":{"type":"string"}, "every":{"type":"string"}, "policyOID":{"type":"string"}
+        }, "additionalProperties":false}
+      },
+      "additionalProperties":false
+    },
+    "memo":{"type":"string"}
+  },
+  "additionalProperties":false
+}
