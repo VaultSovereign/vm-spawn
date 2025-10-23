@@ -303,8 +303,8 @@ Every memory includes:
 Read in this order:
 
 1. **`START_HERE.md`** — Quick orientation (start here!)
-2. **`V4.0_KICKOFF.md`** — **NEW**: Current release (v4.0 federation)
-3. **`V3.0_COVENANT_FOUNDATION.md`** — v3.0 features (sealed)
+2. **[`V4.0_KICKOFF.md`](archive/completion-records/20251023/V4.0_KICKOFF.md)** — v4.0 federation release (archived)
+3. **[`V3.0_COVENANT_FOUNDATION.md`](archive/completion-records/20251023/V3.0_COVENANT_FOUNDATION.md)** — v3.0 features (archived)
 4. **`docs/COVENANT_HARDENING.md`** — **NEW**: Phase 1 hardening guide
 5. **`ops/COVENANT_RITUALS.md`** — **NEW**: Operator cheatsheet
 6. **`ops/mcp/README.md`** — **NEW**: MCP server guide
@@ -425,7 +425,7 @@ vm-spawn/
 │
 ├── 📖 DOCUMENTATION
 │   ├── START_HERE.md                            # Quick start
-│   ├── V3.0_COVENANT_FOUNDATION.md              # v3.0 release notes
+│   ├── archive/completion-records/20251023/V3.0_COVENANT_FOUNDATION.md  # v3.0 release notes (archived)
 │   ├── VERSION_TIMELINE.md                      # Complete history (v1.0→v3.0)
 │   ├── 🧠_REMEMBRANCER_STATUS.md                # Dashboard
 │   ├── docs/COVENANT_SIGNING.md                 # GPG guide (v3.0)
@@ -603,7 +603,7 @@ remembrancer export-proof my-app.tar.gz
 - **ADR-007**: Why GPG over X.509 certificates? → Sovereign key custody
 - **ADR-008**: Why RFC3161 over blockchain? → Legal recognition + mature tooling
 
-Guide: See `VERSION_TIMELINE.md` (canonical). The v3.0 completion record is archived at `archive/completion-records/V3.0_COVENANT_FOUNDATION.md`.
+Guide: See `VERSION_TIMELINE.md` (canonical). The v3.0 completion record is archived at `archive/completion-records/20251023/V3.0_COVENANT_FOUNDATION.md`.
 
 ---
 
@@ -875,7 +875,7 @@ Truth is the only sovereign — signed, Sovereign.
 ### Documentation
 - **Quick Start:** `START_HERE.md`
 - **Codex Verification:** `docs/VERIFY.md` 🆕
-- **Current Release:** `V3.0_COVENANT_FOUNDATION.md`
+- **Current Release:** `VERSION_TIMELINE.md` (canonical history)
 - **System Dashboard:** `🧠_REMEMBRANCER_STATUS.md`
 - **Version History:** `VERSION_TIMELINE.md`
 - **Memory Index:** `docs/REMEMBRANCER.md`

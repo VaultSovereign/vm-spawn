@@ -13,7 +13,7 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 1. **Spawn Elite** — Infrastructure forge (spawns production-ready microservices)
 2. **The Remembrancer** — Cryptographic memory layer (GPG + RFC 3161 + Merkle audit)
 3. **Aurora** — Distributed coordination (treaty routing, federation, SLOs)
-   - The **DAO Governance Pack** is an **optional plugin overlay** (documentation-only), not a separate layer.
+   • The **DAO Governance Pack** is an **optional documentation plugin** (zero-coupled), not a layer.
 
 **Key Principle:** Each layer is **independent, modular, and zero-coupled**.
 
@@ -28,8 +28,7 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 │  Layer 3: AURORA (DISTRIBUTED COORDINATION)                 │
 │  ├── Treaty-based routing & federation                      │
 │  ├── SLO tracking, metrics, GPU pool orchestration          │
-│  └── Uses receipts from Layer 2 (Remembrancer)              │
-│  Note: DAO Governance Pack = optional plugin overlay        │
+│  └── Consumes receipts from Layer 2                         │
 └─────────────────────────────────────────────────────────────┘
                               ↓ uses (one-way)
 ┌─────────────────────────────────────────────────────────────┐
@@ -59,8 +58,8 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 Spawn Elite ──────────────────> [generates services]
        ↓ (optional recording)
 The Remembrancer ──────────────> [records with proofs]
-       ↓ (optional governance)
-DAO Governance Pack ────────────> [governance procedures]
+       ↓ (optional coordination)
+Aurora ─────────────────────────> [distributed coordination]
 ```
 
 **Critical:** Dependencies are **one-way only**. Removing Layer 3 doesn't break Layer 2. Removing Layer 2 doesn't break Layer 1.
@@ -477,12 +476,12 @@ cat DAO_GOVERNANCE_PACK/snapshot-proposal.md    ✅ (safe)
 1. **Identify the correct layer:**
    - Infrastructure generation → Layer 1 (generators/)
    - Memory/proof operations → Layer 2 (ops/bin/)
-   - Governance procedures → Layer 3 (DAO_GOVERNANCE_PACK/)
+   - Distributed coordination → Layer 3 (Aurora services/)
 
 2. **Follow existing patterns:**
    - Layer 1: Bash generators (see `generators/*.sh`)
    - Layer 2: Python CLI tools (see `ops/bin/remembrancer`)
-   - Layer 3: Markdown documentation (see `DAO_GOVERNANCE_PACK/*.md`)
+   - Layer 3: TypeScript services (see `services/scheduler/`, `services/federation/`)
 
 3. **Maintain zero coupling:**
    - Layer 3 may use Layer 2 tools ✅
@@ -718,10 +717,10 @@ See `DAO_GOVERNANCE_PACK/operator-runbook.md` for:
 ☐ Read AGENTS.md (this file)
 ☐ Run ./ops/bin/health-check (system health)
 ☐ Run ./SMOKE_TEST.sh (full validation)
-☐ Understand layer boundaries (1=forge, 2=memory, 3=governance)
+☐ Understand layer boundaries (1=forge, 2=memory, 3=Aurora coordination)
 ☐ Check docs/REMEMBRANCER.md (canonical memory with Phase I-V)
 ☐ Verify Merkle root: ./ops/bin/remembrancer verify-audit (see docs/REMEMBRANCER.md for canonical root)
-☐ Verify zero coupling (DAO pack is plugin overlay, Aurora is Layer 3)
+☐ Verify zero coupling (Aurora is Layer 3, DAO pack is optional plugin)
 ☐ Run make covenant (validate four covenants)
 ☐ Check VERSION_TIMELINE.md (understand history)
 ☐ Review scheduler service (services/scheduler/README.md)

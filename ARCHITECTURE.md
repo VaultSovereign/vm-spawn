@@ -4,7 +4,7 @@
 **Cloud:** AWS (EKS / Route 53 / ACM / ALB / S3)
 **Status:** GA v1.0.0 (Week-1 → Week-3 rollout path)
 **Rating (Aurora sub-program):** 9.2/10 → Target 9.65/10 (Week 1) → 9.9/10 (Week 3)
-**Execution Plan:** See [AURORA_99_PROPOSAL.md](AURORA_99_PROPOSAL.md) for complete roadmap
+**Execution Plan:** See [AURORA_99_PROPOSAL.md](archive/completion-records/20251023/AURORA_99_PROPOSAL.md) for complete roadmap
 
 > **Note:** Overall VaultMesh program rating is **10.0/10** (per README.md); this document tracks **Aurora's** cloud rollout KPIs specifically.
 
@@ -13,14 +13,14 @@
 - [START_HERE.md](START_HERE.md) — Orientation guide
 - [CONTRIBUTING.md](CONTRIBUTING.md) — PR flow & ADRs (if exists)
 - [ops/aws/DEPLOYMENT_QUICKSTART.md](ops/aws/DEPLOYMENT_QUICKSTART.md) — Deploy Aurora to EKS
-- [PROJECT_FEEDBACK_2025-10-22.md](PROJECT_FEEDBACK_2025-10-22.md) — Latest assessment & recommendations
+- [PROJECT_FEEDBACK_2025-10-22.md](archive/completion-records/20251023/PROJECT_FEEDBACK_2025-10-22.md) — Latest assessment & recommendations
 
 **Aurora 9.9 Plan:**
-- [AURORA_99_PROPOSAL.md](AURORA_99_PROPOSAL.md) — Complete 9.9 proposal
-- [AURORA_99_TASKS.md](AURORA_99_TASKS.md) — Week-by-week task breakdown
-- [AURORA_99_SUMMARY.md](AURORA_99_SUMMARY.md) — One-page executive summary
-- [AURORA_99_ROADMAP.md](AURORA_99_ROADMAP.md) — Visual roadmap
-- [AURORA_99_STATUS.md](AURORA_99_STATUS.md) — Current execution status
+- [AURORA_99_PROPOSAL.md](archive/completion-records/20251023/AURORA_99_PROPOSAL.md) — Complete 9.9 proposal
+- [AURORA_99_TASKS.md](archive/completion-records/20251023/AURORA_99_TASKS.md) — Week-by-week task breakdown
+- [AURORA_99_SUMMARY.md](archive/completion-records/20251023/AURORA_99_SUMMARY.md) — One-page executive summary
+- [AURORA_99_ROADMAP.md](archive/completion-records/20251023/AURORA_99_ROADMAP.md) — Visual roadmap
+- [AURORA_99_STATUS.md](archive/completion-records/20251023/AURORA_99_STATUS.md) — Current execution status
 
 **Additional Resources:**
 - [AURORA_GA_HANDOFF_COMPLETE.md](AURORA_GA_HANDOFF_COMPLETE.md) — Week 1-4 deliverables
@@ -597,7 +597,7 @@ eksctl scale nodegroup --cluster aurora-staging \
 
 6. ⏳ 72-hour soak period
 
-7. 📊 **Week 1 Proof Gates** (per [AURORA_99_SUMMARY.md](AURORA_99_SUMMARY.md)):
+7. 📊 **Week 1 Proof Gates** (per [AURORA_99_SUMMARY.md](archive/completion-records/20251023/AURORA_99_SUMMARY.md)):
 
    **✅ Deliverable 1:** `canary_slo_report.json` with real Prometheus data (no nulls)
    ```bash
@@ -653,7 +653,7 @@ ops/aws/verify-aurora-week1.sh
 
 **Target Rating:** 9.80/10
 
-*See [AURORA_99_TASKS.md](AURORA_99_TASKS.md) for complete Week 2 task breakdown.*
+*See [AURORA_99_TASKS.md](archive/completion-records/20251023/AURORA_99_TASKS.md) for complete Week 2 task breakdown.*
 
 ### Week 3: Federation Proof
 
@@ -684,7 +684,7 @@ ops/aws/verify-aurora-week1.sh
 
 **Target Rating:** 9.90/10
 
-*See [AURORA_99_ROADMAP.md](AURORA_99_ROADMAP.md) for complete Week 3 gates.*
+*See [AURORA_99_ROADMAP.md](archive/completion-records/20251023/AURORA_99_ROADMAP.md) for complete Week 3 gates.*
 
 ---
 
