@@ -60,3 +60,20 @@ artifacts/
 services/psi-field/vaultmesh_psi/vigil_pp_outputs/
 services/psi-field/vaultmesh_psi/void_guardian_trial6/
 .vaultmesh/migration-logs/
+
+# Simulator outputs (generated files)
+sim/*/out/*.csv
+sim/*/out/*.json
+sim/*/out/*.png
+
+# Test coverage
+.coverage
+coverage.xml
+.audit-venv/
+
+# Backups (old/deprecated files)
+*.bak
+*backup*.tar.gz
+
+# Separate projects (not part of this infrastructure repo)
+VaultMeshWired/
