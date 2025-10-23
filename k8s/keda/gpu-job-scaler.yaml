@@ -1,0 +1,104 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: gpu-job-scaler
+  namespace: vaultmesh
+spec:
+  # Job template
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    template:
+      spec:
+        # GPU node affinity
+        tolerations:
+          - key: "gpu"
+            operator: "Equal"
+            value: "true"
+            effect: "NoSchedule"
+
+        nodeSelector:
+          gpu: "h100"  # Or "a100" depending on your pool
+
+        serviceAccountName: vaultmesh-worker
+
+        containers:
+        - name: gpu-worker
+          image: us-central1-docker.pkg.dev/PROJECT_ID/vaultmesh/gpu-worker:latest
+
+          # GPU resource request
+          resources:
+            limits:
+              nvidia.com/gpu: "1"
+            requests:
+              cpu: "8"
+              memory: "32Gi"
+              nvidia.com/gpu: "1"
+
+          env:
+          - name: PUBSUB_SUBSCRIPTION
+            value: "projects/PROJECT_ID/subscriptions/vaultmesh-gpu-jobs-sub"
+          - name: GCP_PROJECT_ID
+            value: "PROJECT_ID"
+          - name: MODEL_NAME
+            value: "meta-llama/Llama-2-70b-hf"
+          - name: MODEL_CACHE_PATH
+            value: "/models"
+
+          volumeMounts:
+          - name: model-cache
+            mountPath: /models
+
+        volumes:
+        - name: model-cache
+          emptyDir:
+            sizeLimit: 100Gi
+
+        restartPolicy: Never
+
+  # Scaling configuration
+  pollingInterval: 10      # Check queue every 10s for GPU jobs
+  minReplicaCount: 0       # Scale to zero when idle
+  maxReplicaCount: 10      # Max 10 concurrent GPU jobs
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+
+  # Triggers
+  triggers:
+    # Google Cloud Pub/Sub trigger for GPU jobs
+    - type: gcp-pubsub
+      metadata:
+        subscriptionName: vaultmesh-gpu-jobs-sub
+        subscriptionSize: "1"  # 1 job per message
+        mode: SubscriptionSize
+        credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS_JSON
+
+---
+# Notes:
+#
+# 1. Replace PROJECT_ID with your actual GCP project ID
+#
+# 2. Create GPU node pool with min-nodes=0:
+#    gcloud container node-pools create gpu-pool \
+#      --cluster=vaultmesh-minimal --region=us-central1 \
+#      --machine-type=a2-highgpu-1g \
+#      --accelerator type=nvidia-tesla-a100,count=1,gpu-driver-version=latest \
+#      --enable-autoscaling --min-nodes=0 --max-nodes=10 \
+#      --node-taints=gpu=true:NoSchedule \
+#      --node-labels=gpu=a100
+#
+# 3. Create Pub/Sub subscription:
+#    gcloud pubsub topics create vaultmesh-gpu-jobs
+#    gcloud pubsub subscriptions create vaultmesh-gpu-jobs-sub \
+#      --topic=vaultmesh-gpu-jobs --ack-deadline=600
+#
+# 4. Deploy this scaler:
+#    kubectl apply -f gpu-job-scaler.yaml
+#
+# 5. Submit GPU job:
+#    gcloud pubsub topics publish vaultmesh-gpu-jobs \
+#      --message='{"model": "llama-2-70b", "prompt": "Hello world"}'
+#
+# 6. Watch GPU nodes spin up:
+#    watch kubectl get nodes -l gpu=a100
+#    watch kubectl get jobs -n vaultmesh

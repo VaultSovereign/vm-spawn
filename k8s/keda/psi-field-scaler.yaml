@@ -1,0 +1,26 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: psi-field-scaler
+  namespace: vaultmesh
+spec:
+  scaleTargetRef:
+    name: psi-field  # Target deployment
+
+  # Scale to zero when idle
+  minReplicaCount: 0
+  maxReplicaCount: 10
+
+  # Polling and cooldown
+  pollingInterval: 30     # Check queue every 30s
+  cooldownPeriod: 300     # Wait 5 minutes before scaling to zero
+
+  # Triggers
+  triggers:
+    # Google Cloud Pub/Sub trigger
+    - type: gcp-pubsub
+      metadata:
+        subscriptionName: vaultmesh-psi-jobs-sub
+        subscriptionSize: "5"  # 1 pod per 5 messages
+        mode: SubscriptionSize
+        credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS_JSON
