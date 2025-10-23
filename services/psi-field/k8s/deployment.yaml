@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psi-field
+  labels:
+    app: psi-field
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: psi-field
+  template:
+    metadata:
+      labels:
+        app: psi-field
+    spec:
+      containers:
+      - name: psi-field
+        image: vaultmesh/psi-field:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+          requests:
+            cpu: "500m"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        volumeMounts:
+        - name: remembrancer-volume
+          mountPath: /app/ops
+      volumes:
+      - name: remembrancer-volume
+        persistentVolumeClaim:
+          claimName: remembrancer-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: psi-field
+spec:
+  selector:
+    app: psi-field
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP

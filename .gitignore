@@ -48,3 +48,14 @@ Thumbs.db
 tmp/
 *.tmp
 .continue/
+
+# Amazon Q Rules (local only)
+.amazonq/rules/EVOLUTION_PROPOSAL.md
+.amazonq/rules/PROOF_CHAIN_COMMANDS.sh
+
+# VaultMesh bundles / artifacts
+PSI_VAULTMESH_INTEGRATED_READY.tar.gz
+vaultmesh_psi_package*.zip
+artifacts/
+services/psi-field/vaultmesh_psi/vigil_pp_outputs/
+services/psi-field/vaultmesh_psi/void_guardian_trial6/

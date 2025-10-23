@@ -1,0 +1,50 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: vm-rabbit
+    ports: ["5672:5672", "15672:15672"]
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  remembrancer:
+    build: ../remembrancer
+    container_name: vm-remembrancer
+    environment:
+      REMEMBRANCER_DATA: /data
+    volumes:
+      - ../../data/remembrancer:/data
+    ports: ["8080:8080"]
+    depends_on: [rabbitmq]
+
+  psi-kalman-01:
+    build: .
+    container_name: psi-kalman-01
+    depends_on: [rabbitmq, remembrancer]
+    environment:
+      AGENT_ID: "psi-kalman-01"
+      PSI_BACKEND: "kalman"
+      PSI_INPUT_DIM: "16"
+      PSI_LATENT_DIM: "32"
+      RABBIT_ENABLED: "1"
+      RABBIT_URL: "amqp://guest:guest@rabbitmq:5672/"
+      RABBIT_EXCHANGE: "swarm"
+      REMEMBRANCER_API: "http://remembrancer:8080"
+    ports: ["8001:8000"]
+
+  psi-seasonal-01:
+    build: .
+    container_name: psi-seasonal-01
+    depends_on: [rabbitmq, remembrancer]
+    environment:
+      AGENT_ID: "psi-seasonal-01"
+      PSI_BACKEND: "seasonal"
+      PSI_INPUT_DIM: "16"
+      PSI_LATENT_DIM: "32"
+      RABBIT_ENABLED: "1"
+      RABBIT_URL: "amqp://guest:guest@rabbitmq:5672/"
+      RABBIT_EXCHANGE: "swarm"
+      REMEMBRANCER_API: "http://remembrancer:8080"
+    ports: ["8002:8000"]

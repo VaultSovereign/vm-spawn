@@ -1,0 +1,10 @@
+# A list of trusted peer nodes that this instance will federate with.
+# In a production environment, this list would be managed via a
+# governance process and updated via signed ADRs.
+peers:
+  - id: "node-beta"
+    url: "http://localhost:8081" # Example URL for a locally running peer
+  - id: "node-gamma"
+    url: "http://localhost:8082" # Example URL for a second peer
+  - id: "node-delta"
+    url: "http://localhost:8083"

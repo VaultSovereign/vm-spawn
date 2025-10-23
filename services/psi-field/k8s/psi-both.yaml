@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psi-kalman-01
+  labels: { app: psi, backend: kalman }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: psi, instance: psi-kalman-01 }
+  template:
+    metadata:
+      labels: { app: psi, instance: psi-kalman-01 }
+    spec:
+      containers:
+      - name: psi
+        image: your-registry/psi-field:latest
+        ports: [{ containerPort: 8000 }]
+        env:
+        - { name: AGENT_ID, value: "psi-kalman-01" }
+        - { name: PSI_BACKEND, value: "kalman" }
+        - { name: PSI_INPUT_DIM, value: "16" }
+        - { name: PSI_LATENT_DIM, value: "32" }
+        - { name: RABBIT_ENABLED, value: "1" }
+        - { name: RABBIT_URL, value: "amqp://guest:guest@rabbitmq.default.svc:5672/" }
+        - { name: RABBIT_EXCHANGE, value: "swarm" }
+        - { name: REMEMBRANCER_API, value: "http://remembrancer.default.svc:8080" }
+        readinessProbe:
+          httpGet: { path: /health, port: 8000 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: psi-kalman-01
+spec:
+  selector: { app: psi, instance: psi-kalman-01 }
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psi-seasonal-01
+  labels: { app: psi, backend: seasonal }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: psi, instance: psi-seasonal-01 }
+  template:
+    metadata:
+      labels: { app: psi, instance: psi-seasonal-01 }
+    spec:
+      containers:
+      - name: psi
+        image: your-registry/psi-field:latest
+        ports: [{ containerPort: 8000 }]
+        env:
+        - { name: AGENT_ID, value: "psi-seasonal-01" }
+        - { name: PSI_BACKEND, value: "seasonal" }
+        - { name: PSI_INPUT_DIM, value: "16" }
+        - { name: PSI_LATENT_DIM, value: "32" }
+        - { name: RABBIT_ENABLED, value: "1" }
+        - { name: RABBIT_URL, value: "amqp://guest:guest@rabbitmq.default.svc:5672/" }
+        - { name: RABBIT_EXCHANGE, value: "swarm" }
+        - { name: REMEMBRANCER_API, value: "http://remembrancer.default.svc:8080" }
+        readinessProbe:
+          httpGet: { path: /health, port: 8000 }
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: psi-seasonal-01
+spec:
+  selector: { app: psi, instance: psi-seasonal-01 }
+  ports:
+  - port: 8000
+    targetPort: 8000
+    name: http
+  type: ClusterIP

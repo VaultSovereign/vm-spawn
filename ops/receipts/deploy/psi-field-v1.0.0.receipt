@@ -1,0 +1,23 @@
+---
+type: deployment
+component: psi-field
+version: v1.0.0
+timestamp: 2025-10-23T07:29:17Z
+evidence:
+  artifact: Initial Ψ-Field service implementation
+  sha256: fa0f9eb749fee990549c5ea7ae23aa5f9126f58852df6fcf3f6fff8bd429f6fa
+status: active
+verified_by: remembrancer-cli
+---
+
+This receipt cryptographically attests to the deployment of:
+
+  Component: psi-field
+  Version: v1.0.0
+  Timestamp: 2025-10-23T07:29:17Z
+  SHA256: fa0f9eb749fee990549c5ea7ae23aa5f9126f58852df6fcf3f6fff8bd429f6fa
+
+Verification:
+  shasum -a 256 Initial Ψ-Field service implementation
+
+This memory is recorded in the VaultMesh Covenant Index.

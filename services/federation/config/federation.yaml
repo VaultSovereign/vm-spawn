@@ -1,0 +1,11 @@
+# General configuration for the local federation service node.
+node_id: "node-alpha"
+
+# Port for the federation service to listen on for peer communication.
+listen_port: 8080
+
+# Interval in milliseconds for initiating a gossip session with a random peer.
+gossip_interval_ms: 15000
+
+# Timeout for requests made to peer nodes.
+peer_timeout_ms: 5000
