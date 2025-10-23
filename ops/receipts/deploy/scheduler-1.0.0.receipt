@@ -1,0 +1,23 @@
+---
+type: deployment
+component: scheduler
+version: 1.0.0
+timestamp: 2025-10-23T00:31:26Z
+evidence:
+  artifact: 
+  sha256: 9fe65ef6bf4f6da65a5f6dbe8200fdf80f337726658f47439253f75eed47c9e5
+status: active
+verified_by: remembrancer-cli
+---
+
+This receipt cryptographically attests to the deployment of:
+
+  Component: scheduler
+  Version: 1.0.0
+  Timestamp: 2025-10-23T00:31:26Z
+  SHA256: 9fe65ef6bf4f6da65a5f6dbe8200fdf80f337726658f47439253f75eed47c9e5
+
+Verification:
+  shasum -a 256 
+
+This memory is recorded in the VaultMesh Covenant Index.

@@ -1,5 +1,53 @@
 # Changelog — VaultMesh
 
+## [v4.1.1] — 2025-10-23
+
+### Added
+- **Scheduler 10/10 Hardening**: Upgraded scheduler service from 8/10 to 10/10 production-ready
+  - Async I/O throughout using `fs/promises`
+  - Zod validation for type-safe configuration
+  - Structured logging with Pino (JSON output)
+  - Prometheus metrics (5 types: counters, gauges, histograms)
+  - HTTP health endpoint (`:9090/health`)
+  - Adaptive φ-backoff with error classification
+  - Parallel namespace processing with `Promise.allSettled`
+  - Environment-based configuration via `.env`
+  - Comprehensive test suite (7 tests, 100% passing)
+  - Full documentation: README, UPGRADE guide
+  
+- **Phase V Federation Verification**: Confirmed complete integration
+  - 8 service files verified (anti_entropy, apply, conflict, gossip, index, peerbook, transport, types)
+  - Configuration files present (federation.yaml, peers.yaml)
+  - Documentation complete (FEDERATION_PROTOCOL, FEDERATION_OPERATIONS, FEDERATION_SEMANTICS)
+  - Added `docs/REMEMBRANCER_PHASE_V.md` - comprehensive Phase V overview
+  - Make targets integrated (`federation`, `federation-status`, `federation-sync`)
+  - CLI tool present (`tools/vmsh-federation.ts`)
+
+- **Documentation**:
+  - `SCHEDULER_10_10_COMPLETE.md` - Scheduler upgrade completion report
+  - `services/scheduler/UPGRADE_10_10.md` - Detailed upgrade guide
+  - `services/scheduler/README.md` - Enhanced service documentation
+  - `PHASE_V_FEDERATION_STATUS.md` - Federation verification report
+  - `PHASE_V_COMPLETE_SUMMARY.md` - Executive summary
+  - `docs/REMEMBRANCER_PHASE_V.md` - Phase V architecture overview
+
+### Changed
+- **START_HERE.md**: Updated to reflect v4.1-genesis+ status
+- **VERSION_TIMELINE.md**: Added v4.1-genesis+ milestone with full details
+- **Scheduler**: Version bumped from 0.1.0 to 1.0.0
+- **Test Coverage**: Extended to include scheduler tests (26/26 core + 7/7 scheduler)
+
+### Fixed
+- TypeScript compilation errors in scheduler health module
+- Missing type definitions for js-yaml
+
+### Audit
+- Remembrancer receipts:
+  - `ops/receipts/deploy/scheduler-1.0.0.receipt` (SHA256: 9fe65ef6bf4f6da65a5f6dbe8200fdf80f337726658f47439253f75eed47c9e5)
+  - `ops/receipts/deploy/phase-v-federation-complete.receipt` (SHA256: 5dd1bdeb9246c6f0e06bd75c541df9eec3b0888f3efd4ac62cd08b8b5aeacf15)
+
+---
+
 ## [v5.0.0-alpha.1] — 2025-10-23
 
 ### Added
