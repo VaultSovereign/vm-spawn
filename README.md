@@ -9,6 +9,11 @@
 [![Scheduler](https://img.shields.io/badge/scheduler-10%2F10-gold)](./services/scheduler/README.md)
 [![Federation](https://img.shields.io/badge/federation-complete-blue)](./docs/REMEMBRANCER_PHASE_V.md)
 
+[![CI](https://github.com/VaultSovereign/vm-spawn/actions/workflows/ci.yml/badge.svg)](https://github.com/VaultSovereign/vm-spawn/actions/workflows/ci.yml)
+[![Security](https://github.com/VaultSovereign/vm-spawn/actions/workflows/security.yml/badge.svg)](https://github.com/VaultSovereign/vm-spawn/actions/workflows/security.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/VaultSovereign/vm-spawn/badge)](https://securityscorecards.dev/viewer/?uri=github.com/VaultSovereign/vm-spawn)
+[![Release](https://img.shields.io/github/v/release/VaultSovereign/vm-spawn)](https://github.com/VaultSovereign/vm-spawn/releases)
+
 ---
 
 ## 🎉 Recent Enhancements (2025-10-23)
