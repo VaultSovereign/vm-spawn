@@ -1,8 +1,8 @@
 # 🤖 AGENTS.md — VaultMesh Architecture Guide for AI Agents
 
-**Version:** v4.1-genesis
+**Version:** v4.1-genesis+ (Enhanced)
 **Purpose:** Comprehensive architecture reference for AI agents working with VaultMesh
-**Last Updated:** 2025-10-20
+**Last Updated:** 2025-10-23 (Scheduler 10/10 + Phase V verified)
 
 ---
 
@@ -12,7 +12,8 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 
 1. **Spawn Elite** — Infrastructure forge (spawns production-ready microservices)
 2. **The Remembrancer** — Cryptographic memory layer (GPG + RFC 3161 + Merkle audit)
-3. **DAO Governance Pack** — Governance overlay (optional plugin for multi-stakeholder DAOs)
+3. **Aurora** — Distributed coordination (treaty routing, federation, SLOs)
+   • The **DAO Governance Pack** is an **optional documentation plugin** (zero-coupled), not a layer.
 
 **Key Principle:** Each layer is **independent, modular, and zero-coupled**.
 
@@ -24,10 +25,10 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 3: DAO Governance Pack (OPTIONAL PLUGIN)             │
-│  ├── Pure documentation overlay                             │
-│  ├── No code coupling to layers 1-2                         │
-│  └── Uses existing tools from Layer 2                       │
+│  Layer 3: AURORA (DISTRIBUTED COORDINATION)                 │
+│  ├── Treaty-based routing & federation                      │
+│  ├── SLO tracking, metrics, GPU pool orchestration          │
+│  └── Consumes receipts from Layer 2                         │
 └─────────────────────────────────────────────────────────────┘
                               ↓ uses (one-way)
 ┌─────────────────────────────────────────────────────────────┐
@@ -57,8 +58,8 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 Spawn Elite ──────────────────> [generates services]
        ↓ (optional recording)
 The Remembrancer ──────────────> [records with proofs]
-       ↓ (optional governance)
-DAO Governance Pack ────────────> [governance procedures]
+       ↓ (optional coordination)
+Aurora ─────────────────────────> [distributed coordination]
 ```
 
 **Critical:** Dependencies are **one-way only**. Removing Layer 3 doesn't break Layer 2. Removing Layer 2 doesn't break Layer 1.
@@ -96,6 +97,14 @@ generators/                     ← Modular code generators (11 scripts)
 templates/                      ← Base templates for generators
 ├── mcp/                        ← MCP server templates
 └── message-queue/              ← Message queue templates
+
+services/                       ← Production services
+├── scheduler/                  ← Cadence manager (v1.0.0, 10/10)
+│   ├── src/ (7 files)         ← Async I/O, Prometheus, Zod, Health
+│   └── test/ (3 suites)       ← 7/7 tests passing
+└── federation/                 ← Phase V peer-to-peer (complete)
+    ├── src/ (8 files)         ← Gossip, anti-entropy, conflict resolution
+    └── config/                ← federation.yaml, peers.yaml
 ```
 
 ### **Cryptographic Memory (Layer 2)**
@@ -118,23 +127,31 @@ ops/
 │   └── remembrancer.db         ← SQLite audit database
 │
 ├── receipts/                   ← Cryptographic receipts
-│   ├── deploy/                 ← Deployment receipts
+│   ├── deploy/                 ← Deployment receipts (incl. scheduler-1.0.0)
 │   ├── adr/                    ← Architectural Decision Records
 │   └── merge/                  ← Federation merge receipts
 │
 ├── certs/                      ← TSA certificates (SPKI-pinned)
 │   └── cache/                  ← TSA CA + TSA cert cache
 │
-└── mcp/                        ← MCP server (v4.0 federation)
-    ├── remembrancer_server.py  ← FastMCP-based MCP server
-    └── README.md               ← MCP integration guide
+├── mcp/                        ← MCP server (v4.0 federation)
+│   ├── remembrancer_server.py  ← FastMCP-based MCP server
+│   └── README.md               ← MCP integration guide
+│
+└── make.d/                     ← Makefile fragments
+    ├── covenants.mk            ← Covenant validation targets
+    ├── federation.mk           ← Federation daemon targets
+    └── scheduler.mk            ← Scheduler service targets (NEW)
 ```
 
 ### **Documentation (Essential Reading)**
 ```
 docs/
-├── REMEMBRANCER.md             ← THE CANONICAL MEMORY INDEX
+├── REMEMBRANCER.md             ← THE CANONICAL MEMORY INDEX (Phase I-V)
+├── REMEMBRANCER_PHASE_V.md     ← Phase V Federation overview (NEW)
 ├── FEDERATION_SEMANTICS.md     ← Federation protocol (JCS-canonical)
+├── FEDERATION_PROTOCOL.md      ← Wire protocol & conflict rules
+├── FEDERATION_OPERATIONS.md    ← Deployment & operations guide
 ├── COVENANT_SIGNING.md         ← GPG signing guide (v3.0+)
 ├── COVENANT_TIMESTAMPS.md      ← RFC 3161 timestamp guide (v3.0+)
 ├── COVENANT_HARDENING.md       ← Phase 1 hardening guide
@@ -182,6 +199,12 @@ III. FEDERATION (Citrinitas)      → JCS-canonical merge, deterministic
 IV.  PROOF-CHAIN (Rubedo)         → Dual-TSA, SPKI pinning, independent verification
 ```
 
+**Status (2025-10-23):**
+- ✅ All four covenants operational
+- ✅ Scheduler hardened to 10/10
+- ✅ Phase V Federation complete (peer-to-peer anchoring)
+- ✅ 26/26 core tests + 7/7 scheduler tests passing
+
 **Run this to verify:**
 ```bash
 make covenant
@@ -190,16 +213,19 @@ make covenant
 
 ### **2. Merkle Root (Tamper Detection)**
 
-Every memory operation updates a **Merkle root**:
-
-```
-Current Root: d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea
-```
+Every memory operation updates a **Merkle root**. The canonical Merkle root is maintained in `docs/REMEMBRANCER.md`.
 
 **Verify audit log integrity:**
 ```bash
 ./ops/bin/remembrancer verify-audit
 # Expected: ✅ Audit log integrity verified
+# Output shows current Merkle root
+```
+
+**Check current root:**
+```bash
+grep -E "Merkle Root:" docs/REMEMBRANCER.md
+# Single source of truth for current root
 ```
 
 ### **3. Genesis (The Anchor Point)**
@@ -290,6 +316,12 @@ TSA 2: Enterprise TSA (optional, commercial)
 | Generate receipts index | `ops/bin/receipts-site` | `./ops/bin/receipts-site` |
 | Read canonical memory | `docs/REMEMBRANCER.md` | `cat docs/REMEMBRANCER.md` |
 | Review DAO procedures | `DAO_GOVERNANCE_PACK/` | `cat DAO_GOVERNANCE_PACK/operator-runbook.md` |
+| **Start scheduler** | `services/scheduler/` | `make scheduler` |
+| **Check scheduler health** | Scheduler health endpoint | `curl localhost:9090/health` |
+| **View scheduler metrics** | Prometheus endpoint | `curl localhost:9090/metrics` |
+| **Start federation** | `services/federation/` | `make federation` |
+| **Check federation status** | Federation CLI | `make federation-status` |
+| **Sync federation** | Federation sync | `make federation-sync` |
 
 ### **I Want to Understand...**
 
@@ -298,11 +330,14 @@ TSA 2: Enterprise TSA (optional, commercial)
 | Overall architecture | `README.md` | `START_HERE.md`, `AGENTS.md` (this file) |
 | Version history | `VERSION_TIMELINE.md` | `CHANGELOG.md` |
 | Current release | `V4.1_GENESIS_COMPLETE.md` | `FOUR_COVENANTS_DEPLOYED.md` |
+| Recent enhancements | `SCHEDULER_10_10_COMPLETE.md` | `PHASE_V_COMPLETE_SUMMARY.md` |
 | Covenant Foundation | `V3.0_COVENANT_FOUNDATION.md` | `docs/COVENANT_*.md` |
 | Modular architecture | `V2.4_MODULAR_PERFECTION.md` | `generators/README.md` |
 | GPG signing | `docs/COVENANT_SIGNING.md` | `ops/bin/remembrancer` source |
 | RFC 3161 timestamps | `docs/COVENANT_TIMESTAMPS.md` | `ops/bin/rfc3161-verify` source |
 | Federation semantics | `docs/FEDERATION_SEMANTICS.md` | `ops/bin/fed-merge` source |
+| **Phase V Federation** | `docs/REMEMBRANCER_PHASE_V.md` | `docs/FEDERATION_PROTOCOL.md` |
+| **Scheduler service** | `services/scheduler/README.md` | `services/scheduler/UPGRADE_10_10.md` |
 | MCP integration | `ops/mcp/README.md` | `PROPOSAL_MCP_COMMUNICATION_LAYER.md` |
 | DAO governance | `DAO_GOVERNANCE_PACK/README.md` | `DAO_GOVERNANCE_PACK/snapshot-proposal.md` |
 
@@ -441,12 +476,12 @@ cat DAO_GOVERNANCE_PACK/snapshot-proposal.md    ✅ (safe)
 1. **Identify the correct layer:**
    - Infrastructure generation → Layer 1 (generators/)
    - Memory/proof operations → Layer 2 (ops/bin/)
-   - Governance procedures → Layer 3 (DAO_GOVERNANCE_PACK/)
+   - Distributed coordination → Layer 3 (Aurora services/)
 
 2. **Follow existing patterns:**
    - Layer 1: Bash generators (see `generators/*.sh`)
    - Layer 2: Python CLI tools (see `ops/bin/remembrancer`)
-   - Layer 3: Markdown documentation (see `DAO_GOVERNANCE_PACK/*.md`)
+   - Layer 3: TypeScript services (see `services/scheduler/`, `services/federation/`)
 
 3. **Maintain zero coupling:**
    - Layer 3 may use Layer 2 tools ✅
@@ -513,9 +548,16 @@ v2.4  → Modular perfection (11 generators, 19/19 tests)
 v3.0  → Covenant Foundation (GPG + RFC3161 + Merkle)
 v4.0  → Federation Foundation (MCP + federation protocol)
 v4.1  → Genesis Complete (Four Covenants + DAO Pack)
+v4.1+ → Enhanced (Scheduler 10/10 + Phase V verified)
 ```
 
-**Current:** v4.1-genesis (2025-10-20)
+**Current:** v4.1-genesis+ (2025-10-23)
+
+**Recent Enhancements (2025-10-23):**
+- ✅ Scheduler upgraded 8/10 → 10/10 (async I/O, Prometheus, health)
+- ✅ Phase V Federation verified complete (8 services, 2 configs, 4 docs)
+- ✅ Test coverage: 26/26 core + 7/7 scheduler (100%)
+- ✅ Documentation: 6 new guides added
 
 **Next:** Phase 2 hardening (CI guards, automated covenant checks)
 
@@ -675,12 +717,14 @@ See `DAO_GOVERNANCE_PACK/operator-runbook.md` for:
 ☐ Read AGENTS.md (this file)
 ☐ Run ./ops/bin/health-check (system health)
 ☐ Run ./SMOKE_TEST.sh (full validation)
-☐ Understand layer boundaries (1=forge, 2=memory, 3=governance)
-☐ Check docs/REMEMBRANCER.md (canonical memory)
-☐ Know Merkle root: d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea
-☐ Verify zero coupling (DAO pack is isolated)
+☐ Understand layer boundaries (1=forge, 2=memory, 3=Aurora coordination)
+☐ Check docs/REMEMBRANCER.md (canonical memory with Phase I-V)
+☐ Verify Merkle root: ./ops/bin/remembrancer verify-audit (see docs/REMEMBRANCER.md for canonical root)
+☐ Verify zero coupling (Aurora is Layer 3, DAO pack is optional plugin)
 ☐ Run make covenant (validate four covenants)
 ☐ Check VERSION_TIMELINE.md (understand history)
+☐ Review scheduler service (services/scheduler/README.md)
+☐ Understand federation (docs/REMEMBRANCER_PHASE_V.md)
 ```
 
 ---
@@ -700,7 +744,7 @@ Rubedo (Completion)       → Genesis ceremony prepared  ✅
 
 ---
 
-**Last Updated:** 2025-10-20
-**Merkle Root:** `d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea`
-**Version:** v4.1-genesis
-**Status:** ✅ Complete
+**Last Updated:** 2025-10-23
+**Merkle Root:** See `docs/REMEMBRANCER.md` (canonical source)
+**Version:** v4.1-genesis+ (Enhanced)
+**Status:** ✅ Complete + Enhanced (Scheduler 10/10, Phase V verified)

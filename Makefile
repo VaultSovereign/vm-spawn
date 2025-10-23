@@ -4,6 +4,7 @@
 # VaultMesh Covenants
 include ops/make.d/covenants.mk
 include ops/make.d/federation.mk
+include ops/make.d/scheduler.mk
 
 .PHONY: help codex-seal codex-verify test health codegen verify-receipts seal verify-finalized anchor-evm anchor-btc anchor-tsa verify-online scheduler governance-propose-cadence
 
@@ -35,9 +36,6 @@ verify-online: ## Verify receipt anchors against external trust sources
 		echo "No finalized receipts found."; \
 	fi
 
-scheduler: ## Run per-namespace cadence driver
-	npm --prefix services/scheduler install --no-audit --no-fund
-	npm --prefix services/scheduler run dev
 
 governance-propose-cadence: ## Submit a governance.cadence.set event (example via curl)
 	@echo 'Use vmsh or curl to submit a signed envelope with payload matching governance.cadence.set@1.0.0'

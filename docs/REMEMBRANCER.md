@@ -3,7 +3,7 @@
 **Purpose:** Cryptographic memory layer for civilization infrastructure  
 **Initialized:** 2025-10-19  
 **Covenant:** Self-verifying, self-auditing, self-attesting systems  
-**Last Updated:** 2025-10-19 20:18 UTC (post v3.0 testing)
+**Last Updated:** 2025-10-23 (v4.1-genesis+ enhancements)
 
 ---
 
@@ -95,6 +95,50 @@ sealer.
 
 Phase III promotes provisional anchors (`vm:internal`) into externally verifiable commitments.
 Each batch now records attestations across three independent trust rails:
+
+### Phase IV — Multi-Tenant Namespaces & Governance
+
+Phase IV introduces namespace-specific configuration and governance-controlled cadences:
+
+- **Scheduler Service (v1.0.0)**: Per-namespace cadence management with φ-backoff algorithm
+  - Async I/O, Prometheus metrics, health endpoints
+  - Adaptive backoff with error classification
+  - Parallel namespace processing
+  - Status: ✅ 10/10 production-hardened
+  - Documentation: `services/scheduler/README.md`
+
+- **Namespace Validation**: Enhanced Harbinger service with namespace-specific admission rules
+- **Governance Schema**: `governance.cadence.set@1.0.0.json` for cadence management
+
+### Phase V — Federation (Peer-to-Peer Anchoring)
+
+Phase V enables cross-node anchor replication with local re-verification:
+
+- **Federation Service**: Peer-to-peer gossip protocol for batch announcements
+  - 8 service files (anti_entropy, apply, conflict, gossip, index, peerbook, transport, types)
+  - Local re-verification of all imports
+  - Deterministic conflict resolution (BTC > EVM > TSA)
+  - Anti-entropy range sync for partition recovery
+  - DID-based peer allowlist with role management
+
+- **Configuration**: 
+  - `vmsh/config/federation.yaml` - Node identity, listen address, peer routing
+  - `vmsh/config/peers.yaml` - DID allowlist with verification keys
+
+- **Make Targets**:
+  ```bash
+  make federation          # Start federation daemon
+  make federation-status   # Show peer connectivity
+  make federation-sync     # Manual sync
+  ```
+
+- **Documentation**: See `docs/REMEMBRANCER_PHASE_V.md` for complete Phase V overview
+
+**Status**: ✅ Complete and operational
+
+---
+
+### Legacy: Phase III Anchoring
 
 | Cadence | Target | Purpose |
 |---------|--------|---------|

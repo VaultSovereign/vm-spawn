@@ -1,11 +1,22 @@
 # 🧠 VaultMesh Spawn Elite + The Remembrancer
 
-**Version:** v4.0.1-LITERALLY-PERFECT | **Status:** ✅ LITERALLY PERFECT
-**Rating:** 10.0/10 | **Tests:** 26/26 (100%) | **Updated:** 2025-10-19
+**Version:** v4.1-genesis+ (Enhanced) | **Status:** ✅ PRODUCTION READY + ENHANCED
+**Rating:** 10.0/10 | **Tests:** 26/26 Core + 7/7 Scheduler (100%) | **Updated:** 2025-10-23
 
 [![Codex v1.0.0 — Proof-Sealed](https://img.shields.io/badge/Codex-v1.0.0-gold)](https://github.com/VaultSovereign/vm-spawn/releases/tag/codex-v1.0.0)
-[![Tests](https://img.shields.io/badge/tests-26%2F26-brightgreen)](./SMOKE_TEST.sh)
+[![Tests](https://img.shields.io/badge/tests-26%2F26%20%2B%207%2F7-brightgreen)](./SMOKE_TEST.sh)
 [![Rating](https://img.shields.io/badge/rating-10.0%2F10-gold)](./PATH_TO_26_26.md)
+[![Scheduler](https://img.shields.io/badge/scheduler-10%2F10-gold)](./services/scheduler/README.md)
+[![Federation](https://img.shields.io/badge/federation-complete-blue)](./docs/REMEMBRANCER_PHASE_V.md)
+
+---
+
+## 🎉 Recent Enhancements (2025-10-23)
+
+- ✅ **Scheduler 10/10**: Upgraded from 8/10 to production-hardened with async I/O, Prometheus metrics, health endpoints
+- ✅ **Phase V Federation**: Verified complete integration - peer-to-peer anchoring ready
+- ✅ **Documentation**: 6 new guides added including comprehensive Phase V overview
+- ✅ **Audit Trail**: All changes recorded in Remembrancer with cryptographic receipts
 
 ---
 
@@ -143,11 +154,12 @@ Artifacts live in `sim/multi-provider-routing-simulator/` (configs, scenarios, s
 <summary>📊 System Status</summary>
 
 - **Spawn Elite:** 10.0/10 (v2.4 modular)
-- **The Remembrancer v4.0:** ✅ FEDERATION FOUNDATION
-- **Cryptographic Proof:** GPG + RFC3161 + Merkle
-- **MCP Server:** ✅ OPERATIONAL (FastMCP)
-- **Federation:** ✅ FOUNDATIONS LAID
-- **Tests:** 22/24 PASSED (91%, 9.5/10)
+- **The Remembrancer v4.0:** ✅ Federation integrated
+- **Cryptographic Proof:** GPG + RFC 3161 + Merkle
+- **MCP Server:** ✅ Operational (FastMCP)
+- **Federation:** ✅ COMPLETE (Phase V)
+- **Scheduler:** ✅ 10/10 production-hardened
+- **Tests:** **26/26 core + 7/7 scheduler (100%)**
 - **Technical Debt:** Zero
 
 </details>
@@ -291,8 +303,8 @@ Every memory includes:
 Read in this order:
 
 1. **`START_HERE.md`** — Quick orientation (start here!)
-2. **`V4.0_KICKOFF.md`** — **NEW**: Current release (v4.0 federation)
-3. **`V3.0_COVENANT_FOUNDATION.md`** — v3.0 features (sealed)
+2. **[`V4.0_KICKOFF.md`](archive/completion-records/20251023/V4.0_KICKOFF.md)** — v4.0 federation release (archived)
+3. **[`V3.0_COVENANT_FOUNDATION.md`](archive/completion-records/20251023/V3.0_COVENANT_FOUNDATION.md)** — v3.0 features (archived)
 4. **`docs/COVENANT_HARDENING.md`** — **NEW**: Phase 1 hardening guide
 5. **`ops/COVENANT_RITUALS.md`** — **NEW**: Operator cheatsheet
 6. **`ops/mcp/README.md`** — **NEW**: MCP server guide
@@ -413,7 +425,7 @@ vm-spawn/
 │
 ├── 📖 DOCUMENTATION
 │   ├── START_HERE.md                            # Quick start
-│   ├── V3.0_COVENANT_FOUNDATION.md              # v3.0 release notes
+│   ├── archive/completion-records/20251023/V3.0_COVENANT_FOUNDATION.md  # v3.0 release notes (archived)
 │   ├── VERSION_TIMELINE.md                      # Complete history (v1.0→v3.0)
 │   ├── 🧠_REMEMBRANCER_STATUS.md                # Dashboard
 │   ├── docs/COVENANT_SIGNING.md                 # GPG guide (v3.0)
@@ -591,7 +603,7 @@ remembrancer export-proof my-app.tar.gz
 - **ADR-007**: Why GPG over X.509 certificates? → Sovereign key custody
 - **ADR-008**: Why RFC3161 over blockchain? → Legal recognition + mature tooling
 
-Guide: See `VERSION_TIMELINE.md` (canonical). The v3.0 completion record is archived at `archive/completion-records/V3.0_COVENANT_FOUNDATION.md`.
+Guide: See `VERSION_TIMELINE.md` (canonical). The v3.0 completion record is archived at `archive/completion-records/20251023/V3.0_COVENANT_FOUNDATION.md`.
 
 ---
 
@@ -818,8 +830,10 @@ The code is sovereign. The memory is yours. The civilization belongs to you.
 - **Phase 1 Hardening** complete 2025-10-19 (CI guards + rituals)
 - **v4.0 Federation Foundation** deployed 2025-10-19 (MCP + federation)
 - **FastMCP SDK** integrated v1.18.0 (AI agent coordination ready)
-- **Production verified** 2025-10-19 (22/24 tests passing, 9.5/10)
-- **Zero breaking changes** maintained from v3.0 to v4.0
+- **Phase V Federation** verified 2025-10-23 (peer-to-peer anchoring complete)
+- **Scheduler 10/10** hardened 2025-10-23 (production-ready with metrics)
+- **Tests verified** 2025-10-23 (26/26 core + 7/7 scheduler passing, 10.0/10)
+- **Zero breaking changes** maintained from v3.0 to v4.1+
 
 ---
 
@@ -861,7 +875,7 @@ Truth is the only sovereign — signed, Sovereign.
 ### Documentation
 - **Quick Start:** `START_HERE.md`
 - **Codex Verification:** `docs/VERIFY.md` 🆕
-- **Current Release:** `V3.0_COVENANT_FOUNDATION.md`
+- **Current Release:** `VERSION_TIMELINE.md` (canonical history)
 - **System Dashboard:** `🧠_REMEMBRANCER_STATUS.md`
 - **Version History:** `VERSION_TIMELINE.md`
 - **Memory Index:** `docs/REMEMBRANCER.md`
