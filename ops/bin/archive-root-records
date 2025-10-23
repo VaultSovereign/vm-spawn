@@ -1,0 +1,125 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+cd "$ROOT"
+
+DATE_TAG="$(date +%Y%m%d)"
+DEST="archive/completion-records/${DATE_TAG}"
+mkdir -p "$DEST" 2>/dev/null || true
+
+# Canonical keep-list (root)
+KEEP=(
+  "README.md" "START_HERE.md" "ARCHITECTURE.md" "AGENTS.md"
+  "spawn.sh" "SMOKE_TEST.sh" "LICENSE" "SECURITY.md" "CONTRIBUTING.md"
+  "CHANGELOG.md" "VERSION_TIMELINE.md" "Makefile"
+)
+
+# Match patterns to archive (root-only, files)
+PATTERNS=(
+  "AURORA_*"
+  "PROJECT_FEEDBACK_*"
+  "V[0-9]*_*"
+  "*_SUMMARY.md" "*_STATUS.md" "*_PROPOSAL.md" "*_ROADMAP.md"
+  "*_COMPLETE*.md" "*_HANDOFF*.md" "PHASE_*"
+  "FOUR_COVENANTS_*.md" "ERRATA_*.md"
+  "*_SEAL*.md" "*_RECORD*.md" "*_REPORT*.md"
+  "PATH_TO_*.md" "PLAN_*.md" "PROPOSAL_*.md"
+  "SCHEDULER_*.md" "FEDERATION_*.md" "CODEX_*.md"
+)
+
+dry_run=true
+tombstones=false
+
+for arg in "$@"; do
+  case "$arg" in
+    --apply) dry_run=false ;;
+    --tombstones) tombstones=true ;;
+    --help|-h)
+      echo "Usage: $0 [--apply] [--tombstones]"
+      exit 0
+      ;;
+  esac
+done
+
+is_keep() {
+  local f="$1"
+  for k in "${KEEP[@]}"; do [[ "$f" == "$k" ]] && return 0; done
+  return 1
+}
+
+mapfile -t candidates < <(
+  # root only, md/txt likely candidates
+  find . -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) -printf "%f\n" 2>/dev/null || \
+  find . -maxdepth 1 -type f \( -name "*.md" -o -name "*.txt" \) | sed 's|^\./||'
+)
+
+declare -a to_move=()
+for f in "${candidates[@]}"; do
+  is_keep "$f" && continue
+  for p in "${PATTERNS[@]}"; do
+    # Use bash glob matching
+    case "$f" in
+      $p)
+        to_move+=("$f")
+        break
+        ;;
+    esac
+  done
+done
+
+if ((${#to_move[@]}==0)); then
+  echo "No root files matched archive criteria."
+  exit 0
+fi
+
+echo "— Archive plan (${DATE_TAG}) —"
+echo "Destination: ${DEST}/"
+echo ""
+for f in "${to_move[@]}"; do
+  echo "  • $f"
+done
+echo ""
+echo "Total: ${#to_move[@]} files"
+
+if $dry_run; then
+  echo ""
+  echo "[DRY-RUN] Nothing moved. Re-run with --apply to perform moves."
+  exit 0
+fi
+
+# Perform moves with git mv (preserve history)
+for f in "${to_move[@]}"; do
+  mkdir -p "$DEST"
+  git mv "$f" "${DEST}/$f"
+  if $tombstones; then
+    cat > "$f" <<EOF
+> This document has been archived to \`${DEST}/$f\`.
+
+See \`${DEST}/$f\` for the canonical copy (preserves incoming links).
+EOF
+    git add "$f"
+  fi
+done
+
+# Update archive index
+INDEX="archive/completion-records/INDEX.md"
+mkdir -p "$(dirname "$INDEX")"
+{
+  echo "# Completion Records Index"
+  echo ""
+  echo "## Batch: ${DATE_TAG}"
+  echo ""
+  for f in "${to_move[@]}"; do
+    echo "- [\`$f\`](./${DATE_TAG}/$f)"
+  done
+  echo ""
+} >> "$INDEX"
+git add "$INDEX"
+
+echo ""
+echo "✅ Archive complete. ${#to_move[@]} files moved to ${DEST}/"
+echo ""
+echo "Review 'git status', then:"
+echo "  git commit -m \"chore(archive): move root completion docs to archive/completion-records/${DATE_TAG}\""
+
