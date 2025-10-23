@@ -1,0 +1,20 @@
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: psi-field
+  namespace: aurora-staging
+  labels:
+    release: prometheus
+    app: psi-field
+spec:
+  namespaceSelector:
+    matchNames: ["aurora-staging"]
+  selector:
+    matchLabels:
+      app: psi-field
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

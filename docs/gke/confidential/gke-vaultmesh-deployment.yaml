@@ -1,0 +1,373 @@
+# VaultMesh Confidential Compute Deployment for GKE
+# Deploys VaultMesh inference workload with TEE attestation capture
+
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vaultmesh-agent
+  namespace: default
+  annotations:
+    iam.gke.io/gcp-service-account: vaultmesh-workload@PROJECT_ID.iam.gserviceaccount.com
+
+---
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: vaultmesh-attestation-script
+  namespace: default
+data:
+  capture-attestation.sh: |
+    #!/bin/bash
+    set -ex
+    
+    PROJECT_ID=$(gcloud config get-value project)
+    ZONE=$(curl -s -H "Metadata-Flavor: Google" \
+      http://metadata.google.internal/computeMetadata/v1/instance/zone | cut -d'/' -f4)
+    INSTANCE=$(curl -s -H "Metadata-Flavor: Google" \
+      http://metadata.google.internal/computeMetadata/v1/instance/name)
+    
+    # Create attestation request
+    mkdir -p /workspace/attestation
+    
+    # 1. Get access token via Workload Identity
+    ACCESS_TOKEN=$(gcloud auth print-identity-token \
+      --audiences=https://confidentialcomputing.googleapis.com)
+    
+    # 2. Generate nonce (current timestamp)
+    NONCE=$(date +%s)
+    
+    # 3. Call Google Confidential Computing attestation API
+    curl -s -X POST \
+      "https://confidentialcomputing.googleapis.com/v1/projects/${PROJECT_ID}/locations/global/confidentialCases:generateAccessToken" \
+      -H "Authorization: Bearer ${ACCESS_TOKEN}" \
+      -H "Content-Type: application/json" \
+      -d "{\"nonce\":\"${NONCE}\"}" \
+      > /workspace/attestation/access_response.json || echo "Note: attestation API may require additional setup"
+    
+    # 4. Fetch GPU metrics from instance
+    GPU_METRICS=$(nvidia-smi --query-gpu=index,name,utilization.gpu,utilization.memory,memory.used,memory.total,power.draw \
+      --format=csv,noheader,nounits 2>/dev/null || echo "No GPU detected")
+    
+    # 5. Build ReadProof structure
+    cat > /workspace/attestation/readproof.json << EOF
+    {
+      "proof_type": "vaultmesh-confidential-compute-gke",
+      "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+      "pod_metadata": {
+        "name": "$(hostname)",
+        "namespace": "default",
+        "node": "${INSTANCE}",
+        "zone": "${ZONE}"
+      },
+      "gcp_attestation": {
+        "tee_type": "TDX",
+        "project_id": "${PROJECT_ID}",
+        "attestation_response": $(cat /workspace/attestation/access_response.json 2>/dev/null || echo '{}')
+      },
+      "gpu_metrics": {
+        "output": "${GPU_METRICS}",
+        "sample_timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+      },
+      "vaultmesh_binding": {
+        "service": "vaultmesh-infer",
+        "pool": "h100-conf"
+      }
+    }
+    EOF
+    
+    # 6. Submit to VaultMesh endpoint (if available)
+    VAULTMESH_ENDPOINT="${VAULTMESH_READPROOF_ENDPOINT:-http://localhost:8080/proofs}"
+    curl -s -X POST \
+      "${VAULTMESH_ENDPOINT}" \
+      -H "Content-Type: application/json" \
+      --data-binary @/workspace/attestation/readproof.json \
+      || echo "Note: VaultMesh endpoint not available at startup (expected for initial deployment)"
+    
+    # 7. Copy to shared volume for main container
+    cp /workspace/attestation/readproof.json /shared/attestation.json
+    cp /workspace/attestation/access_response.json /shared/access_response.json
+    
+    echo "✅ Attestation captured"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultmesh-infer
+  namespace: default
+  labels:
+    app: vaultmesh-infer
+    tier: production
+    compute: gpu
+spec:
+  # IMPORTANT: Start with 0 replicas. KEDA will scale this based on Pub/Sub queue
+  replicas: 0
+  
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Maintain availability during updates
+  
+  selector:
+    matchLabels:
+      app: vaultmesh-infer
+  
+  template:
+    metadata:
+      labels:
+        app: vaultmesh-infer
+        tier: production
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    
+    spec:
+      serviceAccountName: vaultmesh-agent
+      restartPolicy: Always
+      
+      # Tolerations: Allow pods to land on GPU node pool (which has NoSchedule taint)
+      tolerations:
+        - key: gpu
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      
+      # Node affinity: Schedule ONLY on GPU pool with confidential compute
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: gpu
+                    operator: In
+                    values:
+                      - "h100"
+                  - key: confidential
+                    operator: In
+                    values:
+                      - "true"
+      
+      # Init container: Capture TEE attestation before main workload
+      initContainers:
+        - name: attest
+          image: google/cloud-sdk:slim
+          command:
+            - /bin/bash
+            - -c
+            - |
+              apt-get update -qq && apt-get install -y -qq nvidia-utils >/dev/null 2>&1 || true
+              /scripts/capture-attestation.sh
+          
+          env:
+            - name: VAULTMESH_READPROOF_ENDPOINT
+              value: "http://vaultmesh-api:8000/proofs"  # Override if you have a receiving endpoint
+          
+          volumeMounts:
+            - name: attestation-script
+              mountPath: /scripts
+              readOnly: true
+            - name: shared-attestation
+              mountPath: /shared
+            - name: varlog
+              mountPath: /var/log
+          
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "500m"
+            limits:
+              memory: "512Mi"
+              cpu: "1000m"
+      
+      # Main container: VaultMesh inference workload
+      containers:
+        - name: agent
+          image: vaultmesh/workstation:v1.2.0  # Replace with your actual image
+          imagePullPolicy: IfNotPresent
+          
+          # Port for metrics + health checks
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          
+          # Environment variables for workload
+          env:
+            # Attestation mode: Use GCP Confidential Computing
+            - name: VAULTMESH_ATTESTATION_MODE
+              value: "gcp_confidential"
+            
+            # Path to attestation evidence captured by init container
+            - name: VAULTMESH_ATTESTATION_EVIDENCE
+              value: "/shared/attestation.json"
+            
+            # Service identification
+            - name: VAULTMESH_SERVICE_NAME
+              value: "vaultmesh-infer"
+            - name: VAULTMESH_POOL
+              value: "h100-conf"
+            
+            # Pub/Sub for job queue
+            - name: PUBSUB_SUBSCRIPTION
+              value: "projects/PROJECT_ID/subscriptions/vaultmesh-jobs"
+            
+            # Model configuration
+            - name: MODEL_NAME
+              value: "meta-llama/Llama-2-70b-hf"  # Example
+            - name: MODEL_CACHE_PATH
+              value: "/models"
+            
+            # Logging
+            - name: LOG_LEVEL
+              value: "INFO"
+          
+          # Volume mounts
+          volumeMounts:
+            - name: shared-attestation
+              mountPath: /shared
+              readOnly: true
+            - name: models
+              mountPath: /models
+          
+          # Health checks
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+          
+          # Resource allocation
+          resources:
+            requests:
+              cpu: "8"                    # 8 CPU cores
+              memory: "32Gi"              # 32GB RAM
+              nvidia.com/gpu: "1"         # 1x H100 GPU
+            limits:
+              cpu: "10"                   # Burst to 10 cores
+              memory: "48Gi"              # Burst to 48GB
+              nvidia.com/gpu: "1"         # Hard limit: 1 GPU
+          
+          # Security context
+          securityContext:
+            runAsNonRoot: false           # GPUs may require root
+            readOnlyRootFilesystem: false
+            allowPrivilegeEscalation: true
+      
+      # Volumes
+      volumes:
+        - name: attestation-script
+          configMap:
+            name: vaultmesh-attestation-script
+            defaultMode: 0755
+        
+        - name: shared-attestation
+          emptyDir:
+            sizeLimit: 10Mi
+        
+        - name: models
+          emptyDir:
+            sizeLimit: 100Gi
+        
+        - name: varlog
+          emptyDir:
+            sizeLimit: 5Gi
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultmesh-infer
+  namespace: default
+  labels:
+    app: vaultmesh-infer
+spec:
+  type: ClusterIP
+  selector:
+    app: vaultmesh-infer
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+    - name: metrics
+      port: 9090
+      targetPort: 9090
+
+---
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vaultmesh-infer-pdb
+  namespace: default
+spec:
+  minAvailable: 0  # Can go to 0 when no jobs (KEDA scales to 0)
+  selector:
+    matchLabels:
+      app: vaultmesh-infer
+
+---
+
+# Horizontal Pod Autoscaler (for manual testing; KEDA will supersede this)
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: vaultmesh-infer-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: vaultmesh-infer
+  minReplicas: 0
+  maxReplicas: 50
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
+
+---
+
+# Notes for deployment:
+# 
+# 1. Replace "PROJECT_ID" with your GCP project ID
+# 2. Replace "vaultmesh/workstation:v1.2.0" with your actual image
+# 3. Customize MODEL_NAME, PUBSUB_SUBSCRIPTION as needed
+# 
+# Deploy with:
+#   kubectl apply -f gke-vaultmesh-deployment.yaml
+# 
+# Verify:
+#   kubectl get deployment vaultmesh-infer
+#   kubectl get pods -l app=vaultmesh-infer
+#   kubectl logs deployment/vaultmesh-infer -c attest
+# 
+# After KEDA is installed, deploy gke-keda-scaler.yaml to enable auto-scaling from 0

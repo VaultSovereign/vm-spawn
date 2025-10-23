@@ -1,0 +1,7 @@
+apiVersion: v2
+name: vaultmesh-confidential
+description: VaultMesh workload with confidential-compute attestation and optional KEDA autoscaling.
+type: application
+version: 0.1.0
+appVersion: "v1"
+

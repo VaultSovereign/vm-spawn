@@ -1,0 +1,11 @@
+
+groups:
+  - name: psi-field.rules
+    interval: 30s
+    rules:
+      - record: psi_field:prediction_error:rate5m
+        expr: rate(psi_field_prediction_error[5m])
+      - record: psi_field:density:avg5m
+        expr: avg_over_time(psi_field_density[5m])
+      - record: psi_field:coherence:avg5m
+        expr: avg_over_time(psi_field_coherence[5m])

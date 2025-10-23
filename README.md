@@ -51,6 +51,7 @@ flowchart TD
 Note on history and records
 - The detailed milestone completion documents have been archived to `archive/completion-records/`.
 - See `VERSION_TIMELINE.md` for the canonical version history and pointers to archived details.
+- Current emoji status flags: `STATUS.md` (links to latest archived markers)
 
 ## 🚀 Quick Start (2 minutes)
 

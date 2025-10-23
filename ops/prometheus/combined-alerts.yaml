@@ -1,0 +1,152 @@
+groups:
+  - name: psi_field
+    interval: 30s
+    rules:
+      - alert: PsiFieldPredictionErrorHigh
+        expr: psi_field_prediction_error > 0.7
+        for: 5m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field prediction error above threshold"
+          description: "Prediction error is {{ $value | humanize }} (threshold: 0.7)"
+          runbook_url: "https://github.com/vaultmesh/vm-spawn/wiki/Runbook-PsiField"
+
+      - alert: PsiFieldPodDrift
+        expr: |
+          abs(
+            max(psi_field_prediction_error) -
+            min(psi_field_prediction_error)
+          ) > 1.0
+        for: 10m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field pods showing moderate drift"
+          description: "Prediction error variance is {{ $value | humanize }} (threshold: 1.0)"
+          impact: "Expected for stateful services without state sync. Monitor for excessive drift."
+          runbook: "https://github.com/vaultmesh/vm-spawn/wiki/Runbook-PsiFieldDrift"
+
+      - alert: PsiFieldDown
+        expr: up{job="kubernetes-service-endpoints",service="psi-field"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field service down"
+          description: "ψ-Field service {{ $labels.instance }} is unreachable"
+
+      - alert: PsiFieldDensityAnomaly
+        expr: psi_field_density < 0.2 or psi_field_density > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field density outside normal range"
+          description: "Density is {{ $value | humanize }} (normal: 0.2-0.9)"
+
+      - alert: PsiFieldTemporalEntropyHigh
+        expr: psi_field_temporal_entropy > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field temporal entropy elevated"
+          description: "Temporal entropy is {{ $value | humanize }} (threshold: 0.8)"
+groups:
+  - name: aurora_treaty
+    interval: 30s
+    rules:
+      - alert: TreatyFillRateLow
+        expr: treaty_fill_rate < 0.80
+        for: 10m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} fill rate below 80%"
+          description: "Fill rate is {{ $value | humanizePercentage }} (threshold: 80%)"
+          impact: "GPU allocation efficiency degraded"
+
+      - alert: TreatyFillRateCritical
+        expr: treaty_fill_rate < 0.50
+        for: 5m
+        labels:
+          severity: critical
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} fill rate critical"
+          description: "Fill rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+          impact: "Severe GPU allocation issues — immediate investigation required"
+
+      - alert: TreatyRttHigh
+        expr: treaty_rtt_ms > 250
+        for: 5m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} RTT above 250ms"
+          description: "Round-trip time is {{ $value | humanize }}ms (threshold: 250ms)"
+
+      - alert: TreatyRttCritical
+        expr: treaty_rtt_ms > 500
+        for: 3m
+        labels:
+          severity: critical
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} RTT critical"
+          description: "Round-trip time is {{ $value | humanize }}ms (threshold: 500ms)"
+          impact: "Severe latency — routing may timeout"
+
+      - alert: TreatyDropRateHigh
+        expr: |
+          rate(treaty_dropped_requests[5m]) /
+          rate(treaty_requests_total[5m]) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} dropping >10% of requests"
+          description: "Drop rate: {{ $value | humanizePercentage }} over 5m"
+          impact: "High request failure rate — check provider health"
+
+      - alert: TreatyProvenanceLow
+        expr: treaty_provenance_coverage < 0.90
+        for: 10m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} provenance coverage low"
+          description: "Provenance coverage: {{ $value | humanizePercentage }} (threshold: 90%)"
+          impact: "Cryptographic attestation gaps detected"
+
+      - alert: TreatyNoRequests
+        expr: rate(treaty_requests_total[10m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} receiving no requests"
+          description: "No requests in 15 minutes — routing may be disabled"

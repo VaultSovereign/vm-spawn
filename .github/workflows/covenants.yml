@@ -1,43 +1,47 @@
-name: Covenants
-on:
-  push:
-  workflow_dispatch:
+name: Covenants & Health
 
-permissions:
-  contents: write
+on:
+  pull_request:
+    paths:
+      - 'ops/**'
+      - 'ops/make.d/**'
+      - 'Makefile'
+      - 'charts/**'
+      - 'docs/**'
+      - 'services/**'
+      - 'generators/**'
+      - 'templates/**'
+      - 'SMOKE_TEST.sh'
+      - '.github/workflows/covenants.yml'
+  push:
+    branches: [ main ]
+    paths:
+      - 'ops/**'
+      - 'ops/make.d/**'
+      - 'Makefile'
+      - 'charts/**'
+      - 'docs/**'
+      - 'services/**'
+      - 'generators/**'
+      - 'templates/**'
+      - 'SMOKE_TEST.sh'
+      - '.github/workflows/covenants.yml'
 
 jobs:
-  judge:
+  covenant-guard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Prepare
-        run: |
-          chmod +x ops/bin/* || true
-      - name: Docs Guardian
-        run: |
-          if [ -x ops/bin/docs-guardian ]; then ./ops/bin/docs-guardian; else echo "docs-guardian not present"; fi
-      - name: Health
-        run: ./ops/bin/health-check
-      - name: Assert Machine Truth
-        run: ./ops/bin/assert-tests-consistent
-      - name: Covenants
-        run: make covenant
-      - name: Publish badge (artifact)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ops-status-badge
-          path: ops/status/badge.json
-      - name: Commit covenant badge
-        if: github.ref == 'refs/heads/main'
-        run: |
-          git config user.name "covenants-bot"
-          git config user.email "actions@users.noreply.github.com"
-          git add ops/status/badge.json
-          git commit -m "ci: update covenant badge" || echo "no changes"
-          git push
+      - name: Checkout
+        uses: actions/checkout@v4
 
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep jq
+
+      - name: Run covenant CI
+        run: |
+          make covenant
+          ./ops/bin/health-check
+          ./ops/bin/remembrancer verify-audit
+          make docs-check

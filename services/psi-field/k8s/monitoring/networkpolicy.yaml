@@ -1,0 +1,22 @@
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: psi-field-allow-aurora
+  namespace: aurora-staging
+spec:
+  podSelector:
+    matchLabels:
+      app: psi-field
+  policyTypes: ["Ingress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: aurora-router
+        - namespaceSelector:
+            matchLabels:
+              name: aurora-staging
+      ports:
+        - port: 8080
+          protocol: TCP

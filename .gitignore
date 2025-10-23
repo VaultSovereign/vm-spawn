@@ -59,3 +59,4 @@ vaultmesh_psi_package*.zip
 artifacts/
 services/psi-field/vaultmesh_psi/vigil_pp_outputs/
 services/psi-field/vaultmesh_psi/void_guardian_trial6/
+.vaultmesh/migration-logs/

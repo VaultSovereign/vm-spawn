@@ -1,0 +1,87 @@
+groups:
+  - name: aurora_treaty
+    interval: 30s
+    rules:
+      - alert: TreatyFillRateLow
+        expr: treaty_fill_rate < 0.80
+        for: 10m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} fill rate below 80%"
+          description: "Fill rate is {{ $value | humanizePercentage }} (threshold: 80%)"
+          impact: "GPU allocation efficiency degraded"
+
+      - alert: TreatyFillRateCritical
+        expr: treaty_fill_rate < 0.50
+        for: 5m
+        labels:
+          severity: critical
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} fill rate critical"
+          description: "Fill rate is {{ $value | humanizePercentage }} (threshold: 50%)"
+          impact: "Severe GPU allocation issues — immediate investigation required"
+
+      - alert: TreatyRttHigh
+        expr: treaty_rtt_ms > 250
+        for: 5m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} RTT above 250ms"
+          description: "Round-trip time is {{ $value | humanize }}ms (threshold: 250ms)"
+
+      - alert: TreatyRttCritical
+        expr: treaty_rtt_ms > 500
+        for: 3m
+        labels:
+          severity: critical
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} RTT critical"
+          description: "Round-trip time is {{ $value | humanize }}ms (threshold: 500ms)"
+          impact: "Severe latency — routing may timeout"
+
+      - alert: TreatyDropRateHigh
+        expr: |
+          rate(treaty_dropped_requests[5m]) /
+          rate(treaty_requests_total[5m]) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} dropping >10% of requests"
+          description: "Drop rate: {{ $value | humanizePercentage }} over 5m"
+          impact: "High request failure rate — check provider health"
+
+      - alert: TreatyProvenanceLow
+        expr: treaty_provenance_coverage < 0.90
+        for: 10m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} provenance coverage low"
+          description: "Provenance coverage: {{ $value | humanizePercentage }} (threshold: 90%)"
+          impact: "Cryptographic attestation gaps detected"
+
+      - alert: TreatyNoRequests
+        expr: rate(treaty_requests_total[10m]) == 0
+        for: 15m
+        labels:
+          severity: warning
+          component: aurora
+          layer: l3
+        annotations:
+          summary: "Treaty {{ $labels.treaty_id }} receiving no requests"
+          description: "No requests in 15 minutes — routing may be disabled"

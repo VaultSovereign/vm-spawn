@@ -1,0 +1,65 @@
+groups:
+  - name: psi_field
+    interval: 30s
+    rules:
+      - alert: PsiFieldPredictionErrorHigh
+        expr: psi_field_prediction_error > 0.7
+        for: 5m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field prediction error above threshold"
+          description: "Prediction error is {{ $value | humanize }} (threshold: 0.7)"
+          runbook_url: "https://github.com/vaultmesh/vm-spawn/wiki/Runbook-PsiField"
+
+      - alert: PsiFieldPodDrift
+        expr: |
+          abs(
+            max(psi_field_prediction_error) -
+            min(psi_field_prediction_error)
+          ) > 1.0
+        for: 10m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field pods showing moderate drift"
+          description: "Prediction error variance is {{ $value | humanize }} (threshold: 1.0)"
+          impact: "Expected for stateful services without state sync. Monitor for excessive drift."
+          runbook: "https://github.com/vaultmesh/vm-spawn/wiki/Runbook-PsiFieldDrift"
+
+      - alert: PsiFieldDown
+        expr: up{job="kubernetes-service-endpoints",service="psi-field"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field service down"
+          description: "ψ-Field service {{ $labels.instance }} is unreachable"
+
+      - alert: PsiFieldDensityAnomaly
+        expr: psi_field_density < 0.2 or psi_field_density > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field density outside normal range"
+          description: "Density is {{ $value | humanize }} (normal: 0.2-0.9)"
+
+      - alert: PsiFieldTemporalEntropyHigh
+        expr: psi_field_temporal_entropy > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          component: psi-field
+          layer: l3
+        annotations:
+          summary: "ψ-Field temporal entropy elevated"
+          description: "Temporal entropy is {{ $value | humanize }} (threshold: 0.8)"

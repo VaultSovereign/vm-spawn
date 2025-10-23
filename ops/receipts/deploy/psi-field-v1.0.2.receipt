@@ -1,0 +1,18 @@
+{
+  "component": "psi-field",
+  "version": "v1.0.2",
+  "timestamp": "2025-01-XX",
+  "image": "509399262563.dkr.ecr.eu-west-1.amazonaws.com/vaultmesh/psi-field:v1.0.2",
+  "digest": "sha256:b2d29625112369a24de4b5879c454153bfa8730b629e4faa80fa9246868c74e0",
+  "cluster": "aurora-staging",
+  "namespace": "aurora-staging",
+  "region": "eu-west-1",
+  "status": "operational",
+  "health": "healthy",
+  "pods": "2/2 Ready",
+  "metrics": ["psi_field_density", "psi_field_phase_coherence", "psi_field_continuity", "psi_field_futurity", "psi_field_temporal_entropy", "psi_field_prediction_error"],
+  "hpa": "2-10 replicas (CPU 70%, Memory 80%)",
+  "revenue_tier": "Tier 1 ($2,500/mo)",
+  "covenant_seals": [1, 2, 6, 7],
+  "proof_chain": "ECR digest + deployment receipt + health verification"
+}

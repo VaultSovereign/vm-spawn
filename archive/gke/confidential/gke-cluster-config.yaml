@@ -1,0 +1,144 @@
+# GKE Cluster Configuration for VaultMesh Confidential Compute
+# This file documents the gcloud commands to set up a GKE cluster with Confidential Nodes
+
+# Prerequisites:
+# - gcloud CLI installed and authenticated
+# - Quota for Confidential Computing and A3/H100 GPUs in target region
+# - PROJECT_ID set: export PROJECT_ID=$(gcloud config get-value project)
+
+---
+
+# 1. Create GKE Cluster with Confidential Nodes Enabled
+# Status: Ready to deploy
+# Command:
+#
+# gcloud container clusters create vaultmesh-cluster \
+#   --region=us-central1 \
+#   --release-channel=regular \
+#   --enable-confidential-nodes \
+#   --enable-stackdriver-kubernetes \
+#   --workload-pool="${PROJECT_ID}.svc.id.goog" \
+#   --addons=HorizontalPodAutoscaling,HttpLoadBalancing \
+#   --network=default \
+#   --default-max-pods-per-node=110 \
+#   --num-nodes=3 \
+#   --enable-autoscaling \
+#   --min-nodes=3 \
+#   --max-nodes=10 \
+#   --no-enable-basic-auth \
+#   --no-issue-client-certificate \
+#   --enable-cluster-autoscaling \
+#   --enable-cluster-secondary-ranges \
+#   --enable-ip-alias \
+#   --machine-type=n2-standard-4 \
+#   --enable-image-streaming
+
+# Notes on configuration:
+# - release-channel=regular: Latest stable features, good for production
+# - enable-confidential-nodes: Required for Confidential Computing
+# - enable-stackdriver-kubernetes: Monitoring and logging integration
+# - workload-pool: Enables Workload Identity for Pod authentication
+# - addons: Enable auto-scaling and load balancing
+# - num-nodes=3: Initial size for high availability
+# - enable-autoscaling: System node pool scales with demand
+# - machine-type=n2-standard-4: Cost-efficient for control plane
+# - enable-image-streaming: Faster pod startup times
+
+---
+
+# 2. Get Cluster Credentials
+# Command:
+#
+# gcloud container clusters get-credentials vaultmesh-cluster \
+#   --region=us-central1 \
+#   --project=${PROJECT_ID}
+
+# After this, kubectl will be configured to access the cluster
+
+---
+
+# 3. Verify Cluster is Ready
+# Command:
+#
+# kubectl cluster-info
+# kubectl get nodes
+# kubectl get namespace
+
+# Expected output:
+# - 3-4 nodes in NotReady (taking 2-3 minutes to initialize)
+# - System namespaces: default, kube-system, kube-public
+
+---
+
+# 4. Create Service Account for Workload Identity
+# Command:
+#
+# gcloud iam service-accounts create vaultmesh-workload \
+#   --display-name="VaultMesh Workload Service Account"
+#
+# gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+#   --member="serviceAccount:vaultmesh-workload@${PROJECT_ID}.iam.gserviceaccount.com" \
+#   --role="roles/confidentialcomputing.workloadUser"
+
+# This allows the Pod to:
+# - Access Confidential Computing attestation API
+# - Verify TEE quotes
+# - Fetch attestation tokens
+
+---
+
+# 5. Bind Kubernetes SA to GCP SA (Workload Identity)
+# Command:
+#
+# kubectl create serviceaccount vaultmesh-agent -n default
+#
+# gcloud iam service-accounts add-iam-policy-binding \
+#   vaultmesh-workload@${PROJECT_ID}.iam.gserviceaccount.com \
+#   --role roles/iam.workloadIdentityUser \
+#   --member "serviceAccount:${PROJECT_ID}.svc.id.goog[default/vaultmesh-agent]"
+#
+# kubectl annotate serviceaccount vaultmesh-agent \
+#   -n default \
+#   iam.gke.io/gcp-service-account=vaultmesh-workload@${PROJECT_ID}.iam.gserviceaccount.com
+
+# This creates a mapping so K8s Pods can authenticate to GCP APIs
+
+---
+
+# 6. Test Cluster Access
+# Command:
+#
+# kubectl run -it --rm debug \
+#   --image=gcr.io/google.com/cloudsdktool/google-cloud-cli:slim \
+#   --restart=Never \
+#   -- bash
+
+# Inside the container:
+#
+# # Test Google metadata service
+# curl -s -H "Metadata-Flavor: Google" \
+#   http://metadata.google.internal/computeMetadata/v1/instance/name
+#
+# # Test attestation API access (when Workload Identity is set up)
+# gcloud auth list  # Should show the service account
+
+---
+
+# 7. Quick Verification Checklist
+verification_checklist:
+  - "✅ Cluster created (gcloud container clusters list)"
+  - "✅ Nodes are Ready (kubectl get nodes)"
+  - "✅ System pods running (kubectl get pods -n kube-system)"
+  - "✅ Workload identity configured (gcloud iam service-accounts list)"
+  - "✅ K8s SA has GCP binding (kubectl get sa -o yaml)"
+
+---
+
+# 8. Cluster Outputs
+outputs:
+  cluster_name: "vaultmesh-cluster"
+  region: "us-central1"
+  gke_endpoint: "kubectl cluster-info"
+  workload_pool: "${PROJECT_ID}.svc.id.goog"
+  confidential_compute_enabled: true
+  next_step: "Deploy GPU node pool (see gke-gpu-nodepool.yaml)"

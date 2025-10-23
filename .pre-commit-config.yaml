@@ -1,4 +1,13 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=5000']
+
   - repo: local
     hooks:
       - id: vaultmesh-hygiene
@@ -6,3 +15,10 @@ repos:
         entry: bash .git/hooks/pre-commit
         language: system
         types: [file]
+
+      - id: tem-guardian
+        name: Tem Guardian (Covenant Enforcer)
+        entry: python3 .github/scripts/tem_guardian.py
+        language: system
+        pass_filenames: false
+        always_run: true

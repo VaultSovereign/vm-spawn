@@ -90,6 +90,34 @@ managedNodeGroups:
     ssh:
       allow: false
 
+  # Confidential CPU pool for TEE attestation and secure workloads
+  - name: confidential-cpu-pool
+    instanceType: c6in.2xlarge # Nitro Enclaves enabled instance
+    desiredCapacity: 0
+    minSize: 0
+    maxSize: 5
+    volumeSize: 80
+    volumeType: gp3
+    labels:
+      role: cpu
+      workload: confidential
+      aws.amazon.com/nitro/enclaves: "true"
+    taints:
+      - key: confidential
+        value: "true"
+        effect: NoSchedule
+    tags:
+      Name: aurora-staging-confidential
+      k8s.io/cluster-autoscaler/enabled: "true"
+    iam:
+      withAddonPolicies:
+        autoScaler: true
+        cloudWatch: true
+        ebs: true
+    privateNetworking: false
+    ssh:
+      allow: false
+
 # VPC configuration (uses eksctl defaults with public/private subnets)
 vpc:
   cidr: 10.42.0.0/16

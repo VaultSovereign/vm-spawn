@@ -1,0 +1,48 @@
+# Example values for VaultMesh Confidential chart
+
+image:
+  repository: gcr.io/PROJECT/vaultmesh-agent
+  tag: v1.0.0
+  pullPolicy: IfNotPresent
+
+replicaCount: 0
+
+readProof:
+  endpoint: https://readproof.vaultmesh.io/record
+
+gpu:
+  enabled: true
+  resource: "1"
+
+nodeSelector:
+  gpu: h100
+  confidential: "true"
+
+tolerations:
+  - key: "gpu"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+keda:
+  enabled: true
+  subscriptionName: vaultmesh-jobs
+  messagesPerWorker: 10
+  minReplicaCount: 0
+  maxReplicaCount: 50
+  cooldownPeriod: 300
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 8080
+
+serviceAccount:
+  create: true
+  name: ""
+
+resources:
+  limits:
+    nvidia.com/gpu: 1
+  requests: {}
+

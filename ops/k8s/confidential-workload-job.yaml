@@ -1,0 +1,66 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: confidential-inference-job
+  namespace: aurora-staging
+  labels:
+    treaty_id: AURORA-AKASH-001
+    vaultmesh.cloud/workload-type: confidential
+spec:
+  template:
+    metadata:
+      labels:
+        app: confidential-inference
+    spec:
+      # Ensure this pod runs on a confidential node
+      nodeSelector:
+        workload: confidential
+        aws.amazon.com/nitro/enclaves: "true"
+      tolerations:
+        - key: "confidential"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+      restartPolicy: OnFailure
+      
+      # Init container to fetch attestation and record it
+      initContainers:
+      - name: attest-and-record
+        image: vaultmesh/remembrancer-tools:latest # Assumes an image with AWS CLI, jq, and remembrancer
+        command: ["/bin/sh", "-c"]
+        args:
+          - |
+            set -ex
+            echo "Fetching Nitro Enclave attestation document..."
+            # 1. Get a token for the attestation service
+            TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+            
+            # 2. Generate a nonce for replay protection
+            NONCE=$(openssl rand -hex 16)
+            
+            # 3. Fetch the attestation document
+            curl -H "X-aws-ec2-metadata-token: $TOKEN" \
+              "http://169.254.169.254/latest/meta-data/enclave/attestation-document?nonce=$NONCE" > /workspace/attestation.json
+            
+            echo "Attestation document fetched. Recording with Remembrancer..."
+            
+            # 4. Record the attestation as a cryptographic proof
+            /usr/local/bin/remembrancer record attestation \
+              --component confidential-inference-job \
+              --nonce "$NONCE" \
+              --evidence /workspace/attestation.json \
+              --key ${REMEMBRANCER_KEY_ID}
+            
+            echo "Attestation recorded successfully."
+        volumeMounts:
+        - name: workspace
+          mountPath: /workspace
+
+      # Main workload container
+      containers:
+      - name: confidential-agent
+        image: vaultmesh/secure-agent:latest
+        # ... your container spec here ...
+      volumes:
+      - name: workspace
+        emptyDir: {}

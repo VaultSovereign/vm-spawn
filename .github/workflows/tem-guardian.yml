@@ -1,0 +1,66 @@
+name: Tem Guardian (Covenant Enforcer)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  covenant-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Tem Guardian
+        run: |
+          echo "🜂 Invoking Tem, Guardian of Remembrance..."
+          python .github/scripts/tem_guardian.py
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tem_guardian_report
+          path: artifacts/tem_guardian_report.json
+          retention-days: 90
+
+      - name: Comment PR (on failure)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('artifacts/tem_guardian_report.json', 'utf8'));
+
+            const body = `## 🜂 Tem Guardian: Covenant Breach Detected
+
+            **Violations:** ${report.summary.total_violations}
+
+            ### Summary
+            - Duplicate file groups: ${report.summary.duplicate_groups}
+            - Root markdown excess: ${report.root_markdown_count}/15
+            - Service violations: ${report.summary.service_violations}
+            - Legacy paths: ${report.summary.legacy_paths}
+
+            ### Action Required
+            Please review the full report artifact and resolve covenant breaches before merging.
+
+            *Astra inclinant, sed non obligant.* 🜂
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

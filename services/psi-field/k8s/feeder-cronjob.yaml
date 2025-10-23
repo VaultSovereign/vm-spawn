@@ -1,0 +1,32 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: psi-field-feeder
+  namespace: aurora-staging
+spec:
+  schedule: "*/1 * * * *" # every minute
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: psi-field-feeder
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: feeder
+              image: curlimages/curl:8.10.1
+              command:
+                - /bin/sh
+                - -lc
+                - |
+                  set -e
+                  URL="http://psi-field:8000/step"
+                  BODY='{"x":[0.1,0.2,0.3,0.4,0.5,0.0,-0.1,0.2,0.9,-0.4,0.1,0.0,0.2,-0.2,0.3,0.1],"apply_guardian":true}'
+                  for i in 1 2; do
+                    curl -sS -m 3 -H "Content-Type: application/json" -d "$BODY" "$URL" >/dev/null
+                    sleep 30
+                  done

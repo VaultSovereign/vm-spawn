@@ -1,0 +1,81 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: aurora-staging
+  labels:
+    app: scheduler
+    component: layer-2
+    service: scheduler
+spec:
+  replicas: 1  # Scheduler should run as singleton (state management)
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+        component: layer-2
+        service: scheduler
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: scheduler
+        image: 509399262563.dkr.ecr.eu-west-1.amazonaws.com/vaultmesh/scheduler:v1.0.2
+        imagePullPolicy: Always
+        ports:
+        - name: metrics
+          containerPort: 9091
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: VMSH_ROOT
+          value: "/app"
+        - name: VMSH_NAMESPACES
+          value: "/app/vmsh/config/namespaces.yaml"
+        - name: VMSH_STATE
+          value: "/app/out/state/scheduler.json"
+        - name: VMSH_TICK_MS
+          value: "30000"  # 30 seconds
+        - name: METRICS_PORT
+          value: "9091"
+        - name: VMSH_BASE_BACKOFF
+          value: "5"
+        - name: VMSH_MAX_BACKOFF
+          value: "7"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        # Health probes temporarily disabled for staging (anchor scripts not configured)
+        # TODO: Re-enable after configuring blockchain credentials or mocking anchors
+        # livenessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 9091
+        #   initialDelaySeconds: 10
+        #   periodSeconds: 30
+        #   timeoutSeconds: 5
+        #   failureThreshold: 3
+        # readinessProbe:
+        #   httpGet:
+        #     path: /health
+        #     port: 9091
+        #   initialDelaySeconds: 5
+        #   periodSeconds: 10
+        #   timeoutSeconds: 5
+        #   failureThreshold: 2
+        volumeMounts:
+        - name: scheduler-state
+          mountPath: /app/out/state
+      volumes:
+      - name: scheduler-state
+        emptyDir: {}  # Ephemeral state (can be replaced with PVC for persistence)

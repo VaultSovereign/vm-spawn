@@ -1,0 +1,217 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VaultMesh ReadProof for GCP Confidential Computing",
+  "description": "Cryptographic proof of computation on GCP Confidential VMs with GPU attestation",
+  "type": "object",
+  "required": [
+    "proof_type",
+    "timestamp",
+    "gcp_attestation",
+    "vaultmesh_binding"
+  ],
+  "properties": {
+    "proof_type": {
+      "type": "string",
+      "enum": [
+        "vaultmesh-confidential-compute",
+        "vaultmesh-confidential-compute-gke"
+      ],
+      "description": "Type of proof: VM-based or Kubernetes-based"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "RFC 3339 timestamp when this proof was generated"
+    },
+    "pod_metadata": {
+      "type": "object",
+      "description": "Pod/instance metadata (GKE only)",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Pod name or VM instance name"
+        },
+        "namespace": {
+          "type": "string",
+          "description": "Kubernetes namespace (GKE) or 'vm' (Terraform)"
+        },
+        "node": {
+          "type": "string",
+          "description": "Node name or instance name"
+        },
+        "zone": {
+          "type": "string",
+          "description": "GCP zone (e.g., us-central1-a)"
+        },
+        "cluster": {
+          "type": "string",
+          "description": "GKE cluster name (GKE only)"
+        }
+      }
+    },
+    "gcp_attestation": {
+      "type": "object",
+      "description": "Google Cloud Confidential Computing attestation",
+      "required": [
+        "tee_type",
+        "project_id"
+      ],
+      "properties": {
+        "tee_type": {
+          "type": "string",
+          "enum": [
+            "TDX",
+            "SEV",
+            "SEV-SNP"
+          ],
+          "description": "Trusted Execution Environment type"
+        },
+        "project_id": {
+          "type": "string",
+          "description": "GCP Project ID"
+        },
+        "quote": {
+          "type": "string",
+          "description": "Base64-encoded TEE attestation quote from GCP attestation verifier"
+        },
+        "quote_type": {
+          "type": "string",
+          "enum": [
+            "TDX_QUOTE",
+            "SEV_SNP_REPORT"
+          ],
+          "description": "Format of the attestation quote"
+        },
+        "verification_timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When Google's attestation service verified this quote"
+        },
+        "attestation_response": {
+          "type": "object",
+          "description": "Full response from Google Confidential Computing API",
+          "additionalProperties": true
+        }
+      }
+    },
+    "rfc3161_timestamp": {
+      "type": "object",
+      "description": "RFC 3161 timestamp from Timestamp Authority (optional but recommended)",
+      "properties": {
+        "tsr_token": {
+          "type": "string",
+          "description": "Base64-encoded RFC 3161 timestamp response token"
+        },
+        "timestamp_authority": {
+          "type": "string",
+          "enum": [
+            "freetsa.org",
+            "enterprise"
+          ],
+          "description": "Which TSA issued this token"
+        },
+        "timestamp": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp from the TSA"
+        },
+        "serial_number": {
+          "type": "string",
+          "description": "RFC 3161 token serial number"
+        }
+      }
+    },
+    "gpu_metrics": {
+      "type": "object",
+      "description": "GPU utilization at proof generation time",
+      "properties": {
+        "gpu_type": {
+          "type": "string",
+          "enum": [
+            "h100-80gb",
+            "a100-80gb",
+            "v100-32gb",
+            "t4-16gb"
+          ],
+          "description": "GPU model"
+        },
+        "gpu_count": {
+          "type": "integer",
+          "description": "Number of GPUs in use"
+        },
+        "compute_utilization": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "GPU compute utilization percentage"
+        },
+        "memory_allocated_gb": {
+          "type": "number",
+          "description": "GPU memory currently allocated (GB)"
+        },
+        "memory_free_gb": {
+          "type": "number",
+          "description": "GPU memory available (GB)"
+        },
+        "power_draw_watts": {
+          "type": "number",
+          "description": "Current power draw (watts)"
+        },
+        "temperature_celsius": {
+          "type": "number",
+          "description": "GPU die temperature (°C)"
+        },
+        "driver_version": {
+          "type": "string",
+          "description": "NVIDIA driver version"
+        },
+        "cuda_version": {
+          "type": "string",
+          "description": "CUDA toolkit version"
+        }
+      }
+    },
+    "vaultmesh_binding": {
+      "type": "object",
+      "description": "VaultMesh-specific binding information",
+      "required": [
+        "service"
+      ],
+      "properties": {
+        "service": {
+          "type": "string",
+          "description": "VaultMesh service name"
+        },
+        "version": {
+          "type": "string",
+          "description": "Service version (semver)"
+        },
+        "pool": {
+          "type": "string",
+          "description": "Compute pool name (e.g., h100-conf)"
+        },
+        "merkle_anchor": {
+          "type": "string",
+          "description": "Merkle root from Remembrancer at proof time"
+        },
+        "merkle_leaf_index": {
+          "type": "integer",
+          "description": "Index in Merkle tree audit log"
+        },
+        "pod_namespace": {
+          "type": "string",
+          "description": "Kubernetes namespace"
+        },
+        "workload_id": {
+          "type": "string",
+          "description": "Unique identifier for this workload/job"
+        }
+      }
+    },
+    "chain_ref": {
+      "type": "string",
+      "pattern": "^(eip155:[0-9]+/(tx|safe):|snapshot:|ipfs:|http).*",
+      "description": "Optional on-chain or off-chain reference (EIP-155 format)"
+    }
+  }
+}

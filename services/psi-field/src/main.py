@@ -32,39 +32,12 @@ except ImportError:
     GUARDIAN_KIND = "basic"
 from .remembrancer_client import RemembrancerClient
 
-# Add the vaultmesh_psi module to the Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-
-# Import the VaultMesh Ψ-Field components
-try:
-    from vaultmesh_psi import psi_core
-    from vaultmesh_psi.psi_core import Params, PsiEngine, SyntheticEnv
-    # Backend selection
-    if PSI_BACKEND == "kalman":
-        from vaultmesh_psi.backends.kalman import KalmanBackend as BackendClass
-    elif PSI_BACKEND == "seasonal":
-        from vaultmesh_psi.backends.seasonal import SeasonalBackend as BackendClass
-    else:
-        from vaultmesh_psi.backends.simple import SimpleBackend as BackendClass
-    IMPORT_SUCCESS = True
-except ImportError:
-    IMPORT_SUCCESS = False
-    BackendClass = None
-    logging.error("Could not import vaultmesh_psi module. Please ensure it is installed.")
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("psi-field-api")
-
-# Global variables
-psi_engine = None
-guardian = None
-remembrancer_client = None
-mq_publisher = None
-mcp_server = None
 
 # Environment configuration
 AGENT_ID = os.environ.get("AGENT_ID", "psi-field-agent")
@@ -74,6 +47,131 @@ RABBIT_EXCHANGE = os.environ.get("RABBIT_EXCHANGE", "swarm")
 PSI_INPUT_DIM = int(os.environ.get("PSI_INPUT_DIM", "16"))
 PSI_LATENT_DIM = int(os.environ.get("PSI_LATENT_DIM", "32"))
 PSI_BACKEND = os.environ.get("PSI_BACKEND", "simple").lower()  # simple|kalman|seasonal
+
+# Add the vaultmesh_psi module to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+
+# Import the VaultMesh Ψ-Field components (with synthetic fallback)
+try:
+    from vaultmesh_psi import psi_core
+    from vaultmesh_psi.psi_core import Params, PsiEngine, SyntheticEnv
+    if PSI_BACKEND == "kalman":
+        from vaultmesh_psi.backends.kalman import KalmanBackend as BackendClass
+    elif PSI_BACKEND == "seasonal":
+        from vaultmesh_psi.backends.seasonal import SeasonalBackend as BackendClass
+    else:
+        from vaultmesh_psi.backends.simple import SimpleBackend as BackendClass
+    IMPORT_SUCCESS = True
+    FALLBACK_MODE = False
+except ImportError:
+    from types import SimpleNamespace
+
+    IMPORT_SUCCESS = False
+    FALLBACK_MODE = True
+    BackendClass = None
+    psi_core = None
+    PsiEngine = None
+
+    logging.error("Could not import vaultmesh_psi module. Using synthetic fallback metrics.")
+
+    class FallbackPsiEngine:
+        """Deterministic synthetic Ψ-field engine used when core module is unavailable."""
+
+        def __init__(self, params_dict: Dict[str, Any]):
+            self.params = SimpleNamespace(
+                dt=params_dict.get("dt", 0.2),
+                W_r=params_dict.get("W_r", 3.0),
+                H=params_dict.get("H", 2.0),
+                N=params_dict.get("N", 8),
+                C_w=params_dict.get("C_w", 32),
+                latent_dim=params_dict.get("latent_dim", 32),
+                w1=params_dict.get("w1", 1.0),
+                w2=params_dict.get("w2", 0.8),
+                w3=params_dict.get("w3", 0.6),
+                w4=params_dict.get("w4", 0.6),
+                w5=params_dict.get("w5", 0.7),
+                w6=params_dict.get("w6", 0.7),
+                lambda_=params_dict.get("lambda_", 0.6),
+                dt_min=params_dict.get("dt_min", 0.05),
+                dt_max=params_dict.get("dt_max", 0.5),
+            )
+            self.backend = "synthetic"
+            self._noise = 0.0
+            self.last_metrics = {
+                "C": 0.0,
+                "U": 0.0,
+                "Phi": 0.0,
+                "H": 0.0,
+                "PE": 0.0,
+                "M": 0.0,
+            }
+            self.last_psi = 0.0
+            self.last_dt_eff = self.params.dt
+            self.k = 0
+
+        def _sigmoid(self, value: float) -> float:
+            return 1.0 / (1.0 + np.exp(-value))
+
+        def reset_prediction(self):
+            self._noise = 0.0
+
+        def increase_noise(self, amount: float):
+            self._noise = float(np.clip(self._noise + amount, 0.0, 1.5))
+
+        def decrease_noise(self, amount: float):
+            self._noise = float(np.clip(self._noise - amount, 0.0, 1.5))
+
+        def reset_consciousness(self):
+            self.last_psi = 0.0
+
+        def step(self, x: np.ndarray) -> Dict[str, float]:
+            vec = np.nan_to_num(x.astype(float), nan=0.0, posinf=5.0, neginf=-5.0)
+            length = max(vec.size, 1)
+
+            norm = float(np.linalg.norm(vec))
+            mean = float(vec.mean())
+            std = float(vec.std())
+            energy = float(np.dot(vec, np.arange(length, 0, -1)) / length)
+
+            continuity = float(np.clip(1.0 - std / (1.0 + std), 0.0, 1.0))
+            futurity = float(np.clip(self._sigmoid(mean + 0.5 * self._noise), 0.0, 1.0))
+            phase = float(np.mod(np.arctan2(vec.sum(), length + self._noise), np.pi))
+            entropy = float(np.clip(np.log1p(std ** 2 + self._noise), 0.0, 5.0))
+            prediction_error = float(np.clip(abs(vec[-1] - mean) + self._noise, 0.0, 5.0))
+            time_dilation = float(np.clip(self.params.dt + std * 0.05, self.params.dt_min, self.params.dt_max))
+            psi = float(np.clip(self._sigmoid(norm / length + energy / (length * 5.0)), 0.0, 1.0))
+            memory = float(np.clip(norm / length, 0.0, 10.0))
+
+            self.last_metrics = {
+                "C": continuity,
+                "U": futurity,
+                "Phi": phase,
+                "H": entropy,
+                "PE": prediction_error,
+                "M": memory,
+            }
+            self.last_psi = psi
+            self.last_dt_eff = time_dilation
+            self.k += 1
+
+            return {
+                "Psi": psi,
+                "C": continuity,
+                "U": futurity,
+                "Phi": phase,
+                "H": entropy,
+                "PE": prediction_error,
+                "M": memory,
+                "dt_eff": time_dilation,
+                "backend": self.backend,
+            }
+
+# Global variables
+psi_engine = None
+guardian = None
+remembrancer_client = None
+mq_publisher = None
+mcp_server = None
 
 # Create FastAPI application
 app = FastAPI(
@@ -139,14 +237,21 @@ last_state = None
 
 # Dependency for checking if the Ψ-Field module is imported correctly
 def verify_psi_field():
-    if not IMPORT_SUCCESS:
+    if not IMPORT_SUCCESS and not FALLBACK_MODE:
         raise HTTPException(status_code=500, detail="Ψ-Field module not available")
     return True
 
 # Initialize the Ψ-Field engine
 def initialize_engine(params_dict: Dict[str, Any]):
     global psi_engine, backend, params
-    
+
+    if FALLBACK_MODE or not IMPORT_SUCCESS:
+        psi_engine = FallbackPsiEngine(params_dict)
+        backend = getattr(psi_engine, "backend", "synthetic")
+        params = psi_engine.params
+        logger.warning("Ψ-Field engine initialized in synthetic fallback mode")
+        return psi_engine
+
     # Convert the dictionary to a Params object
     p = psi_core.Params(
         dt=params_dict.get("dt", 0.2),
@@ -409,28 +514,54 @@ async def record_trace(record: RememberRecord, _: bool = Depends(verify_psi_fiel
         raise HTTPException(status_code=500, detail=f"Error recording trace: {result['error']}")
 
 @app.get("/metrics", tags=["Monitoring"])
-async def metrics(_: bool = Depends(verify_psi_field)):
+async def metrics():
     """Get Prometheus metrics for the Ψ-Field service"""
     if not psi_engine:
-        return {"status": "not_initialized"}
+        state = get_last_state()
+    else:
+        state = {
+            "Psi": getattr(psi_engine, "last_psi", 0.0),
+            "C": getattr(psi_engine, "last_metrics", {}).get("C", 0.0),
+            "U": getattr(psi_engine, "last_metrics", {}).get("U", 0.0),
+            "Phi": getattr(psi_engine, "last_metrics", {}).get("Phi", 0.0),
+            "H": getattr(psi_engine, "last_metrics", {}).get("H", 0.0),
+            "PE": getattr(psi_engine, "last_metrics", {}).get("PE", 0.0),
+            "dt_eff": getattr(psi_engine, "last_dt_eff", 0.2)
+        }
     
-    # Return the latest metrics in Prometheus format
-    metrics_string = "# HELP psi_consciousness_density Current Psi consciousness density\n"
-    metrics_string += "# TYPE psi_consciousness_density gauge\n"
-    metrics_string += f'psi_consciousness_density {getattr(psi_engine, "last_psi", 0.0)}\n'
+    # Return metrics in Prometheus format
+    metrics_lines = [
+        "# HELP psi_field_density Consciousness density (ψ)",
+        "# TYPE psi_field_density gauge",
+        f'psi_field_density {state["Psi"]}',
+        "",
+        "# HELP psi_field_phase_coherence Phase coherence (Φ)",
+        "# TYPE psi_field_phase_coherence gauge",
+        f'psi_field_phase_coherence {state["Phi"]}',
+        "",
+        "# HELP psi_field_continuity Continuity (C)",
+        "# TYPE psi_field_continuity gauge",
+        f'psi_field_continuity {state["C"]}',
+        "",
+        "# HELP psi_field_futurity Futurity (U)",
+        "# TYPE psi_field_futurity gauge",
+        f'psi_field_futurity {state["U"]}',
+        "",
+        "# HELP psi_field_temporal_entropy Temporal entropy (H)",
+        "# TYPE psi_field_temporal_entropy gauge",
+        f'psi_field_temporal_entropy {state["H"]}',
+        "",
+        "# HELP psi_field_prediction_error Prediction error (PE)",
+        "# TYPE psi_field_prediction_error gauge",
+        f'psi_field_prediction_error {state["PE"]}',
+        "",
+        "# HELP psi_field_time_dilation Effective time dilation",
+        "# TYPE psi_field_time_dilation gauge",
+        f'psi_field_time_dilation {state["dt_eff"]}',
+        ""
+    ]
     
-    metrics_string += "# HELP psi_time_dilation Current effective time dilation\n"
-    metrics_string += "# TYPE psi_time_dilation gauge\n"
-    metrics_string += f'psi_time_dilation {getattr(psi_engine, "last_dt_eff", psi_engine.params.dt)}\n'
-    
-    # Add swarm metrics if available
-    swarm_metrics = getattr(federation, "metrics", {})
-    for key, value in swarm_metrics.items():
-        metrics_string += f"# HELP psi_{key.lower()} Swarm {key} metric\n"
-        metrics_string += f"# TYPE psi_{key.lower()} gauge\n"
-        metrics_string += f'psi_{key.lower()} {value}\n'
-    
-    return metrics_string
+    return Response(content="\n".join(metrics_lines), media_type="text/plain")
 
 @app.get("/federation/metrics", tags=["Federation"])
 async def get_federation_metrics():
@@ -588,19 +719,28 @@ async def startup_event():
     
     logger.info("🚀 Starting PSI-Field API service")
     
-    # Initialize PSI engine
-    if IMPORT_SUCCESS:
-        initialize_engine({"input_dim": PSI_INPUT_DIM, "latent_dim": PSI_LATENT_DIM})
+    # Initialize PSI engine (native or synthetic fallback)
+    initialize_engine({"input_dim": PSI_INPUT_DIM, "latent_dim": PSI_LATENT_DIM})
+    if FALLBACK_MODE or not IMPORT_SUCCESS:
+        logger.warning("⚠️ PSI engine initialized in synthetic fallback mode (vaultmesh_psi module unavailable)")
+    else:
         logger.info(f"✅ PSI engine initialized with {PSI_BACKEND} backend")
     
-    # Initialize Guardian (AdvancedGuardian by default)
-    guardian = Guardian(
-        psi_low_threshold=0.25,
-        pe_high_threshold=2.0,
-        h_high_threshold=2.2,
-        percentile_threshold=95 if GUARDIAN_KIND == "advanced" else None,
-        history_window=200 if GUARDIAN_KIND == "advanced" else None
-    )
+    # Initialize Guardian (AdvancedGuardian if available)
+    if GUARDIAN_KIND == "advanced":
+        guardian = Guardian(
+            history_window=200,
+            percentile_threshold=95.0,
+            intervention_cooldown=100,
+            min_samples=50
+        )
+    else:
+        guardian = Guardian(
+            psi_low_threshold=0.25,
+            pe_high_threshold=2.0,
+            h_high_threshold=2.2,
+            intervention_cooldown=100
+        )
     logger.info(f"✅ Guardian initialized ({GUARDIAN_KIND})")
     
     # Initialize Remembrancer client

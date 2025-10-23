@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(tree:*)",
+      "Bash(kubectl -n aurora-staging delete deployment scheduler)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

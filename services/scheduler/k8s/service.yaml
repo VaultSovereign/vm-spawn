@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler
+  namespace: aurora-staging
+  labels:
+    app: scheduler
+    component: layer-2
+    service: scheduler
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9091"
+    prometheus.io/path: "/metrics"
+spec:
+  type: ClusterIP
+  selector:
+    app: scheduler
+  ports:
+  - name: metrics
+    port: 9091
+    targetPort: 9091
+    protocol: TCP

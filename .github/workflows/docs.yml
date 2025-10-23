@@ -1,0 +1,29 @@
+name: Docs Validation
+
+on:
+  pull_request:
+    paths:
+      - '**/*.md'
+      - 'docs/**'
+  push:
+    branches: [ main ]
+    paths:
+      - '**/*.md'
+      - 'docs/**'
+
+jobs:
+  docs-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
+      - name: Docs link + semantics checks
+        run: |
+          make docs-check
+

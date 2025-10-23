@@ -1,0 +1,52 @@
+nameOverride: ""
+fullnameOverride: ""
+
+image:
+  repository: vaultmesh/workstation
+  tag: v1.2.0
+  pullPolicy: IfNotPresent
+
+replicaCount: 0
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: 8080
+
+gpu:
+  enabled: true
+  resource: "1"
+
+nodeSelector:
+  gpu: h100
+  confidential: "true"
+
+tolerations:
+  - key: "gpu"
+    operator: "Equal"
+    value: "true"
+    effect: "NoSchedule"
+
+annotations: {}
+labels: {}
+
+readProof:
+  endpoint: "http://vaultmesh-readproof.default.svc.cluster.local/record"
+
+keda:
+  enabled: true
+  minReplicaCount: 0
+  maxReplicaCount: 10
+  subscriptionName: vaultmesh-jobs
+  messagesPerWorker: 10
+  cooldownPeriod: 300
+
+serviceAccount:
+  create: true
+  name: ""
+
+resources:
+  limits:
+    nvidia.com/gpu: 1
+  requests: {}
+

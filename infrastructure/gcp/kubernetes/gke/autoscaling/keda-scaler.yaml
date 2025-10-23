@@ -1,0 +1,87 @@
+# KEDA ScaledObject for VaultMesh GKE
+# Enables scaling from zero based on Google Cloud Pub/Sub queue depth
+
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: vaultmesh-infer-scaler
+  namespace: default
+  labels:
+    app: vaultmesh-infer
+    version: v1
+spec:
+  scaleTargetRef:
+    name: vaultmesh-infer
+    kind: Deployment
+  
+  minReplicaCount: 0
+  maxReplicaCount: 50
+  
+  fallback:
+    failureThreshold: 3
+    replicas: 0
+  
+  cooldownPeriod: 300
+  
+  triggers:
+    - type: gcp-pubsub
+      metadata:
+        subscriptionName: vaultmesh-jobs
+        mode: MessageCount
+        value: "10"
+        activationThreshold: "5"
+      authenticationRef:
+        name: pubsub-auth
+
+---
+
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: pubsub-auth
+  namespace: default
+spec:
+  serviceAccountName: vaultmesh-agent
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: vaultmesh-scaler-role
+  namespace: default
+rules:
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - deployments/scale
+    verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - get
+      - list
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: vaultmesh-scaler-binding
+  namespace: default
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: vaultmesh-scaler-role
+subjects:
+  - kind: ServiceAccount
+    name: keda-operator
+    namespace: keda

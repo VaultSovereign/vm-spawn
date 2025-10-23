@@ -1,0 +1,21 @@
+{{- if .Values.keda.enabled }}
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: {{ include "vaultmesh.fullname" . }}-scaler
+  labels:
+    app.kubernetes.io/name: {{ include "vaultmesh.name" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  scaleTargetRef:
+    name: {{ include "vaultmesh.fullname" . }}
+  minReplicaCount: {{ .Values.keda.minReplicaCount }}
+  maxReplicaCount: {{ .Values.keda.maxReplicaCount }}
+  cooldownPeriod: {{ .Values.keda.cooldownPeriod }}
+  triggers:
+    - type: gcp-pubsub
+      metadata:
+        subscriptionName: {{ .Values.keda.subscriptionName | quote }}
+        value: {{ .Values.keda.messagesPerWorker | quote }}
+{{- end }}
+

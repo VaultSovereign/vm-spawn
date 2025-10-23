@@ -1,0 +1,165 @@
+groups:
+  - name: vaultmesh_aggregations
+    interval: 30s
+    rules:
+      # ========================================
+      # ψ-FIELD RECORDING RULES
+      # ========================================
+
+      - record: psi:density:avg
+        expr: avg(psi_field_density)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:density:min
+        expr: min(psi_field_density)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:density:max
+        expr: max(psi_field_density)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:prediction_error:avg
+        expr: avg(psi_field_prediction_error)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:prediction_error:max
+        expr: max(psi_field_prediction_error)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:pod_drift:abs
+        expr: abs(max(psi_field_prediction_error) - min(psi_field_prediction_error))
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:coherence:avg
+        expr: avg(psi_field_phase_coherence)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:continuity:avg
+        expr: avg(psi_field_continuity)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:entropy:avg
+        expr: avg(psi_field_temporal_entropy)
+        labels:
+          layer: l3
+          component: psi-field
+
+      - record: psi:futurity:avg
+        expr: avg(psi_field_futurity)
+        labels:
+          layer: l3
+          component: psi-field
+
+      # ========================================
+      # AURORA TREATY RECORDING RULES
+      # ========================================
+
+      - record: treaty:fill_rate:avg
+        expr: avg(treaty_fill_rate)
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:fill_rate:min
+        expr: min(treaty_fill_rate)
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:rtt:avg
+        expr: avg(treaty_rtt_ms)
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:rtt:p95
+        expr: |
+          histogram_quantile(0.95,
+            rate(treaty_rtt_ms_bucket[5m])
+          )
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:rtt:p99
+        expr: |
+          histogram_quantile(0.99,
+            rate(treaty_rtt_ms_bucket[5m])
+          )
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:drop_rate:5m
+        expr: |
+          sum(rate(treaty_dropped_requests[5m])) /
+          sum(rate(treaty_requests_total[5m]))
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:drop_rate:1h
+        expr: |
+          sum(rate(treaty_dropped_requests[1h])) /
+          sum(rate(treaty_requests_total[1h]))
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:requests:rate_5m
+        expr: sum(rate(treaty_requests_total[5m]))
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:requests:rate_1h
+        expr: sum(rate(treaty_requests_total[1h]))
+        labels:
+          layer: l3
+          component: aurora
+
+      - record: treaty:provenance:avg
+        expr: avg(treaty_provenance_coverage)
+        labels:
+          layer: l3
+          component: aurora
+
+      # ========================================
+      # CROSS-COMPONENT HEALTH SCORE
+      # ========================================
+
+      - record: vaultmesh:health_score
+        expr: |
+          (
+            (psi:density:avg > 0.3 and psi:density:avg < 0.8) * 0.3 +
+            (treaty:fill_rate:avg > 0.8) * 0.4 +
+            (treaty:rtt:avg < 200) * 0.3
+          )
+        labels:
+          layer: platform
+          component: vaultmesh
+
+      - record: vaultmesh:l3_availability
+        expr: |
+          avg(
+            up{job="kubernetes-service-endpoints",service=~"psi-field|aurora-metrics-exporter"}
+          )
+        labels:
+          layer: l3
+          component: vaultmesh

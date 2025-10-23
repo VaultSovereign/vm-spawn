@@ -1,0 +1,75 @@
+version: 1
+sacred_constants:
+  phi: 1.6180339887
+  pi: 3.1415926535
+  e: 2.7182818284
+  sqrt2: 1.4142135623
+north_star: "VaultMesh as the Civilization Ledger — law, memory, economy, guardianship."
+
+canonical:
+  infrastructure:
+    gcp:
+      terraform: infrastructure/gcp/terraform/
+      kubernetes: infrastructure/gcp/kubernetes/
+      schemas: infrastructure/gcp/schemas/
+      docs: infrastructure/gcp/docs/
+    aws:
+      eks: infrastructure/aws/eks/
+      terraform: infrastructure/aws/terraform/
+    common_k8s: infrastructure/kubernetes/common/
+  services:
+    shape: ["src", "tests", "k8s", "Dockerfile", "README.md"]
+  docs:
+    index: docs/README.md
+    remembrancer_index: docs/REMEMBRANCER.md
+  packages:
+    c3l: packages/c3l/
+  archive:
+    completions: archive/completion-records/20251023/
+
+limits:
+  root_markdown_max: 15
+
+rules:
+  - id: no-duplicate-content-outside-archive
+    description: "Identical files may exist only if all but one are in archive/."
+  - id: services-tests-plural
+    description: "Services must use 'tests/' not 'test/'."
+  - id: gcp-one-canonical
+    description: "GCP/GKE configs live only under infrastructure/gcp/..."
+
+allowlist_root:
+  - README.md
+  - START_HERE.md
+  - LICENSE
+  - SECURITY.md
+  - AGENTS.md
+  - CONTRIBUTING.md
+  - CHANGELOG.md
+  - VERSION_TIMELINE.md
+  - STATUS.md
+  - Makefile
+  - spawn.sh
+  - verify.sh
+  - .gitignore
+  - SOVEREIGN_LORE_CODEX_V1.md
+  - PROPOSAL_9_9_EXCELLENCE.md
+  - DIRECTORY_ASSESSMENT_REPORT.md
+
+redirects:
+  - from: ["docs/gcp/**", "docs/gke/**", "deployment/**"]
+    to: "infrastructure/gcp/**"
+
+alchemical_phases:
+  nigredo:
+    description: "Dissolution — Archive root clutter, establish canonical infra"
+    priority: P0
+  albedo:
+    description: "Purification — Standardize services, unify docs"
+    priority: P1
+  citrinitas:
+    description: "Transmutation — Merge deployment/infrastructure, establish packages"
+    priority: P1
+  rubedo:
+    description: "Perfection — Categorize archives, expand examples"
+    priority: P2
