@@ -40,7 +40,7 @@ cd vm-spawn
 
 # 2. Verify
 ./SMOKE_TEST.sh
-# Expected: 19/19 PASSED ✅
+# Expected: 26/26 PASSED ✅
 
 # 3. Spawn a service
 ./spawn.sh my-service service
@@ -59,13 +59,13 @@ make test
 
 ### Core System
 ```
-spawn.sh                    ⭐ v2.4-MODULAR (the perfect one)
-├── Calls 9 modular generators
+spawn.sh                    ⭐ v2.4-MODULAR (enhanced)
+├── Calls 11 modular generators
 ├── Pre-flight validation
 ├── Creates working services
-└── Smoke tested (19/19 passing)
+└── Smoke tested (26/26 core + 7/7 scheduler passing)
 
-generators/ (9 files)       ⭐ Extracted & tested
+generators/ (11 files)      ⭐ Extracted & tested
 ├── source.sh              → main.py + requirements.txt
 ├── tests.sh               → pytest suite
 ├── gitignore.sh           → git patterns

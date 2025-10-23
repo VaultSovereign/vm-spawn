@@ -3,8 +3,10 @@
 **Domain:** `vaultmesh.cloud`
 **Cloud:** AWS (EKS / Route 53 / ACM / ALB / S3)
 **Status:** GA v1.0.0 (Week-1 → Week-3 rollout path)
-**Rating:** 9.2/10 → Target 9.65/10 (Week 1) → 9.9/10 (Week 3)
+**Rating (Aurora sub-program):** 9.2/10 → Target 9.65/10 (Week 1) → 9.9/10 (Week 3)
 **Execution Plan:** See [AURORA_99_PROPOSAL.md](AURORA_99_PROPOSAL.md) for complete roadmap
+
+> **Note:** Overall VaultMesh program rating is **10.0/10** (per README.md); this document tracks **Aurora's** cloud rollout KPIs specifically.
 
 **Quick Links:**
 - [README.md](README.md) — Quick start & value proposition

@@ -12,7 +12,8 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 
 1. **Spawn Elite** — Infrastructure forge (spawns production-ready microservices)
 2. **The Remembrancer** — Cryptographic memory layer (GPG + RFC 3161 + Merkle audit)
-3. **DAO Governance Pack** — Governance overlay (optional plugin for multi-stakeholder DAOs)
+3. **Aurora** — Distributed coordination (treaty routing, federation, SLOs)
+   - The **DAO Governance Pack** is an **optional plugin overlay** (documentation-only), not a separate layer.
 
 **Key Principle:** Each layer is **independent, modular, and zero-coupled**.
 
@@ -24,10 +25,11 @@ VaultMesh is a **three-layer sovereign infrastructure system**:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│  Layer 3: DAO Governance Pack (OPTIONAL PLUGIN)             │
-│  ├── Pure documentation overlay                             │
-│  ├── No code coupling to layers 1-2                         │
-│  └── Uses existing tools from Layer 2                       │
+│  Layer 3: AURORA (DISTRIBUTED COORDINATION)                 │
+│  ├── Treaty-based routing & federation                      │
+│  ├── SLO tracking, metrics, GPU pool orchestration          │
+│  └── Uses receipts from Layer 2 (Remembrancer)              │
+│  Note: DAO Governance Pack = optional plugin overlay        │
 └─────────────────────────────────────────────────────────────┘
                               ↓ uses (one-way)
 ┌─────────────────────────────────────────────────────────────┐
@@ -212,16 +214,19 @@ make covenant
 
 ### **2. Merkle Root (Tamper Detection)**
 
-Every memory operation updates a **Merkle root**:
-
-```
-Current Root: d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea
-```
+Every memory operation updates a **Merkle root**. The canonical Merkle root is maintained in `docs/REMEMBRANCER.md`.
 
 **Verify audit log integrity:**
 ```bash
 ./ops/bin/remembrancer verify-audit
 # Expected: ✅ Audit log integrity verified
+# Output shows current Merkle root
+```
+
+**Check current root:**
+```bash
+grep -E "Merkle Root:" docs/REMEMBRANCER.md
+# Single source of truth for current root
 ```
 
 ### **3. Genesis (The Anchor Point)**
@@ -715,8 +720,8 @@ See `DAO_GOVERNANCE_PACK/operator-runbook.md` for:
 ☐ Run ./SMOKE_TEST.sh (full validation)
 ☐ Understand layer boundaries (1=forge, 2=memory, 3=governance)
 ☐ Check docs/REMEMBRANCER.md (canonical memory with Phase I-V)
-☐ Know Merkle root: d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea
-☐ Verify zero coupling (DAO pack is isolated)
+☐ Verify Merkle root: ./ops/bin/remembrancer verify-audit (see docs/REMEMBRANCER.md for canonical root)
+☐ Verify zero coupling (DAO pack is plugin overlay, Aurora is Layer 3)
 ☐ Run make covenant (validate four covenants)
 ☐ Check VERSION_TIMELINE.md (understand history)
 ☐ Review scheduler service (services/scheduler/README.md)
@@ -741,6 +746,6 @@ Rubedo (Completion)       → Genesis ceremony prepared  ✅
 ---
 
 **Last Updated:** 2025-10-23
-**Merkle Root:** `d5c64aee1039e6dd71f5818d456cce2e48e6590b6953c13623af6fa1070decea`
+**Merkle Root:** See `docs/REMEMBRANCER.md` (canonical source)
 **Version:** v4.1-genesis+ (Enhanced)
 **Status:** ✅ Complete + Enhanced (Scheduler 10/10, Phase V verified)
