@@ -1,0 +1,15 @@
+mesh:
+  node_id: "did:vm:node:vm-spawn-a"
+  listen:
+    http: "0.0.0.0:8088"
+namespaces:
+  dao:vaultmesh:
+    peers: ["did:vm:node:vm-spawn-b","did:vm:node:vm-spawn-c"]
+    verify:
+      evm_confirmations: 3
+      btc_confirmations: 1
+  fin:clearing:
+    peers: ["did:vm:node:clearing-eu","did:vm:node:clearing-us"]
+    verify:
+      evm_confirmations: 12
+      btc_confirmations: 6

@@ -3,6 +3,7 @@
 
 # VaultMesh Covenants
 include ops/make.d/covenants.mk
+include ops/make.d/federation.mk
 
 .PHONY: help codex-seal codex-verify test health codegen verify-receipts seal verify-finalized anchor-evm anchor-btc anchor-tsa verify-online scheduler governance-propose-cadence
 
