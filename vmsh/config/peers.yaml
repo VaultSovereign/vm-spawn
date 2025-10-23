@@ -1,0 +1,9 @@
+peers:
+  - did: "did:vm:node:vm-spawn-b"
+    url: "https://peer-b.vaultmesh.net:8088"
+    roles: ["announce","serve","request"]
+    keys:
+      verify: "ed25519:REPLACE_ME"
+  - did: "did:vm:node:vm-spawn-c"
+    url: "https://peer-c.vaultmesh.net:8088"
+    roles: ["announce","serve","request"]

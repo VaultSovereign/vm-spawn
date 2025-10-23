@@ -1,7 +1,0 @@
-{
-  "id": "demo-001",
-  "ops": [
-    { "type": "Add", "data": { "x": 5 } },
-    { "type": "Mul", "data": { "x": 7 } }
-  ]
-}
