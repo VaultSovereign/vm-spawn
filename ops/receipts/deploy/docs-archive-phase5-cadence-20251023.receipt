@@ -1,0 +1,23 @@
+---
+type: deployment
+component: docs-archive
+version: phase5-cadence-20251023
+timestamp: 2025-10-23T01:05:31Z
+evidence:
+  artifact: archive/completion-records/INDEX.md
+  sha256: 66e8b91951670eee345785ddbbeb9cb3bc203b51
+status: active
+verified_by: remembrancer-cli
+---
+
+This receipt cryptographically attests to the deployment of:
+
+  Component: docs-archive
+  Version: phase5-cadence-20251023
+  Timestamp: 2025-10-23T01:05:31Z
+  SHA256: 66e8b91951670eee345785ddbbeb9cb3bc203b51
+
+Verification:
+  shasum -a 256 archive/completion-records/INDEX.md
+
+This memory is recorded in the VaultMesh Covenant Index.
