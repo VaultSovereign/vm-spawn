@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
       - name: analytics
-        image: vaultmesh/analytics:v1.0.0
-        imagePullPolicy: IfNotPresent
+        image: us-central1-docker.pkg.dev/vm-spawn/vaultmesh/analytics:1.0.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
           name: http
