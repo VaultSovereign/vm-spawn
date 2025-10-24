@@ -17,10 +17,11 @@ spec:
 
   # Triggers
   triggers:
-    # Google Cloud Pub/Sub trigger
+    # Google Cloud Pub/Sub trigger (using Workload Identity)
     - type: gcp-pubsub
+      authenticationRef:
+        name: gcp-pubsub-workload-identity
       metadata:
         subscriptionName: vaultmesh-scheduler-jobs-sub
         subscriptionSize: "5"  # 1 pod per 5 messages
         mode: SubscriptionSize
-        credentialsFromEnv: GOOGLE_APPLICATION_CREDENTIALS_JSON
