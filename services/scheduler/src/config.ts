@@ -1,7 +1,12 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { config as loadDotenv } from 'dotenv';
 
 loadDotenv();
+
+// ESM-compatible directory resolution
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const CONFIG = {
   ROOT: process.env.VMSH_ROOT ? path.resolve(process.env.VMSH_ROOT) : path.resolve(path.join(__dirname, '../../..')),
