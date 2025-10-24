@@ -5,6 +5,14 @@ secrets/
 *.key
 *.pem
 !ops/certs/*.pem
+
+# Environment variables and credentials
+.env
+.env.*
+*.env
+!.env.example
+cloudflare.env
+.vaultmesh/cloudflare.env
 # Oracle data (regenerated)
 ops/oracle/providers.json
 # Reports (signed artifacts tracked separately)
@@ -33,13 +41,17 @@ venv/
 # Node
 node_modules/
 
-# IDE
+# IDE and AI assistants
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 .obsidian/
+.amazonq/
+.claude/
+.continue/
+.cursor/
 # OS
 .DS_Store
 Thumbs.db
@@ -47,10 +59,11 @@ Thumbs.db
 # Temporary
 tmp/
 *.tmp
-.continue/
 
-# Amazon Q Rules (local only)
-.amazonq/rules/EVOLUTION_PROPOSAL.md
+# Generated reports and data files
+*_report.json
+*_slo_*.json
+codex-*.json
 .amazonq/rules/PROOF_CHAIN_COMMANDS.sh
 
 # VaultMesh bundles / artifacts

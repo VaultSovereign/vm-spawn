@@ -1,7 +1,9 @@
-# VaultMesh Scheduler Service (10/10 Hardening)
+# VaultMesh Scheduler Service (Production Ready – Tests Pending Fix)
 
 Automates cadence-based anchoring per namespace with structured logging, Prometheus metrics,
-health endpoints, adaptive φ-backoff, async I/O, config hot-reload (hash-based), and test suites.
+health endpoints, adaptive φ-backoff, async I/O, and config hot-reload (hash-based).
+> **Status:** Code is production-safe, but Jest currently points to `test/` instead of `tests/`.  
+> Fix the config before trusting `npm test`, and integrate the Anchors service once its writers are finalized.
 
 ## Quickstart
 ```bash
@@ -21,6 +23,7 @@ npm run dev
 
 ## Testing
 ```bash
+# NOTE: Update jest.config.ts (roots -> "tests") before running.
 npm test
 npm run test:unit
 npm run test:integration
@@ -70,7 +73,7 @@ GET `/health` returns:
   - Integrity (Merkle updates via anchoring)
   - Proof-Chain (TSA/blockchain anchoring)
 - **Generated via**: `./spawn.sh scheduler service` (enhanced with monitoring)
-- **Uses**: `ops/bin/anchor` for actual anchoring operations
+- **Uses**: `npm --prefix services/anchors run anchor:*` scripts for anchoring (requires Anchors service configuration)
 
 ## Adaptive φ-Backoff
 
@@ -106,4 +109,3 @@ Capped at MAX_BACKOFF attempts (default 7).
 ## Federation Support (Phase V)
 
 Future enhancement: sync scheduler state with peers via gossip protocol for distributed anchoring coordination.
-

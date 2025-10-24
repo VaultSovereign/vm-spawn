@@ -1,0 +1,88 @@
+# VaultMesh Ingress Configuration
+# Exposes psi-field and scheduler services via Google Cloud Load Balancer
+# with Google-managed SSL certificates
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultmesh-ingress
+  namespace: vaultmesh
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    networking.gke.io/managed-certificates: "vaultmesh-cert"
+    kubernetes.io/ingress.allow-http: "false"  # HTTPS only after cert provisioning
+spec:
+  rules:
+  # Psi-Field subdomain
+  - host: psi-field.vaultmesh.cloud
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: psi-field
+            port:
+              number: 8000
+
+  # Scheduler subdomain
+  - host: scheduler.vaultmesh.cloud
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: scheduler
+            port:
+              number: 9091
+
+  # Aurora alias (points to scheduler)
+  - host: aurora.vaultmesh.cloud
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: scheduler
+            port:
+              number: 9091
+
+  # Main API endpoint (unified access)
+  - host: api.vaultmesh.cloud
+    http:
+      paths:
+      - path: /psi-field
+        pathType: Prefix
+        backend:
+          service:
+            name: psi-field
+            port:
+              number: 8000
+      - path: /scheduler
+        pathType: Prefix
+        backend:
+          service:
+            name: scheduler
+            port:
+              number: 9091
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: psi-field
+            port:
+              number: 8000
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: vaultmesh-cert
+  namespace: vaultmesh
+spec:
+  domains:
+    - api.vaultmesh.cloud
+    - psi-field.vaultmesh.cloud
+    - scheduler.vaultmesh.cloud
+    - aurora.vaultmesh.cloud

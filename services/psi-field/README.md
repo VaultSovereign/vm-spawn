@@ -1,12 +1,12 @@
-# Ψ-Field Evolution Algorithm
+# Ψ-Field Stability Metrics Service
 
 **Version:** v1.0.0
-**Status:** Experimental
+**Status:** Operational (stability scoring)
 **Integration:** VaultMesh v4.1-genesis+
 
 ## Overview
 
-The Ψ-Field Evolution Algorithm is a consciousness density control system that integrates with VaultMesh's three-layer architecture. It treats "consciousness density" (Ψ) as a control signal emergent from memory-time dynamics, prediction, and phase coherence.
+The Ψ-Field service aggregates per-agent telemetry into a **stability score** (Ψ) that reflects how coherent, anticipatory, and low-noise the system is. It does **not** implement general “consciousness” or learning—it computes a weighted anomaly signal and applies Guardian playbooks (Nigredo/Albedo) when stability degrades. Outputs feed Remembrancer, Aurora federation metrics, and VaultMesh Analytics.
 
 ## Architecture Integration
 
@@ -26,7 +26,7 @@ The Ψ-Field Evolution Algorithm is a consciousness density control system that 
 4. **Temporal Entropy (H)**: Uncertainty across retained→predicted spans
 5. **Prediction Error (PE)**: Mismatch between realized and expected next latent
 
-### Consciousness Density (Ψ)
+### Stability Score (Ψ)
 
 ```
 ρ = dt / (ε + M)                 // ε small > 0
@@ -40,14 +40,18 @@ Where:
 
 ## Usage
 
-### API Endpoints
+### API Endpoints (HTTP, FastAPI)
 
-- `POST /psi/step`: Execute one Ψ-field evolution step
-- `GET /psi/params`: Get current parameters
-- `PUT /psi/params`: Update parameters
-- `POST /psi/init`: Initialize with configuration
-- `GET /health`: Health check
-- `GET /metrics`: Prometheus metrics
+- `POST /init` – Initialize engine parameters
+- `GET /params` – Inspect current parameters
+- `GET /state` – Read latest Ψ/C/U/Φ/H/PE/M snapshot
+- `POST /step` – Submit an observation vector; returns updated metrics
+- `GET /health` – Health check
+- `GET /metrics` – Prometheus metrics
+- `GET /guardian/status` / `GET /guardian/statistics` – Guardian telemetry
+- `POST /guardian/nigredo` / `POST /guardian/albedo` – Manual guard playbooks
+- `POST /record` / `POST /remembrancer/record` – Explicit Remembrancer recording hooks
+- `GET /federation/metrics` / `POST /federation/swarm` – Swarm aggregation
 
 ### Federation Endpoints
 
@@ -68,10 +72,10 @@ curl -X POST http://localhost:8000/step -H "Content-Type: application/json" \
 
 ## Remembrancer Integration
 
-The Ψ-Field records two types of traces to the Remembrancer:
+Ψ-Field can emit two trace types to the Remembrancer CLI/API:
 
-1. **Memory traces**: Consolidated experiences when Ψ is high or PE is in optimal range
-2. **Protention traces**: Future rollouts for cross-agent prediction alignment
+1. **Memory traces**: Consolidated experiences when stability is in-range
+2. **Protention traces**: Forward projections for cross-agent alignment
 
 ### Command Examples
 

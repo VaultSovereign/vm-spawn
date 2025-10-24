@@ -1,0 +1,72 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurora-router
+  labels:
+    app: aurora-router
+    component: routing
+    layer: l3
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aurora-router
+  template:
+    metadata:
+      labels:
+        app: aurora-router
+        component: routing
+        layer: l3
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: router
+        image: 509399262563.dkr.ecr.eu-west-1.amazonaws.com/vaultmesh/aurora-router:v1.0.0
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: PORT
+          value: "8080"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: NODE_ENV
+          value: "production"
+        - name: ROUTER_MODE
+          value: "rule-based"
+        - name: PSI_FIELD_URL
+          value: "http://psi-field:8000"
+        - name: PSI_FIELD_ENABLED
+          value: "false"
+        - name: AI_ROUTER_ENABLED
+          value: "false"
+        - name: AI_ROLLOUT_PERCENTAGE
+          value: "0"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 2
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      restartPolicy: Always

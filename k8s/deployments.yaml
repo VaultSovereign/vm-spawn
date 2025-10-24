@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: psi-field
+  namespace: vaultmesh
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: psi-field
+  template:
+    metadata:
+      labels:
+        app: psi-field
+    spec:
+      serviceAccountName: vaultmesh-worker
+      containers:
+      - name: psi-field
+        image: us-central1-docker.pkg.dev/vm-spawn/vaultmesh/psi-field:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: PUBSUB_SUBSCRIPTION
+          value: "projects/vm-spawn/subscriptions/vaultmesh-psi-jobs-sub"
+        - name: GCP_PROJECT_ID
+          value: "vm-spawn"
+        resources:
+          requests:
+            cpu: "500m"
+            memory: "512Mi"
+          limits:
+            cpu: "1000m"
+            memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: psi-field
+  namespace: vaultmesh
+spec:
+  selector:
+    app: psi-field
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scheduler
+  namespace: vaultmesh
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: scheduler
+  template:
+    metadata:
+      labels:
+        app: scheduler
+    spec:
+      serviceAccountName: vaultmesh-worker
+      containers:
+      - name: scheduler
+        image: us-central1-docker.pkg.dev/vm-spawn/vaultmesh/scheduler:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PUBSUB_SUBSCRIPTION
+          value: "projects/vm-spawn/subscriptions/vaultmesh-scheduler-jobs-sub"
+        - name: GCP_PROJECT_ID
+          value: "vm-spawn"
+        resources:
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: scheduler
+  namespace: vaultmesh
+spec:
+  selector:
+    app: scheduler
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: ClusterIP

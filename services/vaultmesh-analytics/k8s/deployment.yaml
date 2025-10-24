@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vaultmesh-analytics
+  labels:
+    app: vaultmesh-analytics
+    component: ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: vaultmesh-analytics
+  template:
+    metadata:
+      labels:
+        app: vaultmesh-analytics
+        component: ui
+    spec:
+      containers:
+      - name: analytics
+        image: vaultmesh/analytics:v1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: NEXT_PUBLIC_PSI_FIELD_URL
+          value: "http://psi-field:8000"
+        - name: NEXT_PUBLIC_AURORA_ROUTER_URL
+          value: "http://aurora-router:8080"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vaultmesh-analytics
+  labels:
+    app: vaultmesh-analytics
+spec:
+  type: ClusterIP
+  ports:
+  - port: 3000
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    app: vaultmesh-analytics
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vaultmesh-analytics
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: analytics.vaultmesh.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vaultmesh-analytics
+            port:
+              number: 3000
