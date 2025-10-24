@@ -6,14 +6,27 @@
 
 ## 🚀 Getting Started
 
-- **[START_HERE.md](../START_HERE.md)** — Quick orientation for new users
-- **[README.md](../README.md)** — Main project overview
-- **[AGENTS.md](../AGENTS.md)** — AI agent development guidelines
+- **[START_HERE.md](guides/START_HERE.md)** — Quick orientation for new users
+- **[README.md](../README.md)** — Main project overview (Civilization Engine vision)
+- **[AGENTS.md](architecture/AGENTS.md)** — AI agent development guidelines (27KB master doc)
+- **[AI_AGENT_QUICKSTART.md](architecture/AI_AGENT_QUICKSTART.md)** — Quick start for agent development
+
+---
+
+## 🏛️ Vision & Philosophy
+
+*The Digital Civilization Engine — Infrastructure as Institutional Memory*
+
+- **[SOVEREIGN_LORE_CODEX_V1.md](vision/SOVEREIGN_LORE_CODEX_V1.md)** — Foundation myths and covenant philosophy
+- **[PROPOSAL_9_9_EXCELLENCE.md](vision/PROPOSAL_9_9_EXCELLENCE.md)** — 9/9 Excellence framework
+- **[ALCHEMICAL_EXECUTION_KIT.md](vision/ALCHEMICAL_EXECUTION_KIT.md)** — Execution philosophy
 
 ---
 
 ## 📐 Architecture
 
+- **[AGENTS.md](architecture/AGENTS.md)** — AI agent master documentation (27KB)
+- **[AI_AGENT_QUICKSTART.md](architecture/AI_AGENT_QUICKSTART.md)** — Quick start guide
 - **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** — System architecture overview
 - **[C3L_ARCHITECTURE.md](C3L_ARCHITECTURE.md)** — Critical Civilization Communication Layer
 - **[aurora-architecture.md](aurora-architecture.md)** — Aurora multi-provider routing
@@ -43,6 +56,10 @@
 
 ## ⚙️ Operations
 
+- **[STATUS.md](operations/STATUS.md)** — Current system status
+- **[GCP_DEPLOYMENT_STATUS.md](operations/GCP_DEPLOYMENT_STATUS.md)** — GCP deployment details
+- **[GCP_COST_COMPARISON.md](operations/GCP_COST_COMPARISON.md)** — Cost analysis
+- **[SECURITY_INCIDENT_2025-10-24.md](operations/SECURITY_INCIDENT_2025-10-24.md)** — Security incident log
 - **[OPERATOR_CHECKLIST.md](OPERATOR_CHECKLIST.md)** — Daily operational checklist
 - **[AURORA_RUNBOOK.md](AURORA_RUNBOOK.md)** — Aurora deployment runbook
 - **[REPO_HYGIENE.md](REPO_HYGIENE.md)** — Repository maintenance guide
@@ -82,10 +99,23 @@
 
 ## 📚 Guides & Tutorials
 
+- **[guides/START_HERE.md](guides/START_HERE.md)** — Quick orientation for new users
+- **[guides/GETTING_STARTED_AURORA_ROUTER.md](guides/GETTING_STARTED_AURORA_ROUTER.md)** — Aurora Router setup
+- **[guides/VAULTMESH_ANALYTICS_STATUS.md](guides/VAULTMESH_ANALYTICS_STATUS.md)** — Analytics dashboard guide
 - **[guides/FASTMCP_INSTALLATION.md](guides/FASTMCP_INSTALLATION.md)** — Install FastMCP SDK
 - **[guides/HUGGINGFACE_DEPLOYMENT_PLAN.md](guides/HUGGINGFACE_DEPLOYMENT_PLAN.md)** — Deploy to HuggingFace
 - **[guides/MIGRATION.md](guides/MIGRATION.md)** — Migration procedures
 - **[deployment/RUBBER_DUCKY_PAYLOAD.md](deployment/RUBBER_DUCKY_PAYLOAD.md)** — USB deployment method
+
+---
+
+## 🔮 Evolution & Roadmap
+
+*Experimental features and future direction*
+
+- **[PRODUCTION_ROUTER_ROADMAP.md](evolution/PRODUCTION_ROUTER_ROADMAP.md)** — Aurora Router evolution path
+- **[EXPERIMENTAL_SERVICES.md](evolution/EXPERIMENTAL_SERVICES.md)** — Experimental services catalog
+- **[Phase_VI_Evolution_Plan.md](Phase_VI_Evolution_Plan.md)** — Phase VI features and upgrades
 
 ---
 
@@ -143,4 +173,4 @@ VaultMesh is a self-verifying, self-auditing, self-attesting system. Every docum
 
 ---
 
-*Last updated: 2025-10-23*
+*Last updated: 2025-10-24 — Documentation restructure (PR #20)*
