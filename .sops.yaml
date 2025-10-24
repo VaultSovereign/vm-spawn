@@ -1,0 +1,6 @@
+creation_rules:
+  - path_regex: secrets/.*\.(yaml|yml|json|env)$
+    encrypted_regex: '^(data|stringData|secrets)$'
+    key_groups:
+      - age:
+          - age1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqsym32p

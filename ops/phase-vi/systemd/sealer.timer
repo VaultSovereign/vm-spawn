@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule VaultMesh Sealer anchors
+
+[Timer]
+OnBootSec=5m
+OnUnitActiveSec=30m
+AccuracySec=1m
+Unit=sealer.service
+
+[Install]
+WantedBy=timers.target

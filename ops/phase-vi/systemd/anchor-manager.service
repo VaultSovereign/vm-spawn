@@ -1,0 +1,16 @@
+[Unit]
+Description=VaultMesh Anchor Manager - reconcile external anchor states
+After=network-online.target sealer.service
+
+[Service]
+Type=exec
+Environment=VERIFY_ENFORCE=1
+ExecStart=%h/repos/vm-spawn/vm status show --profile=%i
+WorkingDirectory=%h/repos/vm-spawn
+Restart=on-failure
+RestartSec=15m
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

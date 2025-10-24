@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+"""Convenience launcher for the VaultMesh CLI."""
+from cli.vm import main
+
+if __name__ == "__main__":
+    raise SystemExit(main())

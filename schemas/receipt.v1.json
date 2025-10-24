@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "VaultMeshReceiptV1",
+  "description": "Immutable anchor receipt emitted by VaultMesh anchoring workflows.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "root",
+    "chain",
+    "network",
+    "txScheme",
+    "txRef",
+    "blockNumber",
+    "anchorTs",
+    "observedAt",
+    "status",
+    "verifier",
+    "finality"
+  ],
+  "properties": {
+    "version": {
+      "type": "string",
+      "const": "1"
+    },
+    "root": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{64}$"
+    },
+    "chain": {
+      "type": "string",
+      "enum": ["BTC", "EVM", "TSA"]
+    },
+    "network": {
+      "type": "string",
+      "minLength": 1
+    },
+    "txScheme": {
+      "type": "string",
+      "enum": ["evm", "btc", "tsa"]
+    },
+    "txRef": {
+      "type": "string",
+      "minLength": 1
+    },
+    "txHash": {
+      "type": "string",
+      "pattern": "^[0-9a-fA-Fx]+$"
+    },
+    "blockNumber": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "anchorTs": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["pending", "submitted", "verified", "failed", "reorged"]
+    },
+    "verifier": {
+      "type": "string",
+      "minLength": 1
+    },
+    "finality": {
+      "type": "object",
+      "required": ["observedDepth", "requiredDepth", "state"],
+      "additionalProperties": false,
+      "properties": {
+        "observedDepth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "requiredDepth": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "state": {
+          "type": "string",
+          "enum": ["observed", "finalized", "reorged"]
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "rfc3161Ts": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule VaultMesh Harbinger pre-flight checks
+
+[Timer]
+OnBootSec=2m
+OnUnitActiveSec=10m
+AccuracySec=30s
+Unit=harbinger.service
+
+[Install]
+WantedBy=timers.target
