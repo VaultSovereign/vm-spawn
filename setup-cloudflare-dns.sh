@@ -4,9 +4,9 @@ set -e
 # VaultMesh Cloudflare DNS Setup
 # Configures DNS records for vaultmesh.cloud infrastructure domain
 
-# Cloudflare credentials
-CF_API_TOKEN="VgYJj9TIKqh8v62dnqEcRyHjlqO2voO3InHsL0gK"
-CF_ZONE_ID="8276372d1df87af19b7b595f1c419219"  # vaultmesh.cloud
+# Cloudflare credentials (from environment or config file)
+CF_API_TOKEN="${CF_API_TOKEN:-}"
+CF_ZONE_ID="${CF_ZONE_ID:-8276372d1df87af19b7b595f1c419219}"  # vaultmesh.cloud zone ID (public)
 
 # Colors
 GREEN='\033[0;32m'
@@ -17,6 +17,22 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}🌐 VaultMesh Cloudflare DNS Setup${NC}"
 echo "=================================="
+echo ""
+
+# Check for required credentials
+if [ -z "$CF_API_TOKEN" ]; then
+  echo -e "${RED}❌ CF_API_TOKEN environment variable not set${NC}"
+  echo ""
+  echo "Set it with:"
+  echo -e "  ${YELLOW}export CF_API_TOKEN='your-cloudflare-api-token'${NC}"
+  echo ""
+  echo "Or store in ~/.vaultmesh/cloudflare.env:"
+  echo -e "  ${YELLOW}mkdir -p ~/.vaultmesh${NC}"
+  echo -e "  ${YELLOW}echo 'export CF_API_TOKEN=\"your-token\"' > ~/.vaultmesh/cloudflare.env${NC}"
+  echo -e "  ${YELLOW}chmod 600 ~/.vaultmesh/cloudflare.env${NC}"
+  echo -e "  ${YELLOW}source ~/.vaultmesh/cloudflare.env${NC}"
+  exit 1
+fi
 echo ""
 
 # Check if kubectl is connected

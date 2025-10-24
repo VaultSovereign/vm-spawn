@@ -5,6 +5,14 @@ secrets/
 *.key
 *.pem
 !ops/certs/*.pem
+
+# Environment variables and credentials
+.env
+.env.*
+*.env
+!.env.example
+cloudflare.env
+.vaultmesh/cloudflare.env
 # Oracle data (regenerated)
 ops/oracle/providers.json
 # Reports (signed artifacts tracked separately)
