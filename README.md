@@ -20,6 +20,8 @@
 
 - ✅ **Scheduler 10/10**: Upgraded from 8/10 to production-hardened with async I/O, Prometheus metrics, health endpoints
 - ✅ **Phase V Federation**: Verified complete integration - peer-to-peer anchoring ready
+- ✅ **Google Cloud Deployment**: One-command GCP deployment with scale-to-zero support
+- ✅ **Cost Optimization**: Minimal deployment saves 90-99% vs always-on ($13/month idle)
 - ✅ **Documentation**: 6 new guides added including comprehensive Phase V overview
 - ✅ **Audit Trail**: All changes recorded in Remembrancer with cryptographic receipts
 
@@ -86,7 +88,19 @@ docker-compose up -d                # Starts app + Prometheus + Grafana
 curl http://localhost:8000/         # {"status":"ok","service":"my-service"}
 ```
 
-### 3. Use The Remembrancer (v3.0)
+### 3. Deploy to Google Cloud (NEW!)
+```bash
+# Minimal scale-to-zero deployment (~$13/month idle)
+export PROJECT_ID="your-gcp-project-id"
+./deploy-gcp-minimal.sh
+
+# Or standard always-on deployment (~$350/month)
+./deploy-gcp.sh
+
+# See: DEPLOY_GCP_MINIMAL.md for details
+```
+
+### 4. Use The Remembrancer (v3.0)
 ```bash
 # Query historical decisions
 ./ops/bin/remembrancer query "bash scripts"

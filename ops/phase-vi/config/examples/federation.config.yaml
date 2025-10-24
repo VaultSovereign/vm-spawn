@@ -1,0 +1,15 @@
+# Federation configuration example for Phase VI
+profile: default
+peer_id: guardian-alpha
+listen: 0.0.0.0:9743
+peers:
+  - id: guardian-beta
+    endpoint: https://guardian-beta.vaultmesh.net/federation
+    weight: 1
+  - id: guardian-gamma
+    endpoint: https://guardian-gamma.vaultmesh.net/federation
+    weight: 1
+conflict_resolution:
+  order: ["BTC", "EVM", "TSA"]
+  tie_breaker: anchor_ts
+  final_tie_breaker: tx_hash

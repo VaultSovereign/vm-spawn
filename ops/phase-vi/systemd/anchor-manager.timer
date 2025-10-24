@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule VaultMesh Anchor Manager reconciliation
+
+[Timer]
+OnBootSec=3m
+OnUnitActiveSec=1h
+AccuracySec=5m
+Unit=anchor-manager.service
+
+[Install]
+WantedBy=timers.target

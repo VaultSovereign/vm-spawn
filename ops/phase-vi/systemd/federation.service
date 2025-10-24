@@ -1,0 +1,16 @@
+[Unit]
+Description=VaultMesh Federation reconciler
+After=network-online.target
+
+[Service]
+Type=exec
+Environment=FEDERATION_ENABLED=1
+ExecStart=%h/repos/vm-spawn/vm memory verify --profile=%i
+WorkingDirectory=%h/repos/vm-spawn
+Restart=on-failure
+RestartSec=5m
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,17 @@
+[Unit]
+Description=VaultMesh Sealer - submit receipts to canonical anchors
+After=network-online.target harbinger.service
+
+[Service]
+Type=exec
+Environment=ANCHOR_WRITE_ENABLED=1
+Environment=FEDERATION_ENABLED=1
+ExecStart=%h/repos/vm-spawn/vm memory record --payload=@%h/repos/vm-spawn/ops/receipts/pending.json --profile=%i
+WorkingDirectory=%h/repos/vm-spawn
+Restart=on-failure
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

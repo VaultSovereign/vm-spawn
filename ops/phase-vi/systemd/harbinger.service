@@ -1,0 +1,18 @@
+[Unit]
+Description=VaultMesh Harbinger - anchor pre-flight orchestrator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+Environment=VERIFY_ENFORCE=1
+Environment=ANCHOR_WRITE_ENABLED=0
+ExecStart=%h/repos/vm-spawn/vm audit verify --profile=%i
+Restart=on-failure
+RestartSec=10s
+WorkingDirectory=%h/repos/vm-spawn
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

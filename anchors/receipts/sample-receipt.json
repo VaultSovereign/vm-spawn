@@ -1,0 +1,27 @@
+{
+  "version": "1",
+  "root": "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "chain": "EVM",
+  "network": "mainnet",
+  "txScheme": "evm",
+  "txRef": "0x1234567890abcdef",
+  "txHash": "0x1234567890abcdef",
+  "blockNumber": 21033456,
+  "anchorTs": "2025-10-24T12:34:56Z",
+  "observedAt": "2025-10-24T12:35:10Z",
+  "status": "verified",
+  "verifier": "vs-spawn/anchor-verify@1.0.0",
+  "finality": {
+    "observedDepth": 12,
+    "requiredDepth": 15,
+    "state": "observed"
+  },
+  "evidence": {
+    "logIndex": 7,
+    "contract": "0xfeedfacecafebeefcafebeefcafebeefcafebeef"
+  },
+  "rfc3161Ts": "2025-10-24T12:34:58Z",
+  "metadata": {
+    "anchorId": "example-anchor"
+  }
+}
