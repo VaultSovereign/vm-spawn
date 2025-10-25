@@ -137,6 +137,42 @@ jobs:
           echo "✓ Built and pushed: $FULL_IMAGE"
           echo "image=$FULL_IMAGE" >> $GITHUB_OUTPUT
 
+      - name: Install Cosign (keyless signing)
+        run: |
+          COSIGN_VERSION=2.4.1
+          curl -sSL -o cosign.tgz "https://github.com/sigstore/cosign/releases/download/v${COSIGN_VERSION}/cosign-linux-amd64.tar.gz"
+          tar -xzf cosign.tgz
+          sudo mv cosign /usr/local/bin/cosign
+          cosign version
+
+      - name: Sign image with Cosign (OIDC)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          IMAGE="${{ steps.build.outputs.image }}"
+          echo "🔏 Signing $IMAGE"
+          cosign sign --yes "$IMAGE"
+
+      - name: Install Syft (SBOM generation)
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft version
+
+      - name: Generate SBOM (SPDX JSON)
+        run: |
+          mkdir -p sbom
+          IMAGE="${{ steps.build.outputs.image }}"
+          SERVICE="${{ matrix.service }}"
+          echo "🧾 Generating SBOM for $IMAGE"
+          syft "$IMAGE" -o spdx-json > "sbom/$SERVICE-${{ github.sha }}.spdx.json"
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}-${{ github.sha }}
+          path: sbom/
+          retention-days: 30
+
       - name: Scan for vulnerabilities (optional)
         continue-on-error: true
         run: |
@@ -238,3 +274,25 @@ jobs:
           else
             echo "❌ Deployment encountered errors" >> $GITHUB_STEP_SUMMARY
           fi
+
+      - name: Notify on failure (Slack)
+        if: failure() || needs.deploy.result == 'failure'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          [ -z "$SLACK_WEBHOOK_URL" ] && { echo "No Slack webhook configured"; exit 0; }
+          payload=$(cat <<EOF
+          {
+            "text": "❌ VaultMesh deployment failed",
+            "attachments": [{
+              "color": "danger",
+              "fields": [
+                {"title": "Commit", "value": "${{ github.sha }}", "short": true},
+                {"title": "Run ID", "value": "${{ github.run_id }}", "short": true},
+                {"title": "Services", "value": "${{ needs.detect-changes.outputs.services }}", "short": false}
+              ]
+            }]
+          }
+          EOF
+          )
+          curl -s -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
