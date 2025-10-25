@@ -802,3 +802,4 @@ async def shutdown_event():
 # If the module is run directly, start the server
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+# CI/CD smoke test - Sat Oct 25 11:44:40 AM UTC 2025
