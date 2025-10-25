@@ -75,7 +75,7 @@ jobs:
             echo "matrix={\"service\":[]}" >> $GITHUB_OUTPUT
           else
             # Convert space-separated to JSON array
-            JSON_ARRAY=$(echo "$SERVICES" | jq -R 'split(" ") | map(select(length > 0))')
+            JSON_ARRAY=$(echo "$SERVICES" | tr ' ' '\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
             echo "matrix={\"service\":$JSON_ARRAY}" >> $GITHUB_OUTPUT
           fi
 
