@@ -104,3 +104,4 @@ U_swarm = mean_a U_k^a
 - Weights: `w1=1.0, w2=0.8, w3=0.6, w4=0.6, w5=0.7, w6=0.7`
 - Squash: `σ(x) = 1/(1+e^{-x})`
 - `λ=0.6` (time dilation strength), `dt_min=50 ms`, `dt_max=500 ms`
+Sat Oct 25 11:43:38 AM UTC 2025 — CI smoke
