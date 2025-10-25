@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: router
-        image: 509399262563.dkr.ecr.eu-west-1.amazonaws.com/vaultmesh/aurora-router:v1.0.0
+        image: us-central1-docker.pkg.dev/vm-spawn/vaultmesh/aurora-router:0.1.0
         ports:
         - name: http
           containerPort: 8080

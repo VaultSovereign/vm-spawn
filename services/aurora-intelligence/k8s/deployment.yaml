@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aurora-intelligence
+  namespace: vaultmesh
+  labels:
+    app: aurora-intelligence
+    component: ai
+    part-of: vaultmesh
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aurora-intelligence
+  template:
+    metadata:
+      labels:
+        app: aurora-intelligence
+        component: ai
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: intelligence
+        image: us-central1-docker.pkg.dev/vm-spawn/vaultmesh/aurora-intelligence:0.1.0
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: AURORA_ROUTER_URL
+          value: "http://aurora-router:8080"
+        - name: PSI_URL
+          value: "http://psi-field:8000"
+        - name: STORE_FILE
+          value: "/data/decisions.db"
+        - name: EPSILON
+          value: "0.1"
+        - name: GAMMA
+          value: "0.92"
+        - name: ALPHA
+          value: "0.2"
+        - name: CACHE_TTL_S
+          value: "5"
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+          timeoutSeconds: 3
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 2
+        volumeMounts:
+        - name: data
+          mountPath: /data
+      volumes:
+      - name: data
+        emptyDir: {}  # Ephemeral storage (for demo; use PVC for production)
