@@ -143,6 +143,25 @@ Added failure notifications to workflow:
 
 ---
 
+## 🔍 Deployment Evidence
+
+**All claims in this document are backed by verifiable evidence.**
+
+See [platform/policy/DEPLOYMENT-EVIDENCE.md](platform/policy/DEPLOYMENT-EVIDENCE.md) for:
+- WIF main-branch restriction (IAM policy output)
+- Active NetworkPolicies (kubectl output)
+- Pod health under network isolation
+- Current deployment state (image tags)
+- CI/CD workflow enhancements (file diffs)
+
+**Key Evidence**:
+- **WIF Binding**: Only `refs/heads/main` can deploy (verified via gcloud IAM policy)
+- **NetworkPolicies**: 6 policies active, including default-deny (verified via kubectl)
+- **Pods Healthy**: All 8 pods Running after NetworkPolicy enforcement
+- **Workflow Enhanced**: Cosign + SBOM + Slack steps present in workflow file
+
+---
+
 ## 🚀 Deployment Workflow Security
 
 ### Build Phase
