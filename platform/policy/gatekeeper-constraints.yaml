@@ -1,0 +1,114 @@
+# VaultMesh Gatekeeper Policy Constraints
+# Enforce security and operational best practices via OPA Gatekeeper
+
+---
+# Require SHA-tagged or digest-pinned images only
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequireshaortag
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequireShaOrTag
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            repos:
+              type: array
+              items:
+                type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequireshaortag
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not regex.match("@sha256:|:[0-9a-f]{7,}", container.image)
+          msg := sprintf("Container %v uses unpinned image: %v. Must use SHA digest or commit SHA tag.", [container.name, container.image])
+        }
+
+---
+# Apply SHA/digest requirement to vaultmesh namespace
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequireShaOrTag
+metadata:
+  name: require-sha-tags-vaultmesh
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    namespaces: ["vaultmesh"]
+  parameters:
+    repos:
+      - "us-central1-docker.pkg.dev/vm-spawn/vaultmesh/*"
+
+---
+# Require resource requests and limits
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8scontainerresources
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sContainerResources
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            cpu:
+              type: object
+              properties:
+                min:
+                  type: string
+                max:
+                  type: string
+            memory:
+              type: object
+              properties:
+                min:
+                  type: string
+                max:
+                  type: string
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8scontainerresources
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.requests
+          msg := sprintf("Container %v missing resource requests", [container.name])
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.resources.limits
+          msg := sprintf("Container %v missing resource limits", [container.name])
+        }
+
+---
+# Apply resource requirements to vaultmesh namespace
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sContainerResources
+metadata:
+  name: require-resources-vaultmesh
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment", "StatefulSet", "DaemonSet"]
+    namespaces: ["vaultmesh"]
+  parameters:
+    cpu:
+      min: "100m"
+      max: "4"
+    memory:
+      min: "128Mi"
+      max: "8Gi"

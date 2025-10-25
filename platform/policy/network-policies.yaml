@@ -1,0 +1,136 @@
+# VaultMesh Network Policies
+# Zero-trust networking: default deny + explicit allow rules
+
+---
+# Allow aurora-router to communicate with psi-field
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-aurora-to-psi
+  namespace: vaultmesh
+spec:
+  podSelector:
+    matchLabels:
+      app: psi-field
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: aurora-router
+      ports:
+        - protocol: TCP
+          port: 8000
+
+---
+# Allow aurora-router to communicate with aurora-intelligence
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-aurora-to-intelligence
+  namespace: vaultmesh
+spec:
+  podSelector:
+    matchLabels:
+      app: aurora-intelligence
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: aurora-router
+      ports:
+        - protocol: TCP
+          port: 8001
+
+---
+# Allow scheduler to communicate with all services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-scheduler-egress
+  namespace: vaultmesh
+spec:
+  podSelector:
+    matchLabels:
+      app: scheduler
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8000
+        - protocol: TCP
+          port: 8001
+
+---
+# Allow ingress from GKE health checks and load balancers
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-gke-health-checks
+  namespace: vaultmesh
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: gke-system
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+    - from:
+        - ipBlock:
+            cidr: 10.0.0.0/8  # GKE internal network
+    - from:
+        - ipBlock:
+            cidr: 35.191.0.0/16  # GCP health check ranges
+    - from:
+        - ipBlock:
+            cidr: 130.211.0.0/22  # GCP load balancer ranges
+
+---
+# Allow all pods to reach external DNS and HTTPS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns-and-external-https
+  namespace: vaultmesh
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53  # DNS
+    - to:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443  # HTTPS
+
+---
+# Default deny all ingress and egress (apply last!)
+# NOTE: Only apply this after validating allow rules work
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: vaultmesh
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
