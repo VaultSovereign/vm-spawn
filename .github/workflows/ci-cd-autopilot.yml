@@ -1,0 +1,238 @@
+# VaultMesh CI/CD Pipeline
+# Keyless GitHub Actions → GCP Workload Identity Federation → GKE Autopilot
+#
+# Triggers: Push to main branch affecting services/ directory
+# Actions: Build → Push to Artifact Registry → Rolling update in vaultmesh namespace
+#
+# Required GitHub Secrets:
+#   - GCP_WIF_PROVIDER: projects/572946311311/locations/global/workloadIdentityPools/gh-oidc-pool/providers/github
+#   - GCP_DEPLOYER_SA: vaultmesh-deployer@vm-spawn.iam.gserviceaccount.com
+
+name: VaultMesh Deploy
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - 'services/**'
+      - '.github/workflows/deploy.yaml'
+  workflow_dispatch:
+    inputs:
+      service:
+        description: 'Service to deploy (leave empty for all changed)'
+        required: false
+        type: string
+      force_rebuild:
+        description: 'Force rebuild even if no changes'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PROJECT_ID: vm-spawn
+  REGION: us-central1
+  CLUSTER: vaultmesh-minimal
+  NAMESPACE: vaultmesh
+  REPO_PATH: us-central1-docker.pkg.dev/vm-spawn/vaultmesh
+
+jobs:
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # Need parent commit for diff
+
+      - name: Detect changed services
+        id: changes
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.service }}" ]]; then
+            # Manual trigger with specific service
+            SERVICES="${{ inputs.service }}"
+          elif [[ "${{ inputs.force_rebuild }}" == "true" ]]; then
+            # Force rebuild all services
+            SERVICES=$(ls -1 services/ | tr '\n' ' ')
+          else
+            # Detect changes from git diff
+            SERVICES=$(git diff --name-only HEAD~1 HEAD | \
+              awk -F/ '/^services\/[^\/]+\/(Dockerfile|src\/|k8s\/)/{print $2}' | \
+              sort -u | tr '\n' ' ')
+          fi
+
+          echo "Detected services: $SERVICES"
+          echo "services=$SERVICES" >> $GITHUB_OUTPUT
+
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          SERVICES="${{ steps.changes.outputs.services }}"
+          if [[ -z "$SERVICES" ]]; then
+            echo "matrix={\"service\":[]}" >> $GITHUB_OUTPUT
+          else
+            # Convert space-separated to JSON array
+            JSON_ARRAY=$(echo "$SERVICES" | jq -R 'split(" ") | map(select(length > 0))')
+            echo "matrix={\"service\":$JSON_ARRAY}" >> $GITHUB_OUTPUT
+          fi
+
+  build-and-push:
+    name: Build ${{ matrix.service }}
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Required for OIDC
+      contents: read
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      fail-fast: false  # Continue building other services if one fails
+    outputs:
+      images: ${{ steps.build.outputs.images }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+          token_format: access_token
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and Push ${{ matrix.service }}
+        id: build
+        run: |
+          SERVICE="${{ matrix.service }}"
+          IMAGE_NAME="${{ env.REPO_PATH }}/$SERVICE"
+          IMAGE_TAG="${{ github.sha }}"
+          FULL_IMAGE="$IMAGE_NAME:$IMAGE_TAG"
+
+          echo "Building $SERVICE..."
+          docker build \
+            -t "$FULL_IMAGE" \
+            -t "$IMAGE_NAME:latest" \
+            --build-arg BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --build-arg VCS_REF="${{ github.sha }}" \
+            --build-arg VERSION="${IMAGE_TAG}" \
+            "services/$SERVICE"
+
+          echo "Pushing $FULL_IMAGE..."
+          docker push "$FULL_IMAGE"
+          docker push "$IMAGE_NAME:latest"
+
+          echo "✓ Built and pushed: $FULL_IMAGE"
+          echo "image=$FULL_IMAGE" >> $GITHUB_OUTPUT
+
+      - name: Scan for vulnerabilities (optional)
+        continue-on-error: true
+        run: |
+          # Enable Container Analysis API scanning
+          # Results visible in console.cloud.google.com/artifacts/docker/$PROJECT_ID/$REGION/vaultmesh
+          echo "Container scanning enabled via Artifact Registry"
+
+  deploy:
+    name: Deploy to GKE
+    needs: [detect-changes, build-and-push]
+    if: needs.detect-changes.outputs.services != ''
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOYER_SA }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials "${{ env.CLUSTER }}" \
+            --region="${{ env.REGION }}" \
+            --project="${{ env.PROJECT_ID }}"
+
+      - name: Deploy ${{ matrix.service }}
+        run: |
+          SERVICE="${{ matrix.service }}"
+          NEW_IMAGE="${{ env.REPO_PATH }}/$SERVICE:${{ github.sha }}"
+
+          echo "Deploying $SERVICE with image $NEW_IMAGE..."
+
+          # Update deployment image
+          kubectl set image \
+            deployment/$SERVICE \
+            $SERVICE=$NEW_IMAGE \
+            -n ${{ env.NAMESPACE }} \
+            --record
+
+          # Wait for rollout
+          kubectl rollout status \
+            deployment/$SERVICE \
+            -n ${{ env.NAMESPACE }} \
+            --timeout=180s
+
+          echo "✓ Deployed $SERVICE successfully"
+
+      - name: Verify deployment
+        run: |
+          SERVICE="${{ matrix.service }}"
+
+          # Check pod status
+          kubectl get pods -n ${{ env.NAMESPACE }} -l app=$SERVICE
+
+          # Get deployment status
+          kubectl get deployment $SERVICE -n ${{ env.NAMESPACE }}
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          SERVICE="${{ matrix.service }}"
+          echo "⚠️ Deployment failed, rolling back $SERVICE..."
+          kubectl rollout undo deployment/$SERVICE -n ${{ env.NAMESPACE }}
+          kubectl rollout status deployment/$SERVICE -n ${{ env.NAMESPACE }} --timeout=120s
+          echo "✓ Rollback completed"
+
+  notify:
+    name: Notify
+    needs: [detect-changes, deploy]
+    if: always() && needs.detect-changes.outputs.services != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 VaultMesh Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Services**: ${{ needs.detect-changes.outputs.services }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status**: ${{ needs.deploy.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+            echo "✅ All services deployed successfully" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Deployment encountered errors" >> $GITHUB_STEP_SUMMARY
+          fi

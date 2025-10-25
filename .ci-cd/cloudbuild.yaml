@@ -1,0 +1,201 @@
+# VaultMesh Cloud Build Configuration
+# Alternative to GitHub Actions for fully GCP-native CI/CD
+#
+# Triggers: Push to main branch (configure via gcloud builds triggers create)
+# Actions: Build all services → Push to Artifact Registry → Deploy to GKE
+#
+# Setup:
+#   1. Enable Cloud Build API: gcloud services enable cloudbuild.googleapis.com
+#   2. Grant permissions to Cloud Build SA (see setup script)
+#   3. Create trigger: gcloud builds triggers create github --repo-name=REPO --branch-pattern=^main$
+#
+# Substitutions available:
+#   - $PROJECT_ID: GCP project (vm-spawn)
+#   - $COMMIT_SHA: Git commit hash
+#   - $BRANCH_NAME: Git branch
+#   - $_REGION: us-central1
+#   - $_CLUSTER: vaultmesh-minimal
+#   - $_NAMESPACE: vaultmesh
+
+substitutions:
+  _REGION: us-central1
+  _CLUSTER: vaultmesh-minimal
+  _NAMESPACE: vaultmesh
+  _REPO_PATH: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/vaultmesh
+
+options:
+  machineType: E2_HIGHCPU_8  # Faster builds
+  logging: CLOUD_LOGGING_ONLY
+  substitutionOption: ALLOW_LOOSE
+
+# Parallel build strategy: Build all services concurrently
+steps:
+  # === Build Phase (Parallel) ===
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-psi-field
+    args:
+      - build
+      - -t
+      - ${_REPO_PATH}/psi-field:${COMMIT_SHA}
+      - -t
+      - ${_REPO_PATH}/psi-field:latest
+      - --build-arg
+      - BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      - --build-arg
+      - VCS_REF=${COMMIT_SHA}
+      - services/psi-field
+    waitFor: ['-']  # Start immediately
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-scheduler
+    args:
+      - build
+      - -t
+      - ${_REPO_PATH}/scheduler:${COMMIT_SHA}
+      - -t
+      - ${_REPO_PATH}/scheduler:latest
+      - services/scheduler
+    waitFor: ['-']
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-aurora-router
+    args:
+      - build
+      - -t
+      - ${_REPO_PATH}/aurora-router:${COMMIT_SHA}
+      - -t
+      - ${_REPO_PATH}/aurora-router:latest
+      - services/aurora-router
+    waitFor: ['-']
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-aurora-intelligence
+    args:
+      - build
+      - -t
+      - ${_REPO_PATH}/aurora-intelligence:${COMMIT_SHA}
+      - -t
+      - ${_REPO_PATH}/aurora-intelligence:latest
+      - services/aurora-intelligence
+    waitFor: ['-']
+
+  - name: gcr.io/cloud-builders/docker
+    id: build-analytics
+    args:
+      - build
+      - -t
+      - ${_REPO_PATH}/analytics:${COMMIT_SHA}
+      - -t
+      - ${_REPO_PATH}/analytics:latest
+      - services/vaultmesh-analytics
+    waitFor: ['-']
+
+  # === Push Phase (Wait for all builds) ===
+
+  - name: gcr.io/cloud-builders/docker
+    id: push-images
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        for service in psi-field scheduler aurora-router aurora-intelligence analytics; do
+          echo "Pushing $service..."
+          docker push ${_REPO_PATH}/$service:${COMMIT_SHA}
+          docker push ${_REPO_PATH}/$service:latest
+        done
+    waitFor:
+      - build-psi-field
+      - build-scheduler
+      - build-aurora-router
+      - build-aurora-intelligence
+      - build-analytics
+
+  # === Deploy Phase (Sequential per service) ===
+
+  - name: gcr.io/cloud-builders/gke-deploy
+    id: deploy-psi-field
+    args:
+      - run
+      - --filename=services/psi-field/k8s/
+      - --image=${_REPO_PATH}/psi-field:${COMMIT_SHA}
+      - --location=${_REGION}
+      - --cluster=${_CLUSTER}
+      - --namespace=${_NAMESPACE}
+    waitFor: [push-images]
+
+  - name: gcr.io/cloud-builders/gke-deploy
+    id: deploy-scheduler
+    args:
+      - run
+      - --filename=services/scheduler/k8s/
+      - --image=${_REPO_PATH}/scheduler:${COMMIT_SHA}
+      - --location=${_REGION}
+      - --cluster=${_CLUSTER}
+      - --namespace=${_NAMESPACE}
+    waitFor: [push-images]
+
+  - name: gcr.io/cloud-builders/gke-deploy
+    id: deploy-aurora-router
+    args:
+      - run
+      - --filename=services/aurora-router/k8s/
+      - --image=${_REPO_PATH}/aurora-router:${COMMIT_SHA}
+      - --location=${_REGION}
+      - --cluster=${_CLUSTER}
+      - --namespace=${_NAMESPACE}
+    waitFor: [push-images]
+
+  - name: gcr.io/cloud-builders/gke-deploy
+    id: deploy-aurora-intelligence
+    args:
+      - run
+      - --filename=services/aurora-intelligence/k8s/
+      - --image=${_REPO_PATH}/aurora-intelligence:${COMMIT_SHA}
+      - --location=${_REGION}
+      - --cluster=${_CLUSTER}
+      - --namespace=${_NAMESPACE}
+    waitFor: [push-images]
+
+  - name: gcr.io/cloud-builders/gke-deploy
+    id: deploy-analytics
+    args:
+      - run
+      - --filename=services/vaultmesh-analytics/k8s/
+      - --image=${_REPO_PATH}/analytics:${COMMIT_SHA}
+      - --location=${_REGION}
+      - --cluster=${_CLUSTER}
+      - --namespace=${_NAMESPACE}
+    waitFor: [push-images]
+
+  # === Verification ===
+
+  - name: gcr.io/cloud-builders/kubectl
+    id: verify-deployment
+    args:
+      - get
+      - pods
+      - -n
+      - ${_NAMESPACE}
+      - -o
+      - wide
+    env:
+      - CLOUDSDK_COMPUTE_REGION=${_REGION}
+      - CLOUDSDK_CONTAINER_CLUSTER=${_CLUSTER}
+    waitFor:
+      - deploy-psi-field
+      - deploy-scheduler
+      - deploy-aurora-router
+      - deploy-aurora-intelligence
+      - deploy-analytics
+
+# Images to track in build history
+images:
+  - ${_REPO_PATH}/psi-field:${COMMIT_SHA}
+  - ${_REPO_PATH}/scheduler:${COMMIT_SHA}
+  - ${_REPO_PATH}/aurora-router:${COMMIT_SHA}
+  - ${_REPO_PATH}/aurora-intelligence:${COMMIT_SHA}
+  - ${_REPO_PATH}/analytics:${COMMIT_SHA}
+
+timeout: 1200s  # 20 minutes max
