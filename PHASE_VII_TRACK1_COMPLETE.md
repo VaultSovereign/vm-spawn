@@ -101,6 +101,21 @@
 - **Current:** All services are ClusterIP only
 - **Note:** External access deferred to future work
 
+**9. Analytics API Proxy Configuration** ✅
+- **Issue:** Environment variable mismatch between deployment and Next.js config
+- **Root Cause:**
+  - Deployment set `NEXT_PUBLIC_PSI_FIELD_URL`
+  - next.config.js read `PSI_FIELD_URL` (missing prefix)
+  - API rewrites failed with "Internal Server Error"
+- **Fix Applied:** Updated [deployment.yaml:27-33](services/vaultmesh-analytics/k8s/deployment.yaml#L27-L33)
+  - Changed to `PSI_FIELD_URL` and `AURORA_ROUTER_URL`
+  - Matches [next.config.js:7-8,14,18](services/vaultmesh-analytics/next.config.js#L7-L8) expectations
+- **Verification Script:** [verify-proxy.sh](services/vaultmesh-analytics/scripts/verify-proxy.sh)
+  - Automated 5-step verification process
+  - Tests API proxy endpoints
+  - Verifies env vars in pods
+  - Ready to run once kubectl responds
+
 ---
 
 ## 📈 Success Metrics
@@ -133,6 +148,7 @@
    - [services/vaultmesh-analytics/](services/vaultmesh-analytics/)
    - Image: `analytics:1.0.0`
    - K8s deployment: [services/vaultmesh-analytics/k8s/deployment.yaml](services/vaultmesh-analytics/k8s/deployment.yaml)
+   - API proxy verification: [services/vaultmesh-analytics/scripts/verify-proxy.sh](services/vaultmesh-analytics/scripts/verify-proxy.sh)
 
 3. **Production Smoke Test**
    - [SMOKE_TEST_PRODUCTION.sh](SMOKE_TEST_PRODUCTION.sh)
@@ -426,10 +442,15 @@
 
 ### Recommended Starting Point
 
-1. **Verify Analytics Dashboards** (30 min)
-   - Port-forward to localhost:3000
-   - Test all 3 dashboard pages
-   - Verify API connections work
+1. **Verify Analytics Dashboards** (10 min)
+   - Run: `./services/vaultmesh-analytics/scripts/verify-proxy.sh`
+   - Script will automatically:
+     - Check kubectl connectivity
+     - Verify deployment rollout
+     - Confirm env vars in pods
+     - Test API proxy endpoints
+     - Keep port-forward open for manual testing
+   - Verify all 3 dashboard pages render correctly
    - Screenshot for documentation
 
 2. **Deploy Aurora Router** (1 hour)

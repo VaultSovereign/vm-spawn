@@ -27,9 +27,9 @@ spec:
         env:
         - name: NODE_ENV
           value: "production"
-        - name: NEXT_PUBLIC_PSI_FIELD_URL
+        - name: PSI_FIELD_URL
           value: "http://psi-field:8000"
-        - name: NEXT_PUBLIC_AURORA_ROUTER_URL
+        - name: AURORA_ROUTER_URL
           value: "http://aurora-router:8080"
         resources:
           requests:
